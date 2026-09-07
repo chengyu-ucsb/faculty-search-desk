@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T17:03:26.541Z",
+  "updatedAt": "2026-09-07T17:24:06.547Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -268,6 +268,139 @@
       "feedId": "7ad052b97aae",
       "createdAt": "2026-09-07T16:56:28.246Z",
       "updatedAt": "2026-09-07T16:56:28.246Z"
+    },
+    {
+      "id": "qifygofmdv",
+      "institution": "University of Texas, Austin (Austin, Texas)",
+      "department": "",
+      "title": "Assistant Professor in Organizational Communication & Technology, Department of Communication, Moody College of Communication (Deadline: 09/15/2026)",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#University_of_Texas,_Austin_(Austin,_Texas)_-_Assistant_Professor_in_Organizational_Communication_&_Technology,_Department_of_Communication,_Moody_College_of_Communication_(Deadline:_09/15/2026)",
+      "contacts": [],
+      "salary": "",
+      "summary": "",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "lsquwtfmdv",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "haevcdfmdv",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "qkkezkfmdv",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "1irsw9fmdv",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "j6sa0xfmdv",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "ba137cfmdv",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "8gdb42fmdv",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "eukcq4fmdv",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "7btcjqfmdv",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "3wwlgnfmdv",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "ijmpdsfmdv",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "vy6t2afmdv",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "4db9e22f2195",
+      "createdAt": "2026-09-07T17:24:06.547Z",
+      "updatedAt": "2026-09-07T17:24:06.547Z"
     }
   ],
   "documents": [
