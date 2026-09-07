@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-07T15:52:27Z",
+  "generatedAt": "2026-09-07T16:31:02Z",
+  "profileUpdatedAt": "2026-09-07T00:00:00Z",
   "sources": [
     {
       "id": "ica",
@@ -11,7 +12,7 @@
       "status": "blocked",
       "httpStatus": 403,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 0,
       "new": 0
     },
@@ -21,11 +22,11 @@
       "url": "https://natcom-jobs.careerwebsite.com/jobs/?keywords=communication",
       "kind": "html",
       "enabled": true,
-      "status": "blocked",
-      "httpStatus": 403,
+      "status": "ok",
+      "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
-      "found": 0,
+      "checkedAt": "2026-09-07T16:31:02Z",
+      "found": 25,
       "new": 0
     },
     {
@@ -37,8 +38,8 @@
       "status": "ok",
       "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
-      "found": 12,
+      "checkedAt": "2026-09-07T16:31:02Z",
+      "found": 11,
       "new": 0
     },
     {
@@ -50,7 +51,7 @@
       "status": "ok",
       "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 13,
       "new": 0
     },
@@ -63,7 +64,7 @@
       "status": "ok",
       "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 23,
       "new": 0
     },
@@ -76,7 +77,7 @@
       "status": "blocked",
       "httpStatus": 403,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 0,
       "new": 0
     },
@@ -89,7 +90,7 @@
       "status": "ok",
       "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 4,
       "new": 0
     },
@@ -102,7 +103,7 @@
       "status": "no_postings",
       "httpStatus": 200,
       "error": null,
-      "checkedAt": "2026-09-07T15:52:27Z",
+      "checkedAt": "2026-09-07T16:31:02Z",
       "found": 0,
       "new": 0
     }
@@ -118,8 +119,23 @@
       "url": "https://jobs.chronicle.com/job/38031758/faculty-openings/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Worcester State University: WORCESTER STATE UNIVERSITY WHERE TEACHING MATTERS Apply for a tenure track position at a public university where you make a difference, every... Massachusetts, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-01",
+      "detailTries": 1,
+      "score": 10,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "technology",
+        "media studies",
+        "management",
+        "associate professor",
+        "-adjunct"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "8db6d8bc04e7",
@@ -131,8 +147,18 @@
       "url": "https://careers.insidehighered.com/job/3418844/part-time-communication-studies-instructor-pool-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "West Valley-Mission Community College District: Position Title:Part-Time Communication Studies Instructor (Pool)Campus:Mission CollegeDefinition:PART-TIME, ASSOCIATE FACULTY POOL Applications for P Saratoga, CA",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-10-23"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-10-23",
+      "detailTries": 1,
+      "score": 3,
+      "matched": [
+        "organizational communication",
+        "organizational",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "ff151e6a82f1",
@@ -144,8 +170,23 @@
       "url": "https://careers.insidehighered.com/job/3546355/associate-assistant-professor-in-communications-media-and-journalism-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive: Wenzhou Business College: With over 22,000 students and 1,200 faculty members, the university invites applications for 10-year full-time tenure track ... Shanghai (CN)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-01",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "new media",
+        "health communication",
+        "-adjunct",
+        "-part-time",
+        "-broadcast"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "8dba9cc8e73b",
@@ -157,8 +198,21 @@
       "url": "https://careers.insidehighered.com/job/2618238/part-time-instructor-clinical-supervisor-communication-sciences-and-disorders-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Valdosta State University: Job Title: Part-Time Instructor (Clinical Supervisor-Communication Sciences & Disorders) Location: Valdosta State University Regular/Temporary: Regu Valdosta State University",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2022-10-15"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2022-10-15",
+      "detailTries": 1,
+      "score": -4,
+      "matched": [
+        "workplace",
+        "technology",
+        "social media",
+        "-part-time",
+        "-temporary",
+        "-debate"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "a0c73f94ce2b",
@@ -170,8 +224,21 @@
       "url": "https://jobs.chronicle.com/job/38033864/assistant-professor-of-practice-in-public-relations-tombras-school-of-advertising-and-public/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: University of Tennessee, Knoxville: Description Assistant Professor of Practice, Public Relations The University of Tennessee's Tombras School of Advertising and Public Relations... Knoxville, Tennessee, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-03"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-03",
+      "detailTries": 1,
+      "score": 6,
+      "matched": [
+        "assistant professor",
+        "tenure track",
+        "media studies",
+        "social media",
+        "qualitative",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "7ad052b97aae",
@@ -183,8 +250,27 @@
       "url": "https://jobs.chronicle.com/job/38032763/assistant-professor-communication/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: University of Tampa: Assistant Professor, Communication R0010961 Tampa If you are a current University of Tampa student, please search for and apply to student jobs... Florida, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-02"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-02",
+      "detailTries": 1,
+      "score": 12,
+      "matched": [
+        "communication and technology",
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "technology",
+        "digital media",
+        "new media",
+        "emerging media",
+        "emerging technologies",
+        "media studies",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "f58d48d29800",
@@ -196,8 +282,22 @@
       "url": "https://careers.insidehighered.com/job/3424344/associate-full-professor-and-director-institute-for-community-inclusion/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "University of Massachusetts Boston: Job no: 528529 Position Type: Faculty Full Time Campus: UMass Boston Department: Institute Community Inclusion Pay Grade: No Pay Grade Date opened: 0 UMass Boston",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-11-05"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-11-05",
+      "detailTries": 1,
+      "score": 9,
+      "matched": [
+        "organizational",
+        "collaboration",
+        "tenure-track",
+        "technology",
+        "organizations",
+        "management",
+        "-graduate assistant"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "f688a77419f2",
@@ -209,8 +309,22 @@
       "url": "https://careers.insidehighered.com/job/3392534/assistant-or-associate-professor-in-family-and-community-medicine/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "University of Kentucky: Job Title:Assistant or Associate Professor in Family & Community MedicineRequisition Number:FE03126Department Name:7H460:FAMILY AND COMMUNITY MEDICINE Lexington, KY",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-08-28"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-08-28",
+      "detailTries": 1,
+      "score": 7,
+      "matched": [
+        "tenure-track",
+        "tenure track",
+        "emerging technologies",
+        "institutional",
+        "management",
+        "associate professor",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "6b89ff3cba06",
@@ -222,8 +336,20 @@
       "url": "https://careers.insidehighered.com/job/3473394/adjunct-instructor-communication-uc-blue-ash-college/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "University of Cincinnati: Current UC employees must apply internally via SuccessFactors You are invited to apply to be included in the general pool of candidates from which q Cincinnati, OH",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-03-05"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-03-05",
+      "detailTries": 1,
+      "score": -1,
+      "matched": [
+        "workplace",
+        "management",
+        "business communication",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "d88a2809c8fe",
@@ -234,8 +360,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/transportation-communication-specialist-5000-sign-on-bonus/85694706/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "426df6657c68",
@@ -247,8 +379,27 @@
       "url": "https://jobs.chronicle.com/job/38032680/claremont-colleges-joint-faculty-positions/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: The Claremont Colleges: THE CLAREMONT COLLEGES Claremont Graduate University • Claremont McKenna College • Harvey Mudd College Keck Graduate Institute • Pitzer College •... California, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-02"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-02",
+      "detailTries": 1,
+      "score": 22,
+      "matched": [
+        "organizational",
+        "artificial intelligence",
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "technology",
+        "media studies",
+        "qualitative",
+        "research methods",
+        "interdisciplinary",
+        "management",
+        "associate professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "18cc1c0cfd27",
@@ -259,8 +410,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/speech-pathologist-neurodegenerative-cognitive-communication-disorders/85616583/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "bf9b55df2d27",
@@ -271,8 +428,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/senior-electrical-engineer-communication-and-radio-frequency-remote-eligible-relocation-assistance-available/85684325/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "a6a972fc0deb",
@@ -283,8 +446,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/senior-electrical-engineer-communication-and-radio-frequency-remote-eligible-relocation-assistance-available/85683963/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "c06a9abe8952",
@@ -295,8 +464,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/senior-electrical-engineer-communication-and-radio-frequency-remote-eligible-relocation-assistance-available/85683942/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "0d8c13a832b1",
@@ -307,8 +482,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/senior-editor-kut-news-moody-college-of-communication/85810099/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "29cdb2df7cb0",
@@ -319,8 +500,21 @@
       "location": "",
       "url": "https://www.higheredjobs.com/career/SiteListings.cfm",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:52:27Z"
+      "snippet": "Skip to main content Home News & Resources Search Firms Featured Sponsor Search Firms Each of the search firms listed below has experience conducting searches for colleges and universities. And, if your institution needs help now from an interim executive while you search for a permanent hire, check",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 4,
+      "matched": [
+        "collaboration",
+        "technology",
+        "institutional",
+        "organizations",
+        "management",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "0c86642bf65e",
@@ -332,8 +526,20 @@
       "url": "https://careers.insidehighered.com/job/3097509/communication-studies-lecturer-pool/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "San José State University: Job no: 536587 Work type: Instructional Faculty - Temporary/Lecturer Location: San José Categories: Unit 3 - CFA - California Faculty Association, Fac San José",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2024-03-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2024-03-04",
+      "detailTries": 1,
+      "score": -3,
+      "matched": [
+        "research methods",
+        "interdisciplinary",
+        "management",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "be316b34cdad",
@@ -344,8 +550,14 @@
       "location": "",
       "url": "https://www.higheredjobs.com/career/ResumeService.cfm",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:52:27Z"
+      "snippet": "Skip to main content Leave your resume or CV to the experts Home News & Resources Resume/CV Writing Service Leave your resume or CV to the experts HigherEdJobs has partnered with TopResume, one of the leading resume writing services, to offer exclusive pricing to the HigherEdJobs community. TopResum",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "fa9205b832ef",
@@ -356,8 +568,16 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/public-relations-and-strategic-communication-professional-in-residence/85513022/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 1,
+      "matched": [
+        "strategic communication"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "a7b807958832",
@@ -369,8 +589,21 @@
       "url": "https://jobs.chronicle.com/job/38032397/communication-part-time-adjunct-faculty/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Sinclair Community College: Position Information Position Information (Default Section) Job Title Communication - Part-Time (Adjunct) Faculty Location Main Campus -... Dayton, Ohio, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-05"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-05",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "assistant professor",
+        "tenure track",
+        "technology",
+        "media studies",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "f3200f4ceb53",
@@ -381,8 +614,17 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/pool-instructor-organizational-communication/85332127/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 6,
+      "matched": [
+        "organizational communication",
+        "organizational"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "852443743ee9",
@@ -394,8 +636,28 @@
       "url": "https://careers.insidehighered.com/job/3544043/strategic-communication-and-emerging-technologies/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Northwestern University in Qatar: Strategic Communication and Emerging Technologies Journalism Program Northwestern University in Qatar seeks an outstanding colleague for a full-tim... Doha (QA)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-25",
+      "detailTries": 1,
+      "score": 13,
+      "matched": [
+        "artificial intelligence",
+        "ai",
+        "collaboration",
+        "assistant professor",
+        "emerging technologies",
+        "media studies",
+        "interdisciplinary",
+        "institutional",
+        "strategic communication",
+        "machine learning",
+        "health communication",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "42a600bbe6b1",
@@ -407,8 +669,24 @@
       "url": "https://careers.insidehighered.com/job/3544041/journalistic-writing-and-reporting/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Northwestern University in Qatar: Journalistic Writing and Reporting Journalism Program Northwestern University in Qatar seeks an outstanding colleague for a full-time, open-rank fa... Doha (QA)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-25",
+      "detailTries": 1,
+      "score": 11,
+      "matched": [
+        "artificial intelligence",
+        "ai",
+        "collaboration",
+        "media studies",
+        "interdisciplinary",
+        "institutional",
+        "strategic communication",
+        "platforms",
+        "-sports information"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "dcd56d3004b5",
@@ -420,8 +698,29 @@
       "url": "https://careers.insidehighered.com/job/3544042/global-media-industries/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Northwestern University in Qatar: Global Media Industries Communication Program, with the possibility for a joint appointment in Journalism Northwestern University in Qatar seeks an... Doha (QA)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-25",
+      "detailTries": 1,
+      "score": 12,
+      "matched": [
+        "artificial intelligence",
+        "ai",
+        "collaboration",
+        "technology",
+        "media studies",
+        "interdisciplinary",
+        "institutional",
+        "management",
+        "strategic communication",
+        "platforms",
+        "health communication",
+        "open rank",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "0cd6c0193098",
@@ -433,8 +732,23 @@
       "url": "https://jobs.chronicle.com/job/38032771/instructor-of-communication-studies/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: Northern State University: Instructor of Communication Studies Northern State University Posting Number: F01942P DepartmentL NSU-Arts & Sciences Physical Location of... South Dakota, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-02"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-02",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "media studies",
+        "organizations",
+        "-adjunct",
+        "-part-time",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "488013229ceb",
@@ -446,8 +760,21 @@
       "url": "https://jobs.chronicle.com/job/38033912/adjunct-instructor-of-media-studies/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: North Central College: Posting Details Position Information Posting Number F000497 Position Title Adjunct Instructor of Media Studies Department Communication &... Naperville, Illinois, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-07"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-07",
+      "detailTries": 1,
+      "score": 4,
+      "matched": [
+        "digital communication",
+        "assistant professor",
+        "tenure track",
+        "media studies",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "d63469345341",
@@ -458,8 +785,17 @@
       "location": "",
       "url": "https://www.higheredjobs.com/career/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:52:27Z"
+      "snippet": "Skip to main content Home News & Resources Career Resources Job Search Tips Job search, application, and interview advice to help advance your higher ed career. Newsletter Signup Get the Insider Update for job search tips, career advice, and jobs delivered to your inbox. Institutional Profiles Learn",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 4,
+      "matched": [
+        "workplace",
+        "institutional"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "35cb71423ef8",
@@ -471,8 +807,19 @@
       "url": "https://jobs.chronicle.com/job/38033780/video-production-affiliate-faculty/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: Metropolitan State University of Denver: Video Production Affiliate Faculty Metropolitan State University of Denver Department Journalism and Media Production By applying to this... Colorado, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": -6,
+      "matched": [
+        "tenure track",
+        "-part-time",
+        "-temporary",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "18cd01b66155",
@@ -484,8 +831,19 @@
       "url": "https://jobs.chronicle.com/job/38033777/technical-writing-affiliate-faculty/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: Metropolitan State University of Denver: Technical Writing Affiliate Faculty Metropolitan State University of Denver Department Journalism and Media Production By applying to this... Colorado, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": -6,
+      "matched": [
+        "tenure track",
+        "-part-time",
+        "-temporary",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "c743a8377a9f",
@@ -497,8 +855,19 @@
       "url": "https://jobs.chronicle.com/job/38033779/public-relations-affiliate-faculty/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: Metropolitan State University of Denver: Public Relations Affiliate Faculty Metropolitan State University of Denver Department Journalism and Media Production By applying to this... Colorado, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": -6,
+      "matched": [
+        "tenure track",
+        "-part-time",
+        "-temporary",
+        "-non-tenure"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "3b8605477e3f",
@@ -510,8 +879,20 @@
       "url": "https://jobs.chronicle.com/job/38033778/broadcast-affiliate-instructor/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not specified: Metropolitan State University of Denver: Broadcast Affiliate Instructor Metropolitan State University of Denver Department Journalism and Media Production By applying to this... Colorado, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": -9,
+      "matched": [
+        "tenure track",
+        "-part-time",
+        "-temporary",
+        "-non-tenure",
+        "-broadcast"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "0f5ce336bd4c",
@@ -523,8 +904,18 @@
       "url": "https://careers.insidehighered.com/job/3469167/z-part-time-adjunct-faculty-pool-journalism/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "$60.60 - $72.51 Hourly: College of the Sequoias: z-Part-Time Adjunct Faculty Pool - Journalism Salary: $60.60 - $72.51 Hourly Job Type: Part-time Faculty Job Number: 4220-af-JOUR Closing: Visalia",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-02-24"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-02-24",
+      "detailTries": 1,
+      "score": -9,
+      "matched": [
+        "-adjunct",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "db6d35a6b711",
@@ -535,8 +926,14 @@
       "location": "",
       "url": "https://www.higheredjobs.com/career/resumes.cfm",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:52:27Z"
+      "snippet": "A well-written cover letter can be equally important as an impressive resume or CV. A cover letter should accompany each resume you send and be tailored distinctly for the position to which you are applying. You should describe your abilities, skills, and experience, and illustrate them with concret",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "b1581aac418e",
@@ -548,8 +945,19 @@
       "url": "https://careers.insidehighered.com/job/3469165/z-part-time-adjunct-faculty-pool-information-communications-technology/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "$60.60 - $72.51 Hourly: College of the Sequoias: z-Part-Time Adjunct Faculty Pool - Information/Communications Technology Salary: $60.60 - $72.51 Hourly Job Type: Part-time Faculty Job Numbe Visalia",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-02-24"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-02-24",
+      "detailTries": 1,
+      "score": -8,
+      "matched": [
+        "technology",
+        "-adjunct",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "1fcd3c9cbb26",
@@ -560,8 +968,17 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/health-communication-and-information-assistant-associate-professor-college-of-communication-information-sciences-530406-530409/85779864/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "health communication",
+        "associate professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "4af6c683a396",
@@ -572,8 +989,17 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/health-communication-and-information-assistantassociate-professor-college-of-communication-information-sciences-530406530409/85723107/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "health communication",
+        "associate professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "8a8662a93e26",
@@ -584,8 +1010,17 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/health-communication-and-information-assistantassociate-professor-college-of-communication-information-sciences-530406530409/85739168/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "health communication",
+        "associate professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "9585cbd5834c",
@@ -597,8 +1032,19 @@
       "url": "https://jobs.chronicle.com/job/38030140/production-manager/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Harvard University, Faculty of Arts & Sciences: Company Description By working at Harvard University, you join a vibrant community that advances Harvard's world-changing mission in meaningful... Cambridge, Massachusetts, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-25",
+      "detailTries": 1,
+      "score": 6,
+      "matched": [
+        "collaboration",
+        "media studies",
+        "institutional",
+        "management"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "2cf2410030f0",
@@ -610,8 +1056,18 @@
       "url": "https://careers.insidehighered.com/job/3470006/film-part-time-faculty-ay-26-27/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Georgia Gwinnett College: Job Title: Film: Part-Time Faculty AY 26-27 Location: Georgia Gwinnett College Regular/Temporary: Temporary Full/Part Time: Part-Time Job ID: 2951 Georgia Gwinnett College",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-02-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-02-25",
+      "detailTries": 1,
+      "score": -5,
+      "matched": [
+        "institutional",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "e69a84abfba8",
@@ -623,8 +1079,25 @@
       "url": "https://jobs.chronicle.com/job/38033990/senior-director-of-digital-engagement-marketing-and-communications/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: George Mason University: Department: Advancement and Alumni Relations Classification: Administrative Faculty Job Category: Administrative or Professional Faculty Job... Fairfax, Virginia, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": 18,
+      "matched": [
+        "teams",
+        "collaboration",
+        "workplace",
+        "digital communication",
+        "digital media",
+        "social media",
+        "institutional",
+        "management",
+        "strategic communication",
+        "platforms"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "cd9c1a93ad9e",
@@ -636,8 +1109,17 @@
       "url": "https://careers.insidehighered.com/job/3390536/-as-needed-part-time-instructor-film/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Georgia Highlands College: Job Title: \"As Needed\" Part-time Instructor - Film Location: GHC - Floyd Campus;GHC - Cartersville Instr. Site;GHC - Marietta Instr. Site;GHC - Pauld GHC - Floyd Campus;GHC - Cartersville Instr. Site;GHC - Marietta Instr. Site;GHC - Paulding Instr. Site",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-08-25",
+      "detailTries": 1,
+      "score": -6,
+      "matched": [
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "69203a16e971",
@@ -649,8 +1131,23 @@
       "url": "https://jobs.chronicle.com/job/38033620/assistant-professor-of-media-industry-studies/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive and commensurate with the candidate’s qualifications, rank, and experience while considering internal equity.: Emory University Department of Film and Media: Emory University’s Department of Film and Media invites applications for a tenure-track Assistant Professor position in Media Industry Studies. Atlanta, Georgia (US)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": 6,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "digital media",
+        "media studies",
+        "management",
+        "-adjunct",
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "bab1fc2fb569",
@@ -662,8 +1159,24 @@
       "url": "https://jobs.chronicle.com/job/38031881/multiple-faculty-positions/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "competitive: Duke Kunshan University: Duke Kunshan University (DKU) invites applications for one faculty position in Global Health and related disciplines to begin in the academic year ... China (CN)",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-01",
+      "detailTries": 1,
+      "score": 11,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "technology",
+        "media studies",
+        "interdisciplinary",
+        "management",
+        "associate professor",
+        "-adjunct"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "b90284b752d6",
@@ -675,8 +1188,16 @@
       "url": "https://careers.insidehighered.com/job/3195470/part-time-faculty-media-and-popular-culture/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "DePaul University: Part-time Faculty, Media & Popular Culture Full-time Faculty Positions Full-time faculty positions will be posted on a per-opening basis. Postings a Chicago, IL",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2024-08-03"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2024-08-03",
+      "detailTries": 1,
+      "score": -3,
+      "matched": [
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "318ab510cab6",
@@ -688,8 +1209,16 @@
       "url": "https://careers.insidehighered.com/job/1903942/part-time-faculty-community-service-studies/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "DePaul University: Part Time Faculty, Community Service Studies Full-time Faculty PositionsFull-time faculty positions will be posted on a per-opening basis. Postings Chicago, IL",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2019-11-08"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2019-11-08",
+      "detailTries": 1,
+      "score": -3,
+      "matched": [
+        "-part-time"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "fc6bc66b4f8b",
@@ -701,8 +1230,19 @@
       "url": "https://careers.insidehighered.com/job/2797642/part-time-instructor-of-communications/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Dalton State College: Job Title: Part-Time Instructor of Communications Location: Dalton State College Regular/Temporary: Temporary Full/Part Time: Part-Time Job ID: 25 Dalton State College",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2023-03-09"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2023-03-09",
+      "detailTries": 1,
+      "score": -2,
+      "matched": [
+        "tenure-track",
+        "media studies",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "79dcd8d1589a",
@@ -714,8 +1254,17 @@
       "url": "https://careers.insidehighered.com/job/3390539/-as-needed-part-time-instructor-communications/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Georgia Highlands College: Job Title: \"As Needed\" Part-time Instructor - Communications Location: GHC - Floyd Campus;GHC - Cartersville Instr. Site;GHC - Marietta Instr. Site;G GHC - Floyd Campus;GHC - Cartersville Instr. Site;GHC - Marietta Instr. Site;GHC - Paulding Instr. Site",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-08-25"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-08-25",
+      "detailTries": 1,
+      "score": -6,
+      "matched": [
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "6a6eaed38bd0",
@@ -726,8 +1275,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/communication-specialist-i-ambulance-dispatch-emt-required/85713819/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "9209f92836d3",
@@ -738,8 +1293,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/communication-allrounder-project-manager-mwd/85753813/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "d0e88316f789",
@@ -751,8 +1312,22 @@
       "url": "https://jobs.chronicle.com/job/38031456/tenure-track-assistant-professor-journalism-studies/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: University of Missouri - Columbia: Hiring Department University of Missouri - Columbia School of Journalism Job Description The Missouri School of Journalism seeks applications... Columbia, Missouri, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-28"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-28",
+      "detailTries": 1,
+      "score": 13,
+      "matched": [
+        "assistant professor",
+        "tenure-track",
+        "tenure track",
+        "digital media",
+        "media studies",
+        "interdisciplinary",
+        "organizations"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "273febe3fd75",
@@ -764,8 +1339,21 @@
       "url": "https://jobs.chronicle.com/job/38033994/adjunct-faculty-communications/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Colorado Mountain College: Job Description: Primary Responsibility The adjunct faculty members of Colorado Mountain College are here to assist students in their learning... Leadville, Colorado, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-04"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-04",
+      "detailTries": 1,
+      "score": 2,
+      "matched": [
+        "organizational",
+        "teams",
+        "technology",
+        "management",
+        "-adjunct",
+        "-one-year"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "142f3366c967",
@@ -776,8 +1364,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/charg-de-communication-alternance-fh/85523147/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "d363db3c1854",
@@ -789,8 +1383,23 @@
       "url": "https://jobs.chronicle.com/job/38032658/part-time-lecturer-pool-school-of-communication-2026-2027/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Chapman University: Description General Information The School of Communication at Chapman University seeks applications for its Part-Time Lecturer Pool for... Orange, California, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-09-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-09-01",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [
+        "assistant professor",
+        "tenure track",
+        "media studies",
+        "strategic communication",
+        "global communication",
+        "-adjunct",
+        "-part-time",
+        "-temporary"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "6fcf1b458053",
@@ -802,8 +1411,24 @@
       "url": "https://jobs.chronicle.com/job/38031594/visiting-assistant-professor-or-visiting-lecturer-of-speech/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Competitive Salary: Berry College: Job Description: The Communication Department at Berry College... Mount Berry, Georgia, United States",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-28"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-28",
+      "detailTries": 1,
+      "score": 3,
+      "matched": [
+        "workplace",
+        "assistant professor",
+        "tenure track",
+        "media studies",
+        "social media",
+        "organizations",
+        "-adjunct",
+        "-part-time",
+        "-forensics"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "dcfa5552daf3",
@@ -815,8 +1440,17 @@
       "url": "https://jobs.chronicle.com/job/38020969/college-of-arts-and-sciences-faculty-openings/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Salary Not Specified: Baylor University College of Arts & Sciences: Baylor University College of Arts and Sciences Faculty Openings Baylor University seeks to fill the following faculty positions within the",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-08-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-08-01",
+      "detailTries": 1,
+      "score": 4,
+      "matched": [
+        "assistant professor",
+        "associate professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "59d4ba468945",
@@ -827,8 +1461,14 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/associate-teaching-professor-of-communication-and-director-of-the-marketing-communication-minor/80597448/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 0,
+      "matched": [],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "5b75e40247bf",
@@ -839,8 +1479,16 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-communication-public-relations/85423032/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "dd2c20baf903",
@@ -851,8 +1499,16 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-of-communication-science-rise-earth/85722753/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "36d0244c440f",
@@ -863,8 +1519,16 @@
       "location": "",
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-in-communication/84919993/",
       "deadline": "",
-      "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "snippet": "Job Details",
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "detailTries": 1,
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "page",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "e817209561dd",
@@ -876,7 +1540,14 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-department-of-communication-and-media-9-month-appointment-tenure-track/85824476/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "aa26258c967b",
@@ -888,7 +1559,14 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-communication/85845384/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "945b5acd71ba",
@@ -900,7 +1578,14 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-professor-communication/85842121/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 3,
+      "matched": [
+        "assistant professor"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "5eefe7c13494",
@@ -912,7 +1597,12 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/assistant-director-university-advancement-communication-uac/85747369/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 0,
+      "matched": [],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "4779d17dc8bb",
@@ -924,8 +1614,15 @@
       "url": "https://careers.insidehighered.com/job/3473861/adjunct-mass-media-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Angelo State University: Job Title:Adjunct (Mass Media)Position Number:999467Department:Communication and Mass MediaSalary:Master’s: $2,584 / class PhD: $3,230 / classJob Summ San Angelo, TX",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-03-06"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-03-06",
+      "score": -3,
+      "matched": [
+        "-adjunct"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "d2405f1b7e9b",
@@ -937,8 +1634,15 @@
       "url": "https://careers.insidehighered.com/job/3473870/adjunct-communication-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Angelo State University: Job Title:Adjunct (Communication)Position Number:977552Department:Communication and Mass MediaSalary:Master’s: $2,584/class; PhD: $3,230/classRemote:N San Angelo, TX",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-03-06"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-03-06",
+      "score": -3,
+      "matched": [
+        "-adjunct"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "3d796f574e1c",
@@ -950,8 +1654,15 @@
       "url": "https://careers.insidehighered.com/job/3473851/adjunct-communication-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Angelo State University: Job Title:Adjunct (Communication)Position Number:999467Department:Communication and Mass MediaSalary:Master’s: $2,584 / course PhD: $3,230 / courseJob San Angelo, TX",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-03-06"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-03-06",
+      "score": -3,
+      "matched": [
+        "-adjunct"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "91fc71b6c19f",
@@ -963,7 +1674,12 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/airbnb-host-communication/85604177/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 0,
+      "matched": [],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "9d65d6e185d9",
@@ -975,8 +1691,16 @@
       "url": "https://careers.insidehighered.com/job/3423126/adjunct-faculty-speech-and-communication-early-college-academy-/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "Aims Community College: Are you a current Aims Employee, Temporary Worker? If so, to help avoid future access issues, please apply through your Workday account using \"Browse Greeley, CO",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2025-11-01"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2025-11-01",
+      "score": -6,
+      "matched": [
+        "-adjunct",
+        "-temporary"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "6c972eed23ab",
@@ -988,7 +1712,14 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/adjunct-faculty-visual-communication/85861128/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": -3,
+      "matched": [
+        "-adjunct"
+      ],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "07c4f5892a86",
@@ -1000,8 +1731,13 @@
       "url": "https://careers.insidehighered.com/job/3470186/instructor-tutor-21st-century-community-learning-center/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
       "deadline": "",
       "snippet": "NC State University: Posting Number:PG195417TMPosition Number:24MM99Position Type:TemporaryEssential Job Duties:The Division of Academic & Student Affairs (DASA) is where Franklinton, NC or Henderson, NC",
-      "lastSeen": "2026-09-07T15:52:27Z",
-      "published": "2026-02-26"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "published": "2026-02-26",
+      "score": 0,
+      "matched": [],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     },
     {
       "id": "2bd529b0f414",
@@ -1013,7 +1749,12 @@
       "url": "https://natcom-jobs.careerwebsite.com/job/junior-project-manager-communication-intelligence-mfx/85652740/",
       "deadline": "",
       "snippet": "",
-      "lastSeen": "2026-09-07T15:51:05Z"
+      "lastSeen": "2026-09-07T16:31:02Z",
+      "score": 0,
+      "matched": [],
+      "scoredOn": "title",
+      "scoredAt": "2026-09-07T16:31:02Z",
+      "scoredFor": "2026-09-07T00:00:00Z"
     }
   ]
 }
