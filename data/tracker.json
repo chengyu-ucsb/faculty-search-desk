@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T17:24:06.547Z",
+  "updatedAt": "2026-09-07T17:24:37.061Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -277,7 +277,7 @@
       "area": "",
       "location": "",
       "startDate": "",
-      "deadline": "",
+      "deadline": "2026-09-15",
       "deadlineNote": "",
       "url": "https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#University_of_Texas,_Austin_(Austin,_Texas)_-_Assistant_Professor_in_Organizational_Communication_&_Technology,_Department_of_Communication,_Moody_College_of_Communication_(Deadline:_09/15/2026)",
       "contacts": [],
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-07T17:24:06.547Z"
+      "updatedAt": "2026-09-07T17:24:37.061Z"
     }
   ],
   "documents": [
