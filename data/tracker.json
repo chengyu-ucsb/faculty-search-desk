@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T17:03:19.445Z",
+  "updatedAt": "2026-09-07T17:03:26.541Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -291,7 +291,8 @@
     }
   ],
   "dismissedFeedIds": [
-    "426df6657c68"
+    "426df6657c68",
+    "852443743ee9"
   ],
   "settings": {}
 }
