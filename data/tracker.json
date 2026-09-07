@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T17:25:12.356Z",
+  "updatedAt": "2026-09-07T17:25:17.434Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -272,7 +272,7 @@
     {
       "id": "qifygofmdv",
       "institution": "University of Texas, Austin",
-      "department": "",
+      "department": "ment of Communication, Moody College of Communication",
       "title": "Assistant Professor",
       "area": "Organizational Communication & Technology, Department of Communication, Moody College of Communication",
       "location": "(Austin, Texas)",
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-07T17:25:12.356Z"
+      "updatedAt": "2026-09-07T17:25:17.434Z"
     }
   ],
   "documents": [
