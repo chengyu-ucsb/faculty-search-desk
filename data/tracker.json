@@ -1,44 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T15:00:00Z",
-  "jobs": [
-    {
-      "id": "example01",
-      "example": true,
-      "institution": "Example State University",
-      "department": "Department of Communication",
-      "title": "Assistant Professor of Organizational Communication",
-      "area": "Organizational communication; human-AI teaming",
-      "location": "Springfield, IL",
-      "startDate": "August 2027",
-      "deadline": "2026-10-01",
-      "deadlineNote": "Review begins Oct 1; open until filled",
-      "url": "https://example.edu/jobs/12345",
-      "contacts": [
-        { "name": "Dr. Jordan Lee", "email": "search-chair@example.edu", "role": "Search chair" }
-      ],
-      "salary": "",
-      "summary": "Cover letter, CV, research statement, teaching statement, one writing sample, and names of three references (letters requested for finalists).",
-      "notes": "This is an example so you can see how a job looks. Delete it once you have added your own.",
-      "stage": "preparing",
-      "outcome": "active",
-      "materials": [
-        { "id": "m1", "category": "cover_letter", "name": "Cover letter", "status": "draft", "documentId": null, "documentVersion": null, "notes": "Two pages max" },
-        { "id": "m2", "category": "cv", "name": "Curriculum vitae", "status": "ready", "documentId": null, "documentVersion": null, "notes": "" },
-        { "id": "m3", "category": "research_statement", "name": "Research statement", "status": "revising", "documentId": null, "documentVersion": null, "notes": "" },
-        { "id": "m4", "category": "teaching_statement", "name": "Teaching statement", "status": "needed", "documentId": null, "documentVersion": null, "notes": "" },
-        { "id": "m5", "category": "writing_sample", "name": "Writing sample", "status": "ready", "documentId": null, "documentVersion": null, "notes": "Use the Institutional Logics paper" },
-        { "id": "m6", "category": "reference_names", "name": "Reference names", "status": "ready", "documentId": null, "documentVersion": null, "notes": "" },
-        { "id": "m7", "category": "reference_letters", "name": "Reference letters", "status": "finalists_only", "documentId": null, "documentVersion": null, "notes": "" },
-        { "id": "m8", "category": "dei_statement", "name": "DEI statement", "status": "not_required", "documentId": null, "documentVersion": null, "notes": "" }
-      ],
-      "interviews": [],
-      "source": "manual",
-      "feedId": null,
-      "createdAt": "2026-09-07T15:00:00Z",
-      "updatedAt": "2026-09-07T15:00:00Z"
-    }
-  ],
+  "updatedAt": "2026-09-07T16:29:51.591Z",
+  "jobs": [],
   "documents": [],
   "dismissedFeedIds": [],
   "settings": {}
