@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-07T16:33:50.120Z",
+  "updatedAt": "2026-09-07T16:33:53.906Z",
   "jobs": [],
   "documents": [
     {
       "id": "o95ov4mxlr",
       "name": "Fang_8.5.26_CV",
-      "category": "other",
+      "category": "cv",
       "notes": "",
       "versions": [
         {
@@ -19,7 +19,7 @@
         }
       ],
       "createdAt": "2026-09-07T16:33:48.447Z",
-      "updatedAt": "2026-09-07T16:33:50.120Z"
+      "updatedAt": "2026-09-07T16:33:53.906Z"
     }
   ],
   "dismissedFeedIds": [],
