@@ -216,6 +216,9 @@ select.st.status-draft,select.st.status-revising{border-color:var(--warn)}
 .feeditem .t{font-weight:600}
 .feeditem .s{font-size:13px;color:var(--muted);margin-top:2px}
 .feeditem.added{opacity:.6}
+.terms{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.term{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text)}
+.term.neg{background:var(--crit-soft);color:var(--crit);text-decoration:line-through}
 .source{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
 .source:last-child{border-bottom:0}
 .source .n{font-weight:600}
@@ -426,11 +429,11 @@ const gh = {
 const S = {
   tracker: null, trackerSha: null,
   sources: null, sourcesSha: null,
-  feed: null, checks: null,
+  feed: null, checks: null, profile: null, profileSha: null,
   readonly: true, loaded: false, loadError: null,
   view: settings.get(LS.view) || 'jobs',
   selectedJobId: null, jobTab: 'overview', jobFilter: 'active', jobSort: 'deadline',
-  docFilter: 'all', feedFilter: '', feedSource: 'all', showAddJob: false, editingJob: false,
+  docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', showAddJob: false, editingJob: false,
   query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set()
 };
 function emptyTracker(){ return { schemaVersion: 1, updatedAt: nowIso(), jobs: [], documents: [], dismissedFeedIds: [], settings: {} }; }
@@ -451,24 +454,28 @@ async function loadAll(){
   S.loadError = null;
   try {
     if(c.token && c.owner && c.repo){
-      const [t, s, f, k] = await Promise.all([
+      const [t, s, f, k, p] = await Promise.all([
         gh.getJson('data/tracker.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
         gh.getJson('data/sources.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
         gh.getJson('data/feed.json').catch(() => ({data:null})),
-        gh.getJson('data/link-checks.json').catch(() => ({data:null}))
+        gh.getJson('data/link-checks.json').catch(() => ({data:null})),
+        gh.getJson('data/profile.json').catch(() => ({data:null, sha:null}))
       ]);
+      S.profile = normalizeProfile(p.data); S.profileSha = p.sha;
       S.tracker = normalizeTracker(t.data); S.trackerSha = t.sha;
       S.sources = s.data || { sources: [] }; S.sourcesSha = s.sha;
       S.feed = f.data || { generatedAt: null, sources: [], jobs: [] };
       S.checks = k.data || { checks: {} };
       S.readonly = false;
     } else {
-      const [t, s, f, k] = await Promise.all([
+      const [t, s, f, k, p] = await Promise.all([
         fetchStatic('data/tracker.json').catch(() => null),
         fetchStatic('data/sources.json').catch(() => null),
         fetchStatic('data/feed.json').catch(() => null),
-        fetchStatic('data/link-checks.json').catch(() => null)
+        fetchStatic('data/link-checks.json').catch(() => null),
+        fetchStatic('data/profile.json').catch(() => null)
       ]);
+      S.profile = normalizeProfile(p);
       S.tracker = normalizeTracker(t); S.sources = s || { sources: [] }; S.feed = f || { generatedAt:null, sources:[], jobs:[] }; S.checks = k || { checks:{} };
       S.readonly = true;
       if(!t && location.protocol === 'file:') S.loadError = 'This page was opened as a local file, so it cannot read the data files. Open it from your GitHub Pages address, or add a token in Settings to read through the GitHub API.';
@@ -476,7 +483,7 @@ async function loadAll(){
     S.loaded = true;
   } catch(e){
     S.loaded = true; S.loadError = describeError(e);
-    S.tracker = S.tracker || emptyTracker(); S.sources = S.sources || { sources: [] }; S.feed = S.feed || { generatedAt:null, sources:[], jobs:[] }; S.checks = S.checks || { checks:{} };
+    S.profile = S.profile || normalizeProfile(null); S.tracker = S.tracker || emptyTracker(); S.sources = S.sources || { sources: [] }; S.feed = S.feed || { generatedAt:null, sources:[], jobs:[] }; S.checks = S.checks || { checks:{} };
     S.readonly = true;
   }
 }
@@ -556,6 +563,34 @@ function readiness(job){
 function isClosed(job){ return job.outcome !== 'active'; }
 function isInterviewing(job){ return ['zoom_scheduled','zoom_done','campus_scheduled','campus_done','offer'].includes(job.stage); }
 function jobUsesDoc(docId){ return S.tracker.jobs.filter(j => j.materials.some(m => m.documentId === docId)); }
+/* ---------- fit profile ---------- */
+function normalizeProfile(p){
+  p = p && typeof p === 'object' ? p : {};
+  const list = (x) => Array.isArray(x) ? x.map(t => String(t).trim()).filter(Boolean) : [];
+  return { updatedAt: p.updatedAt || '', core: list(p.core), related: list(p.related), avoid: list(p.avoid), weights: { core: 3, related: 1, avoid: -3, ...(p.weights||{}) }, goodFit: Number(p.goodFit) || 4, note: p.note || '' };
+}
+let _termCache = null;
+function profileTerms(){
+  if(_termCache && _termCache.src === S.profile) return _termCache.terms;
+  const rxEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const terms = [];
+  for(const tier of ['core','related','avoid']) for(const t of S.profile[tier]) terms.push({ term: t, tier, w: S.profile.weights[tier], rx: new RegExp('(?<![a-z0-9])' + rxEsc(t.toLowerCase()) + '(?:s|es)?(?![a-z0-9])', 'i') });
+  _termCache = { src: S.profile, terms }; return terms;
+}
+function hasProfile(){ return S.profile && (S.profile.core.length + S.profile.related.length + S.profile.avoid.length) > 0; }
+function fitScore(text){
+  let score = 0; const matched = [];
+  for(const t of profileTerms()) if(t.rx.test(text || '')){ score += t.w; matched.push(t.tier === 'avoid' ? '-' + t.term : t.term); }
+  return { score, matched };
+}
+function jobFit(job){ return fitScore([job.title, job.department, job.area, job.summary, job.notes].join(' ')); }
+function feedFit(f){
+  if(typeof f.score === 'number') return { score: f.score, matched: f.matched || [], on: f.scoredOn || 'page' };
+  const r = fitScore([f.title, f.institution, f.location, f.snippet].join(' ')); return { score: r.score, matched: r.matched, on: 'title' };
+}
+function fitClass(score){ const g = S.profile ? S.profile.goodFit : 4; return score >= g ? 'good' : score >= 1 ? 'accent' : score < 0 ? 'crit' : ''; }
+function fitPill(fit, small){ return `<span class="pill ${fitClass(fit.score)}" title="${esc(fit.matched.join(', ') || 'no profile terms found')}">fit ${fit.score > 0 ? '+' : ''}${fit.score}${fit.on==='title' && !small ? ' <span class="faint">·title only</span>' : ''}</span>`; }
+
 function feedInbox(){
   const dismissed = new Set(S.tracker.dismissedFeedIds);
   const added = new Set(S.tracker.jobs.map(j => j.feedId).filter(Boolean));
@@ -681,7 +716,7 @@ function renderJobRow(job){
   return `<button class="jobrow${S.selectedJobId===job.id?' selected':''}" data-action="openjob" data-id="${job.id}">
     <div><div class="inst">${esc(job.institution)}${job.example?'<span class="example-tag">example</span>':''}</div><div class="ttl">${esc(job.title)}</div><div class="sub">${esc([job.department, job.location].filter(Boolean).join(' · '))}</div></div>
     ${deadlineCell(job)}
-    <div>${stagePill(job)}</div>
+    <div class="stack" style="gap:4px;align-items:flex-start">${stagePill(job)}${hasProfile() ? fitPill(jobFit(job), true) : ''}</div>
     <div class="ready">${job.stage==='preparing' && r.total ? `<div class="meter${r.ready?' done':''}"><i style="width:${r.pct}%"></i></div>` : ''}<span>${esc(readyTxt)}</span></div>
   </button>`;
 }
@@ -706,9 +741,9 @@ function renderJobDetail(job){
   const r = readiness(job);
   let h = `<section class="detail" id="detail">
     <div class="detail-head">
-      <div><div class="row" style="margin-bottom:4px">${stagePill(job)}${job.stage==='preparing' && r.total ? `<span class="pill ${r.ready?'good':''}">${r.ready?'Ready to submit':r.pct+'% prepared'}</span>`:''}${job.example?'<span class="example-tag">example — delete when you add your own</span>':''}</div>
+      <div><div class="row" style="margin-bottom:4px">${stagePill(job)}${job.stage==='preparing' && r.total ? `<span class="pill ${r.ready?'good':''}">${r.ready?'Ready to submit':r.pct+'% prepared'}</span>`:''}${hasProfile() ? fitPill(jobFit(job)) : ''}${job.example?'<span class="example-tag">example — delete when you add your own</span>':''}</div>
         <h2>${esc(job.institution)}</h2><div class="ttl">${esc(job.title)}${job.department?' · '+esc(job.department):''}</div></div>
-      <div class="row">${job.url?`<a class="btn sm" href="${esc(job.url)}" target="_blank" rel="noopener">${ICON.ext} Posting</a>`:''}<button class="btn sm quiet" data-action="closejob">${ICON.x} Close</button></div>
+      <div class="row">${job.url?`<a class="btn sm" href="${esc(job.url)}" target="_blank" rel="noopener">${ICON.ext} Posting</a>`:''}<button class="btn sm danger" data-action="deletejob" data-id="${job.id}"${S.readonly?' disabled':''}>Delete job</button><button class="btn sm quiet" data-action="closejob">${ICON.x} Close</button></div>
     </div>
     <div class="subtabs">${tabs.map(([k,v]) => `<button class="${S.jobTab===k?'active':''}" data-action="jobtab" data-tab="${k}">${v}${k==='materials'&&r.total?` <span class="muted">(${r.done}/${r.total})</span>`:''}${k==='interviews'&&job.interviews.length?` <span class="muted">(${job.interviews.length})</span>`:''}</button>`).join('')}</div>
     <div class="detail-body">`;
@@ -742,7 +777,7 @@ function renderOverview(job){
       <input type="text" placeholder="Role (search chair, dept admin…)" data-job="${job.id}" data-contact="${i}" data-contact-field="role" value="${esc(c.role||'')}"${S.readonly?' disabled':''}>
       <button class="btn sm quiet" data-action="rmcontact" data-id="${job.id}" data-idx="${i}" title="Remove"${S.readonly?' disabled':''}>${ICON.x}</button></div>`).join('')}
     <div><button class="btn sm" data-action="addcontact" data-id="${job.id}"${S.readonly?' disabled':''}>${ICON.plus} Add contact</button></div></div>
-  <div class="row between" style="margin-top:22px"><span class="small faint">Added ${esc(fmtDate(job.createdAt))}${job.source==='feed'?' from the job feed':''} · updated ${esc(fmtAgo(job.updatedAt))}</span><button class="btn sm danger" data-action="deletejob" data-id="${job.id}"${S.readonly?' disabled':''}>Delete job</button></div>`;
+  <div class="row between" style="margin-top:22px"><span class="small faint">Added ${esc(fmtDate(job.createdAt))}${job.source==='feed'?' from the job feed':''} · updated ${esc(fmtAgo(job.updatedAt))}</span></div>`;
 }
 function renderMaterialsTab(job){
   const docsOpts = (m) => {
@@ -844,16 +879,22 @@ function sourceStatus(src){
   return { cls:'', text: (st.status||'unknown') + ' · ' + when };
 }
 function renderDiscover(){
-  const inbox = feedInbox().filter(f => (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  const prof = hasProfile();
+  const good = S.profile ? S.profile.goodFit : 4;
+  let inbox = feedInbox().filter(f => (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
+  if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || ((b.firstSeen||'') < (a.firstSeen||'') ? -1 : 1));
   const srcs = S.sources.sources || [];
   let h = `<div class="two"><div>
     <div class="row between" style="margin-bottom:10px"><h2 class="display" style="font-size:22px">New postings</h2><span class="small muted">${S.feed.generatedAt ? 'Feed updated ' + esc(fmtAgo(S.feed.generatedAt)) : 'The collector has not run yet'}</span></div>
     <div class="toolbar"><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
-      <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+      <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
+      ${prof ? `<select data-action="feedsort"><option value="fit"${S.feedSort==='fit'?' selected':''}>Best fit first</option><option value="new"${S.feedSort==='new'?' selected':''}>Newest first</option></select>
+      <select data-action="feedmin"><option value="all"${S.feedMin==='all'?' selected':''}>Any fit</option><option value="some"${S.feedMin==='some'?' selected':''}>Some fit (1+)</option><option value="good"${S.feedMin==='good'?' selected':''}>Good fit (${good}+)</option></select>` : `<a href="#" class="small" data-action="goto" data-view="settings">Set up a fit profile to rank these</a>`}</div>
     <div class="joblist">`;
   if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting has been added or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
-      <div><div class="t">${esc(f.title)}</div><div class="s">${esc([f.institution, f.location].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}</div>${f.snippet?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}</div>
+      <div><div class="row" style="gap:8px"><div class="t">${esc(f.title)}</div>${f.fit ? fitPill(f.fit) : ''}</div><div class="s">${esc([f.institution, f.location].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}</div>${f.snippet?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
       <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener">${ICON.ext}</a>`:''}${f.added?`<span class="pill good">In tracker</span>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
     </div>`).join('');
   h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
@@ -913,6 +954,17 @@ function renderSettings(){
         <div class="row" style="align-self:end"><button class="btn primary" type="submit">Save &amp; test</button>${c.token?`<button class="btn quiet" type="button" data-action="forgettoken">Forget token</button>`:''}</div>
       </form>
       ${S.settingsMsg?`<p class="small" style="margin-top:10px">${esc(S.settingsMsg)}</p>`:''}
+    </div>
+    <div class="card"><h3>Fit profile</h3>
+      <p class="small muted">Postings are scored against these lists: each term found adds its weight once (core +${S.profile.weights.core}, related +${S.profile.weights.related}, red flags ${S.profile.weights.avoid}). Plurals match automatically. The collector reads each posting's full page to score it; jobs in your tracker are scored from their title, area, summary, and notes.</p>
+      <form class="grid c3" style="margin-top:12px" data-action-submit="saveprofile">
+        <label class="field"><span>Core terms (+${S.profile.weights.core})</span><textarea name="core" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.core.join('\n'))}</textarea></label>
+        <label class="field"><span>Related terms (+${S.profile.weights.related})</span><textarea name="related" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.related.join('\n'))}</textarea></label>
+        <label class="field"><span>Red flags (${S.profile.weights.avoid})</span><textarea name="avoid" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.avoid.join('\n'))}</textarea></label>
+        <label class="field"><span>"Good fit" starts at</span><input type="number" name="goodFit" value="${S.profile.goodFit}" min="1" max="50"${S.readonly?' disabled':''}></label>
+        <div class="row span2" style="align-self:end;justify-content:flex-end"><span class="small muted">${S.profile.updatedAt ? 'Last saved ' + esc(fmtAgo(S.profile.updatedAt)) : 'Not saved yet'}</span><button class="btn primary" type="submit"${S.readonly?' disabled':''}>Save profile &amp; rescore</button></div>
+      </form>
+      ${S.profileMsg?`<p class="small" style="margin-top:10px">${esc(S.profileMsg)}</p>`:''}
     </div>
     <div class="card"><h3>How to make the token</h3>
       <ol class="steps small">
@@ -1018,6 +1070,8 @@ const actions = {
   },
   dismissfeed: (el) => { S.tracker.dismissedFeedIds.push(el.dataset.id); touch('Dismiss posting'); render(); },
   feedsource: (el) => { S.feedSource = el.value; render(); },
+  feedsort: (el) => { S.feedSort = el.value; render(); },
+  feedmin: (el) => { S.feedMin = el.value; render(); },
   sort: (el) => { S.jobSort = el.value; render(); },
   runcollector: async () => {
     try { await gh.dispatch('collect.yml', {}); S.collectorMsg = 'Started. New postings appear here in a few minutes — reload the page to see them.'; toast('Collector started on GitHub.'); }
@@ -1049,6 +1103,25 @@ const submits = {
     S.checking = null;
     if(await saveSources(`Add source: ${f.name.trim()}`)) toast('Source added. The collector will run for it within a few minutes.');
     render();
+  },
+  saveprofile: async (form) => {
+    const f = Object.fromEntries(new FormData(form).entries());
+    const lines = t => t.split(/\n|,/).map(x => x.trim()).filter(Boolean).filter((x,i,a) => a.indexOf(x) === i);
+    S.profile = normalizeProfile({ ...S.profile, core: lines(f.core), related: lines(f.related), avoid: lines(f.avoid), goodFit: Number(f.goodFit) || 4, updatedAt: nowIso() });
+    _termCache = null;
+    setSaveState('saving','Saving…'); S.profileMsg = 'Saving…'; render();
+    for(let attempt=0; attempt<2; attempt++){
+      try {
+        const res = await gh.putJson('data/profile.json', S.profile, S.profileSha, 'Update fit profile'); S.profileSha = res.content.sha; break;
+      } catch(e){
+        if((e.status===409||e.status===422) && attempt===0){ S.profileSha = await gh.getSha('data/profile.json'); continue; }
+        S.profileMsg = 'Could not save: ' + describeError(e); setSaveState('error','Not saved'); render(); return;
+      }
+    }
+    setSaveState('saved','Saved');
+    try { await gh.dispatch('collect.yml', {}); S.profileMsg = 'Saved. GitHub is re-reading recent postings against the new profile — reload Discover in a few minutes. Tracker jobs are rescored right away.'; }
+    catch(e){ S.profileMsg = 'Saved, but the collector could not be started (' + describeError(e) + '). It will rescore at the next daily run.'; }
+    toast('Fit profile saved.'); render();
   },
   savesettings: async (form) => {
     const f = Object.fromEntries(new FormData(form).entries());
