@@ -1,0 +1,92 @@
+{
+  "sources": [
+    {
+      "id": "ica",
+      "name": "ICA Career Center",
+      "url": "https://careers.icahdq.org/jobs?keywords=communication",
+      "kind": "html",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 60
+    },
+    {
+      "id": "nca",
+      "name": "NCA Career Center",
+      "url": "https://natcom-jobs.careerwebsite.com/jobs/?keywords=communication",
+      "kind": "html",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 60
+    },
+    {
+      "id": "chronicle-communications",
+      "name": "Chronicle — Communications",
+      "url": "https://jobs.chronicle.com/jobsrss/?PositionType=16&countrycode=US",
+      "kind": "rss",
+      "enabled": true,
+      "frequency": "daily",
+      "include": ["professor", "faculty", "lecturer", "instructor", "postdoc", "fellow", "chair"],
+      "exclude": [],
+      "limit": 150
+    },
+    {
+      "id": "chronicle-media-studies",
+      "name": "Chronicle — Media Studies",
+      "url": "https://jobs.chronicle.com/jobsrss/?PositionType=20&countrycode=US",
+      "kind": "rss",
+      "enabled": true,
+      "frequency": "daily",
+      "include": ["professor", "faculty", "lecturer", "instructor", "postdoc", "fellow", "chair"],
+      "exclude": [],
+      "limit": 150
+    },
+    {
+      "id": "ihe-communication",
+      "name": "Inside Higher Ed — Communication & Journalism",
+      "url": "https://careers.insidehighered.com/jobsrss/?FacultyJobs=40&countrycode=US",
+      "kind": "rss",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 150
+    },
+    {
+      "id": "academic-jobs-wiki",
+      "name": "Academic Jobs Wiki — Communication & Media Studies 2026–27",
+      "url": "https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027",
+      "kind": "wiki",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 200
+    },
+    {
+      "id": "higheredjobs",
+      "name": "HigherEdJobs — Communications",
+      "url": "https://www.higheredjobs.com/faculty/search.cfm?JobCat=233",
+      "kind": "html",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 60
+    },
+    {
+      "id": "aom",
+      "name": "Academy of Management Career Center",
+      "url": "https://career-center.aom.org/jobs",
+      "kind": "html",
+      "enabled": true,
+      "frequency": "daily",
+      "include": [],
+      "exclude": [],
+      "limit": 60
+    }
+  ]
+}
