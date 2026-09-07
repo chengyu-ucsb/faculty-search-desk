@@ -253,6 +253,7 @@ code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:
 .sr .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);min-width:70px}
 .contact{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center}
 @media (max-width:720px){.contact{grid-template-columns:1fr}}
+.callbox{border:1px dashed var(--line-strong);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface-2)}
 .example-tag{font-family:var(--mono);font-size:11px;color:var(--warn);border:1px dashed var(--warn);padding:1px 6px;border-radius:4px;margin-left:8px;vertical-align:middle}
 footer{max-width:1180px;margin:30px auto 20px;padding:0 20px;font-size:12px;color:var(--faint)}
 </style>
@@ -434,7 +435,7 @@ const S = {
   view: settings.get(LS.view) || 'jobs',
   selectedJobId: null, jobTab: 'overview', jobFilter: 'active', jobSort: 'deadline',
   docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', showAddJob: false, editingJob: false,
-  query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set()
+  query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set(), showAdded: false, callDraft: null
 };
 function emptyTracker(){ return { schemaVersion: 1, updatedAt: nowIso(), jobs: [], documents: [], dismissedFeedIds: [], settings: {} }; }
 function normalizeTracker(t){
@@ -583,7 +584,7 @@ function fitScore(text){
   for(const t of profileTerms()) if(t.rx.test(text || '')){ score += t.w; matched.push(t.tier === 'avoid' ? '-' + t.term : t.term); }
   return { score, matched };
 }
-function jobFit(job){ return fitScore([job.title, job.department, job.area, job.summary, job.notes].join(' ')); }
+function jobFit(job){ return fitScore([job.title, job.department, job.area, job.summary, job.notes, job.rawText].join(' ')); }
 function feedFit(f){
   if(typeof f.score === 'number') return { score: f.score, matched: f.matched || [], on: f.scoredOn || 'page' };
   const r = fitScore([f.title, f.institution, f.location, f.snippet].join(' ')); return { score: r.score, matched: r.matched, on: 'title' };
@@ -591,10 +592,34 @@ function feedFit(f){
 function fitClass(score){ const g = S.profile ? S.profile.goodFit : 4; return score >= g ? 'good' : score >= 1 ? 'accent' : score < 0 ? 'crit' : ''; }
 function fitPill(fit, small){ return `<span class="pill ${fitClass(fit.score)}" title="${esc(fit.matched.join(', ') || 'no profile terms found')}">fit ${fit.score > 0 ? '+' : ''}${fit.score}${fit.on==='title' && !small ? ' <span class="faint">·title only</span>' : ''}</span>`; }
 
+/* A feed posting counts as "in the tracker" if a job points at it, shares its URL, or has the same title at the same institution. */
+function normUrl(u){ try { const x = new URL(u); x.hash = ''; ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','gclid','ref','source','src'].forEach(k => x.searchParams.delete(k)); return (x.origin + x.pathname.replace(/\/$/,'') + (x.searchParams.toString() ? '?' + x.searchParams.toString() : '')).toLowerCase(); } catch(e){ return (u||'').trim().toLowerCase(); } }
+function titleKey(t){ return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function instKey(i){ return (i||'').toLowerCase().replace(/^(the )/,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+function trackerIndex(){
+  const byFeed = new Map(), byUrl = new Map(), byTitle = new Map();
+  for(const j of S.tracker.jobs){
+    if(j.feedId) byFeed.set(j.feedId, j);
+    if(j.url) byUrl.set(normUrl(j.url), j);
+    const tk = titleKey(j.title); if(tk){ if(!byTitle.has(tk)) byTitle.set(tk, []); byTitle.get(tk).push(j); }
+  }
+  return { byFeed, byUrl, byTitle };
+}
+function trackerJobForFeed(f, idx){
+  if(idx.byFeed.has(f.id)) return idx.byFeed.get(f.id);
+  if(f.url && idx.byUrl.has(normUrl(f.url))) return idx.byUrl.get(normUrl(f.url));
+  const cands = idx.byTitle.get(titleKey(f.title)) || [];
+  const fi = instKey(f.institution);
+  return cands.find(j => { const ji = instKey(j.institution); return !fi || !ji || ji.includes(fi) || fi.includes(ji); }) || null;
+}
+function matchFeedForJob(job){
+  const u = job.url ? normUrl(job.url) : '', tk = titleKey(job.title), ji = instKey(job.institution);
+  return (S.feed.jobs || []).find(f => (u && f.url && normUrl(f.url) === u) || (tk && titleKey(f.title) === tk && (!ji || !instKey(f.institution) || instKey(f.institution).includes(ji) || ji.includes(instKey(f.institution))))) || null;
+}
 function feedInbox(){
   const dismissed = new Set(S.tracker.dismissedFeedIds);
-  const added = new Set(S.tracker.jobs.map(j => j.feedId).filter(Boolean));
-  return (S.feed.jobs || []).filter(f => !dismissed.has(f.id)).map(f => ({ ...f, added: added.has(f.id) }));
+  const idx = trackerIndex();
+  return (S.feed.jobs || []).filter(f => !dismissed.has(f.id)).map(f => { const j = trackerJobForFeed(f, idx); return { ...f, added: !!j, jobId: j ? j.id : null }; });
 }
 </script>
 <script>
@@ -636,7 +661,7 @@ function render(){
 function renderSearch(){
   const q = S.query.trim().toLowerCase();
   const hit = (...fields) => fields.some(f => String(f||'').toLowerCase().includes(q));
-  const jobs = S.tracker.jobs.filter(j => hit(j.institution, j.title, j.department, j.location, j.notes, j.summary, j.area, ...j.contacts.map(c => c.name+' '+c.email)));
+  const jobs = S.tracker.jobs.filter(j => hit(j.institution, j.title, j.department, j.location, j.notes, j.summary, j.area, j.rawText, ...j.contacts.map(c => c.name+' '+c.email)));
   const docs = S.tracker.documents.filter(d => hit(d.name, d.notes, label(DOC_CATEGORIES,d.category), ...d.versions.map(v => v.fileName)));
   const feed = feedInbox().filter(f => hit(f.title, f.institution, f.location, f.snippet));
   let h = `<div class="row between" style="margin-bottom:12px"><h2 class="display">Search: “${esc(S.query)}”</h2><button class="btn sm quiet" data-action="clearsearch">Clear</button></div><div class="searchresults">`;
@@ -721,19 +746,30 @@ function renderJobRow(job){
   </button>`;
 }
 function renderAddJob(){
+  const d = S.callDraft || {};
+  const v = k => esc(d[k] || '');
   return `<form class="card" id="addJobForm" style="margin-bottom:14px" data-action-submit="addjob">
     <div class="row between"><h3>New job</h3><button type="button" class="btn sm quiet" data-action="hideadd">${ICON.x}</button></div>
-    <div class="grid c3" style="margin-top:8px">
-      <label class="field"><span>Institution *</span><input type="text" name="institution" required placeholder="University of …"></label>
-      <label class="field"><span>Position title *</span><input type="text" name="title" required placeholder="Assistant Professor of Communication"></label>
-      <label class="field"><span>Department</span><input type="text" name="department"></label>
-      <label class="field"><span>Location</span><input type="text" name="location" placeholder="City, State"></label>
-      <label class="field"><span>Deadline</span><input type="date" name="deadline"></label>
-      <label class="field"><span>Deadline note</span><input type="text" name="deadlineNote" placeholder="Review begins Oct 15; open until filled"></label>
-      <label class="field span2"><span>Posting URL</span><input type="url" name="url" placeholder="https://"></label>
-      <label class="field"><span>Area / specialization</span><input type="text" name="area" placeholder="Organizational communication, human-AI teaming"></label>
+    <div class="callbox" style="margin-top:10px">
+      <div class="row between"><div><strong>Start from the job call</strong> <span class="small muted">— drop the PDF or DOCX, or paste the ad. The fields below fill in for you to check.</span></div>
+        <label class="btn sm">${ICON.file} Choose file<input type="file" class="hidden" accept=".pdf,.docx,.txt,.md,.rtf,application/pdf" data-action-file="readcall"></label></div>
+      ${d.fileName ? `<div class="small" style="margin-top:6px">Attached: <strong>${esc(d.fileName)}</strong> (${esc(fmtBytes(d.fileSize))}) — it will be saved with the job.${d.reading?' Reading…':''}</div>` : ''}
+      ${d.readError ? `<div class="small" style="margin-top:6px;color:var(--crit)">${esc(d.readError)}</div>` : ''}
+      <textarea name="rawText" placeholder="…or paste the posting text here, then press Fill in fields" style="margin-top:8px;min-height:90px;font-size:13px">${v('rawText')}</textarea>
+      <div class="row end" style="margin-top:6px"><button type="button" class="btn sm" data-action="fillfromtext">Fill in fields from the text</button></div>
     </div>
-    <div class="row between" style="margin-top:12px"><label class="row small"><input type="checkbox" name="standard" checked> Add the standard materials checklist</label><button class="btn primary" type="submit">Save job</button></div>
+    <div class="grid c3" style="margin-top:12px">
+      <label class="field"><span>Institution *</span><input type="text" name="institution" required placeholder="University of …" value="${v('institution')}"></label>
+      <label class="field"><span>Position title *</span><input type="text" name="title" required placeholder="Assistant Professor of Communication" value="${v('title')}"></label>
+      <label class="field"><span>Department</span><input type="text" name="department" value="${v('department')}"></label>
+      <label class="field"><span>Location</span><input type="text" name="location" placeholder="City, State" value="${v('location')}"></label>
+      <label class="field"><span>Deadline</span><input type="date" name="deadline" value="${v('deadline')}"></label>
+      <label class="field"><span>Deadline note</span><input type="text" name="deadlineNote" placeholder="Review begins Oct 15; open until filled" value="${v('deadlineNote')}"></label>
+      <label class="field span2"><span>Posting URL</span><input type="url" name="url" placeholder="https://" value="${v('url')}"></label>
+      <label class="field"><span>Position start</span><input type="text" name="startDate" placeholder="Fall 2027" value="${v('startDate')}"></label>
+      <label class="field span2"><span>Area / specialization</span><input type="text" name="area" placeholder="Organizational communication, human-AI teaming" value="${v('area')}"></label>
+    </div>
+    <div class="row between" style="margin-top:12px"><label class="row small"><input type="checkbox" name="standard" checked> Add the standard materials checklist</label><button class="btn primary" type="submit"${d.reading?' disabled':''}>Save job</button></div>
   </form>`;
 }
 function renderJobDetail(job){
@@ -743,7 +779,7 @@ function renderJobDetail(job){
     <div class="detail-head">
       <div><div class="row" style="margin-bottom:4px">${stagePill(job)}${job.stage==='preparing' && r.total ? `<span class="pill ${r.ready?'good':''}">${r.ready?'Ready to submit':r.pct+'% prepared'}</span>`:''}${hasProfile() ? fitPill(jobFit(job)) : ''}${job.example?'<span class="example-tag">example — delete when you add your own</span>':''}</div>
         <h2>${esc(job.institution)}</h2><div class="ttl">${esc(job.title)}${job.department?' · '+esc(job.department):''}</div></div>
-      <div class="row">${job.url?`<a class="btn sm" href="${esc(job.url)}" target="_blank" rel="noopener">${ICON.ext} Posting</a>`:''}<button class="btn sm danger" data-action="deletejob" data-id="${job.id}"${S.readonly?' disabled':''}>Delete job</button><button class="btn sm quiet" data-action="closejob">${ICON.x} Close</button></div>
+      <div class="row">${job.url?`<a class="btn sm" href="${esc(job.url)}" target="_blank" rel="noopener">${ICON.ext} Posting</a>`:''}${job.callDocumentId && docById(job.callDocumentId) ? `<a class="btn sm" href="#" data-action="opendoc" data-id="${job.callDocumentId}" data-v="${docCurrent(docById(job.callDocumentId)).v}">${ICON.file} Job call</a>` : ''}<button class="btn sm danger" data-action="deletejob" data-id="${job.id}"${S.readonly?' disabled':''}>Delete job</button><button class="btn sm quiet" data-action="closejob">${ICON.x} Close</button></div>
     </div>
     <div class="subtabs">${tabs.map(([k,v]) => `<button class="${S.jobTab===k?'active':''}" data-action="jobtab" data-tab="${k}">${v}${k==='materials'&&r.total?` <span class="muted">(${r.done}/${r.total})</span>`:''}${k==='interviews'&&job.interviews.length?` <span class="muted">(${job.interviews.length})</span>`:''}</button>`).join('')}</div>
     <div class="detail-body">`;
@@ -831,8 +867,16 @@ function renderInterviewsTab(job){
   return h;
 }
 function renderNotesTab(job){
+  const call = job.callDocumentId ? docById(job.callDocumentId) : null;
+  const callDocs = S.tracker.documents.filter(d => d.category === 'job_call');
   return `<div class="stack">
-    <label class="field"><span>Posting summary (what they ask for)</span><textarea data-job="${job.id}" data-job-field="summary" placeholder="Paste the key requirements: materials requested, teaching load, start date…"${S.readonly?' disabled':''}>${esc(job.summary||'')}</textarea></label>
+    <div class="callbox"><div class="row between"><div><strong>Job call</strong> <span class="small muted">${call ? `— ${esc(docCurrent(call).fileName)} <a href="#" data-action="opendoc" data-id="${call.id}" data-v="${docCurrent(call).v}">open</a>` : '— no file attached yet'}</span></div>
+      <div class="row"><label class="btn sm">${ICON.file} ${call ? 'Replace file' : 'Attach PDF / DOCX'}<input type="file" class="hidden" accept=".pdf,.docx,.txt,.md,.rtf,application/pdf" data-action-file="attachcall" data-id="${job.id}"${S.readonly?' disabled':''}></label>
+      ${callDocs.length ? `<select data-job="${job.id}" data-job-field="callDocumentId" style="width:auto;font-size:13px;padding:4px 8px"${S.readonly?' disabled':''}><option value="">— pick an uploaded call —</option>${callDocs.map(d => `<option value="${d.id}"${job.callDocumentId===d.id?' selected':''}>${esc(d.name)}</option>`).join('')}</select>` : ''}</div></div>
+      ${S.callBusy===job.id ? '<div class="small muted" style="margin-top:6px">Uploading and reading…</div>' : ''}</div>
+    <label class="field"><span>Full posting text <span class="faint" style="text-transform:none;letter-spacing:0">(searchable; used for the fit score)</span></span><textarea data-job="${job.id}" data-job-field="rawText" style="min-height:140px;font-size:13px" placeholder="Paste the whole ad here, or attach the file above and it fills in."${S.readonly?' disabled':''}>${esc(job.rawText||'')}</textarea></label>
+    ${job.rawText && !S.readonly ? `<div class="row end"><button class="btn sm" data-action="refill" data-id="${job.id}">Fill empty fields from this text</button></div>` : ''}
+    <label class="field"><span>Posting summary (what they ask for)</span><textarea data-job="${job.id}" data-job-field="summary" placeholder="Key requirements: materials requested, teaching load, start date…"${S.readonly?' disabled':''}>${esc(job.summary||'')}</textarea></label>
     <label class="field"><span>My notes</span><textarea data-job="${job.id}" data-job-field="notes" style="min-height:160px" placeholder="Fit, people to mention, portal quirks, what I heard…"${S.readonly?' disabled':''}>${esc(job.notes||'')}</textarea></label>
   </div>`;
 }
@@ -881,21 +925,24 @@ function sourceStatus(src){
 function renderDiscover(){
   const prof = hasProfile();
   const good = S.profile ? S.profile.goodFit : 4;
-  let inbox = feedInbox().filter(f => (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  const allInbox = feedInbox();
+  const addedCount = allInbox.filter(f => f.added).length;
+  let inbox = allInbox.filter(f => (S.showAdded || !f.added) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
   if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
   if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || ((b.firstSeen||'') < (a.firstSeen||'') ? -1 : 1));
   const srcs = S.sources.sources || [];
   let h = `<div class="two"><div>
     <div class="row between" style="margin-bottom:10px"><h2 class="display" style="font-size:22px">New postings</h2><span class="small muted">${S.feed.generatedAt ? 'Feed updated ' + esc(fmtAgo(S.feed.generatedAt)) : 'The collector has not run yet'}</span></div>
     <div class="toolbar"><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
+      ${addedCount ? `<label class="row small muted" style="gap:4px"><input type="checkbox" data-action-check="showadded"${S.showAdded?' checked':''}> show ${addedCount} already in tracker</label>` : ''}
       <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
       ${prof ? `<select data-action="feedsort"><option value="fit"${S.feedSort==='fit'?' selected':''}>Best fit first</option><option value="new"${S.feedSort==='new'?' selected':''}>Newest first</option></select>
       <select data-action="feedmin"><option value="all"${S.feedMin==='all'?' selected':''}>Any fit</option><option value="some"${S.feedMin==='some'?' selected':''}>Some fit (1+)</option><option value="good"${S.feedMin==='good'?' selected':''}>Good fit (${good}+)</option></select>` : `<a href="#" class="small" data-action="goto" data-view="settings">Set up a fit profile to rank these</a>`}</div>
     <div class="joblist">`;
-  if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting has been added or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
+  if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting here is already in your tracker or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
       <div><div class="row" style="gap:8px"><div class="t">${esc(f.title)}</div>${f.fit ? fitPill(f.fit) : ''}</div><div class="s">${esc([f.institution, f.location].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}</div>${f.snippet?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
-      <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener">${ICON.ext}</a>`:''}${f.added?`<span class="pill good">In tracker</span>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
+      <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener">${ICON.ext}</a>`:''}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
     </div>`).join('');
   h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
 
@@ -943,6 +990,11 @@ function renderVerdict(){
 /* ---------- settings ---------- */
 function renderSettings(){
   const c = repoConf(); const d = detectRepo();
+  if(!c.token && !S.showConnect) return `<div class="settings stack">
+    <div class="card"><h3>This desk belongs to its owner</h3>
+      <p class="small muted">It is a personal job-application tracker. Visitors can look, but nothing here can be changed from this browser.</p>
+      <p class="small" style="margin-top:10px">If it is yours and you want to work from this device: <a href="#" data-action="showconnect">connect this browser</a>.</p>
+    </div></div>`;
   return `<div class="settings stack">
     <div class="card"><h3>Connect to GitHub</h3>
       <p class="small muted">Everything you do on this page is saved as a commit in your repository. To allow that, this browser needs a personal access token. It is stored only in this browser (never in the repo) and you can revoke it on GitHub at any time.</p>
@@ -950,7 +1002,7 @@ function renderSettings(){
         <label class="field"><span>Owner</span><input type="text" name="owner" value="${esc(c.owner||'')}" placeholder="${esc(d.owner||'your-github-username')}"></label>
         <label class="field"><span>Repository</span><input type="text" name="repo" value="${esc(c.repo||'')}" placeholder="${esc(d.repo||'faculty-search-desk')}"></label>
         <label class="field"><span>Branch</span><input type="text" name="branch" value="${esc(c.branch||'main')}"></label>
-        <label class="field span2"><span>Token</span><input type="password" name="token" value="${esc(c.token||'')}" placeholder="github_pat_…" autocomplete="off"></label>
+        <label class="field span2"><span>Token</span><input type="password" name="token" value="" placeholder="${c.token ? 'saved in this browser — paste a new one only to replace it' : 'github_pat_…'}" autocomplete="off"></label>
         <div class="row" style="align-self:end"><button class="btn primary" type="submit">Save &amp; test</button>${c.token?`<button class="btn quiet" type="button" data-action="forgettoken">Forget token</button>`:''}</div>
       </form>
       ${S.settingsMsg?`<p class="small" style="margin-top:10px">${esc(S.settingsMsg)}</p>`:''}
@@ -1016,13 +1068,91 @@ function addStandardMaterials(job){
 function selectJob(id, tab){ S.selectedJobId = id; if(tab) S.jobTab = tab; S.view = 'jobs'; S.query = ''; $('#searchBox').value = ''; render(); }
 function setView(v){ S.view = v; settings.set(LS.view, v); S.query=''; $('#searchBox').value=''; render(); }
 
+/* ---------- reading job calls (PDF / DOCX / text) ---------- */
+const _scripts = {};
+function loadScript(url){ if(!_scripts[url]) _scripts[url] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = url; el.onload = res; el.onerror = () => rej(new Error('Could not load ' + url)); document.head.appendChild(el); }); return _scripts[url]; }
+async function extractText(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.pdf') || file.type === 'application/pdf'){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    let out = [];
+    for(let i = 1; i <= Math.min(pdf.numPages, 12); i++){
+      const page = await pdf.getPage(i); const tc = await page.getTextContent();
+      let line = '', lastY = null;
+      for(const it of tc.items){ if(lastY !== null && Math.abs(it.transform[5] - lastY) > 3){ out.push(line); line = ''; } line += (line && !line.endsWith(' ') && !it.str.startsWith(' ') ? ' ' : '') + it.str; lastY = it.transform[5]; }
+      out.push(line);
+    }
+    return out.join('\n').replace(/[ \t]+\n/g, '\n').trim();
+  }
+  if(name.endsWith('.docx')){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const xml = await zip.file('word/document.xml').async('string');
+    return xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab\/>/g, '\t').replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").trim();
+  }
+  if(name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf') || file.type.startsWith('text/')) return (await file.text()).replace(/\\[a-z]+\d* ?|[{}]/g, m => name.endsWith('.rtf') ? '' : m).trim();
+  return '';
+}
+const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12 };
+function toIsoDate(str){
+  let m = str.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
+  if(m) return `${m[3]}-${String(MONTHS[m[1].toLowerCase()]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`;
+  m = str.match(/\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+(\d{4})/i);
+  if(m) return `${m[3]}-${String(MONTHS[m[2].toLowerCase()]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  m = str.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+  if(m){ const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  m = str.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  return m ? m[0] : '';
+}
+/* Best-effort field guesses from an ad's text. Everything lands in the form for review. */
+function parseJobCall(text){
+  const t = (text || '').replace(/\r/g, '');
+  const lines = t.split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const head = lines.slice(0, 60);
+  const out = {};
+  const rank = /\b(assistant|associate|full|visiting|clinical|open[- ]rank|tenure[- ]track)\b[^\n]{0,40}\b(professor|lecturer|instructor|faculty|fellow|chair)\b|\b(professor|lecturer|instructor|postdoctoral|postdoc|open[- ]rank|faculty position)\b/i;
+  const titleLines = head.filter(l => rank.test(l) && l.length < 140 && !/^(the |we |our |applicants|candidates|review|deadline|salary)/i.test(l));
+  if(titleLines.length){ out.title = (titleLines.find(l => /professor/i.test(l)) || titleLines[0]).replace(/[.:;]+$/, ''); }
+  const inst = head.find(l => /\b(university|college|institute)\b/i.test(l) && !/\bof (communication|journalism|media|arts|business|liberal|humanities|social)\b/i.test(l) && l.length < 90 && !rank.test(l)) || head.find(l => /\b(university|college|institute)\b/i.test(l) && l.length < 90);
+  if(inst){ const m = inst.match(/((?:the )?[A-Z][\w&.'’-]*(?:\s+(?:of|at|in|for|and|&|the|[A-Z][\w&.'’-]*))*\s*(?:university|college|institute)(?:\s+(?:of|at|in|for|and|&|the|[A-Z][\w&.'’-]*))*)/i); out.institution = (m ? m[1] : inst).replace(/[.,;:]+$/, '').trim(); }
+  const dept = head.find(l => /\b(department|school|college|division|program) of\b/i.test(l) && l.length < 110 && l !== inst);
+  if(dept){ const m = dept.match(/((?:department|school|college|division|program) of [^,.;()]{3,80})/i); out.department = (m ? m[1] : dept).trim(); }
+  const loc = t.match(/\b([A-Z][a-zA-Z.'-]+(?: [A-Z][a-zA-Z.'-]+){0,3}), ([A-Z]{2})\b(?!\w)/);
+  if(loc && !/^(University|College|School|Department)/.test(loc[1])) out.location = `${loc[1]}, ${loc[2]}`;
+  else { const loc2 = t.match(/\b([A-Z][a-zA-Z.'-]+(?: [A-Z][a-zA-Z.'-]+){0,2}), (Qatar|Canada|Australia|Singapore|Hong Kong|United Kingdom|UK|England|Scotland|Netherlands|Germany|Denmark|Ireland|New Zealand|Switzerland|Sweden|Norway|Finland|Belgium|Korea|South Korea|Japan|China|UAE|United Arab Emirates|Israel|Italy|France|Spain|Austria|Portugal)\b/); if(loc2) out.location = `${loc2[1]}, ${loc2[2]}`; }
+  const dl = t.match(/(deadline|review of applications? (?:will )?begins?|applications? (?:are )?due|apply by|closing date|closes|priority (?:consideration )?(?:date|deadline)|until|by)[^.\n]{0,80}/i);
+  if(dl){ const iso = toIsoDate(dl[0]); if(iso) out.deadline = iso; out.deadlineNote = dl[0].replace(/\s+/g,' ').trim().slice(0, 120); }
+  if(/open until filled/i.test(t)) out.deadlineNote = (out.deadlineNote ? out.deadlineNote + '; ' : '') + 'open until filled';
+  const st = t.match(/\b(?:start(?:ing)? date|(?:appointment|position|employment)\s+(?:will\s+)?(?:begin|start)s?|beginning|effective|starting)\b[^.\n]{0,40}?\b((?:fall|spring|summer|autumn|winter|january|february|march|april|may|june|july|august|september|october|november|december)\s+(?:\d{1,2},?\s+)?\d{4})/i);
+  if(st) out.startDate = st[1].replace(/^\w/, c => c.toUpperCase());
+  const url = t.match(/https?:\/\/[^\s)>"']+/); if(url) out.url = url[0].replace(/[.,;]+$/, '');
+  return out;
+}
+function captureAddForm(){
+  const form = $('#addJobForm'); if(!form) return;
+  const f = Object.fromEntries(new FormData(form).entries());
+  S.callDraft = { ...(S.callDraft || {}), ...f };
+}
+async function uploadCallFile(file, job){
+  const d = { id: uid(), name: `${job.institution || 'Job'} — job call`, category: 'job_call', notes: '', versions: [], createdAt: nowIso(), updatedAt: nowIso() };
+  const fname = safeName(file.name); const path = `files/${d.id}/v1/${fname}`;
+  await gh.putFile(path, arrayBufferToB64(await file.arrayBuffer()), await gh.getSha(path), `Upload job call: ${fname}`);
+  d.versions.push({ v: 1, path, fileName: fname, size: file.size, uploadedAt: nowIso(), mime: file.type || '' });
+  S.tracker.documents.push(d); return d;
+}
+
 const actions = {
   reload: async () => { setSaveState('saving','Loading…'); await loadAll(); render(); },
   goto: (el) => setView(el.dataset.view),
   clearsearch: () => { S.query=''; $('#searchBox').value=''; render(); },
   filter: (el) => { S.jobFilter = el.dataset.filter; render(); },
   showadd: () => { S.showAddJob = true; render(); $('#addJobForm input[name=institution]')?.focus(); },
-  hideadd: () => { S.showAddJob = false; render(); },
+  showconnect: () => { S.showConnect = true; render(); },
+  hideadd: () => { S.showAddJob = false; S.callDraft = null; render(); },
+  fillfromtext: () => { captureAddForm(); const text = (S.callDraft.rawText || '').trim(); if(!text){ toast('Paste the posting text first, or choose a file.'); return; } const keep = { fileName: S.callDraft.fileName, fileSize: S.callDraft.fileSize, file: S.callDraft.file }; const guess = parseJobCall(text); for(const k of Object.keys(guess)) if(guess[k] && !S.callDraft[k]) S.callDraft[k] = guess[k]; Object.assign(S.callDraft, keep); render(); toast('Filled in what I could — please check the fields.'); },
+  refill: (el) => { const j = jobById(el.dataset.id); const g = parseJobCall(j.rawText || ''); let n = 0; for(const k of ['title','institution','department','location','deadline','deadlineNote','startDate','url']) if(g[k] && !j[k]){ j[k] = g[k]; n++; } if(n){ j.updatedAt = nowIso(); touch(`Fill fields: ${j.institution}`); } toast(n ? `Filled ${n} empty field${n===1?'':'s'}.` : 'Nothing new to fill — the fields are already set.'); render(); },
   openjob: (el) => selectJob(el.dataset.id, S.selectedJobId === el.dataset.id ? S.jobTab : 'overview'),
   closejob: () => { S.selectedJobId = null; render(); },
   jobtab: (el) => { S.jobTab = el.dataset.tab; render(); },
@@ -1085,11 +1215,19 @@ const actions = {
 };
 
 const submits = {
-  addjob: (form) => {
+  addjob: async (form) => {
     const f = Object.fromEntries(new FormData(form).entries());
-    const j = newJob({ institution: f.institution.trim(), title: f.title.trim(), department: f.department.trim(), location: f.location.trim(), deadline: f.deadline, deadlineNote: f.deadlineNote.trim(), url: f.url.trim(), area: f.area.trim() });
+    const j = newJob({ institution: f.institution.trim(), title: f.title.trim(), department: f.department.trim(), location: f.location.trim(), deadline: f.deadline, deadlineNote: f.deadlineNote.trim(), url: f.url.trim(), area: f.area.trim(), startDate: (f.startDate||'').trim(), rawText: (f.rawText || '').trim().slice(0, 40000) });
     if(f.standard) addStandardMaterials(j);
-    S.tracker.jobs.push(j); S.showAddJob = false; touch(`Add job: ${j.institution}`); selectJob(j.id, 'overview');
+    const match = matchFeedForJob(j); if(match){ j.feedId = match.id; if(!j.url && match.url) j.url = match.url; }
+    const file = S.callDraft && S.callDraft.file;
+    S.tracker.jobs.push(j); S.showAddJob = false; S.callDraft = null;
+    touch(`Add job: ${j.institution}`); selectJob(j.id, 'overview');
+    if(match) toast('Also removed it from the Discover queue.');
+    if(file){
+      try { const d = await uploadCallFile(file, j); j.callDocumentId = d.id; j.updatedAt = nowIso(); touch(`Attach job call: ${j.institution}`); toast('Job call file saved with the job.'); render(); }
+      catch(e){ toast('The job was saved, but the file upload failed: ' + describeError(e), 'err'); }
+    }
   },
   addmat: (form) => { const j = jobById(form.dataset.id); const name = form.name.value.trim(); if(!name) return; j.materials.push({ id: uid(), category:'custom', name, status:'needed', documentId:null, documentVersion:null, notes:'' }); j.updatedAt = nowIso(); touch('Add checklist item'); render(); },
   addround: (form) => { const j = jobById(form.dataset.id); const kind = form.kind.value; j.interviews.push({ id: uid(), kind, status:'planning', scheduledAt:'', location:'', contact:'', notes:'', result:'pending', tasks: (DEFAULT_PREP[kind]||[]).map(l => ({ id: uid(), label:l, done:false })) }); j.updatedAt = nowIso(); touch('Add interview round'); render(); },
@@ -1125,7 +1263,7 @@ const submits = {
   },
   savesettings: async (form) => {
     const f = Object.fromEntries(new FormData(form).entries());
-    settings.set(LS.owner, f.owner.trim()); settings.set(LS.repo, f.repo.trim()); settings.set(LS.branch, f.branch.trim() || 'main'); settings.set(LS.token, f.token.trim());
+    settings.set(LS.owner, f.owner.trim()); settings.set(LS.repo, f.repo.trim()); settings.set(LS.branch, f.branch.trim() || 'main'); if(f.token.trim()) settings.set(LS.token, f.token.trim());
     S.settingsMsg = 'Testing…'; render();
     try {
       const me = await gh.whoami(); const r = await gh.repoInfo();
@@ -1241,7 +1379,31 @@ document.addEventListener('submit', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if(el.matches('select[data-action]')){ const fn = actions[el.dataset.action]; if(fn) fn(el, e); return; }
-  if(el.matches('input[data-action-file]')){ if(el.dataset.actionFile === 'replace') uploadFiles(el.files, el.dataset.id); else if(el.dataset.actionFile === 'import') importTracker(el.files[0]); el.value=''; return; }
+  if(el.matches('input[data-action-file]')){
+    const kind = el.dataset.actionFile, file = el.files[0];
+    if(kind === 'replace') uploadFiles(el.files, el.dataset.id);
+    else if(kind === 'import') importTracker(file);
+    else if(kind === 'readcall' && file){
+      captureAddForm(); S.callDraft = { ...(S.callDraft||{}), file, fileName: file.name, fileSize: file.size, reading: true, readError: '' }; render();
+      extractText(file).then(text => { S.callDraft.reading = false; if(text){ const g = parseJobCall(text); for(const k of Object.keys(g)) if(g[k] && !S.callDraft[k]) S.callDraft[k] = g[k]; S.callDraft.rawText = text.slice(0, 40000); } else S.callDraft.readError = 'Could not read text from that file (a scanned PDF has no text layer). The file will still be attached; fill in the fields by hand.'; render(); })
+        .catch(e => { S.callDraft.reading = false; S.callDraft.readError = 'Could not read the file: ' + (e.message || e); render(); });
+    }
+    else if(kind === 'attachcall' && file){
+      const j = jobById(el.dataset.id); if(!j || S.readonly) return;
+      S.callBusy = j.id; render();
+      (async () => {
+        try {
+          const d = await uploadCallFile(file, j); j.callDocumentId = d.id;
+          const text = await extractText(file).catch(() => '');
+          if(text && !j.rawText) j.rawText = text.slice(0, 40000);
+          j.updatedAt = nowIso(); touch(`Attach job call: ${j.institution}`); toast('Job call attached.' + (text ? ' Posting text filled in.' : ''));
+        } catch(e){ toast('Upload failed: ' + describeError(e), 'err'); }
+        S.callBusy = null; render();
+      })();
+    }
+    el.value=''; return;
+  }
+  if(el.matches('input[data-action-check=showadded]')){ S.showAdded = el.checked; render(); return; }
   if(el.id === 'fileInput'){ uploadFiles(el.files); el.value=''; return; }
   if(el.dataset.doc && el.dataset.docField){ if(bindDocField(el)){ touch('Update document'); if(el.tagName==='SELECT') render(); } return; }
   if(bindField(el)){
