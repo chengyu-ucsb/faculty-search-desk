@@ -1,5 +1,17 @@
 {
   "checks": {
+    "https://academicjobs.fandom.com/api.php?action=parse&page=Communication_and_Media_Studies_2026-2027&prop=wikitext&format=json": {
+      "url": "https://academicjobs.fandom.com/api.php?action=parse&page=Communication_and_Media_Studies_2026-2027&prop=wikitext&format=json",
+      "status": "no_postings",
+      "httpStatus": 200,
+      "kind": "html",
+      "title": "",
+      "error": null,
+      "jobLinksFound": 0,
+      "sample": [],
+      "suggestedName": "academicjobs.fandom.com",
+      "checkedAt": "2026-09-07T17:05:41Z"
+    },
     "https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027?action=history&feed=atom": {
       "url": "https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027?action=history&feed=atom",
       "status": "blocked",
