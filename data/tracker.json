@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-08T14:01:16.671Z",
+  "updatedAt": "2026-09-08T14:01:17.995Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -354,7 +354,7 @@
           "id": "eukcq4fmdv",
           "category": "dei_statement",
           "name": "DEI statement",
-          "status": "needed",
+          "status": "not_required",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-08T14:01:16.671Z"
+      "updatedAt": "2026-09-08T14:01:17.995Z"
     },
     {
       "id": "pf3rapkgkc",
