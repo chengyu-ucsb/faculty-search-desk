@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faculty Search Desk</title>
+<meta name="description" content="A personal academic job-application tracker that lives in a GitHub repository.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230E6B73'/%3E%3Cpath d='M8 9h16M8 15h16M8 21h10' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F3F4; --surface:#FFFFFF; --surface-2:#F7F9F9; --ink:#18242A; --muted:#5A6A71; --faint:#8A989E;
+  --line:#D6DDE0; --line-strong:#B9C4C8;
+  --accent:#0E6B73; --accent-ink:#0A5258; --accent-soft:#DDEEF0; --accent-text:#0B5B62;
+  --good:#2A7A4B; --good-soft:#DFF0E5; --warn:#A86A12; --warn-soft:#F7EBD6; --crit:#B23A3A; --crit-soft:#F6E0E0;
+  --shadow:0 1px 2px rgba(24,36,42,.06), 0 8px 24px rgba(24,36,42,.08);
+  --radius:10px; --radius-sm:6px;
+  --display:"Newsreader", Georgia, "Times New Roman", serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1517; --surface:#162024; --surface-2:#1B272C; --ink:#E4EAEC; --muted:#96A5AB; --faint:#6E7F86;
+    --line:#26343A; --line-strong:#3A4B52;
+    --accent:#56B8C0; --accent-ink:#8ED2D8; --accent-soft:#143236; --accent-text:#7FCBD2;
+    --good:#5FC084; --good-soft:#163A26; --warn:#E0A94A; --warn-soft:#3D2C0F; --crit:#E07070; --crit-soft:#43201F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1517; --surface:#162024; --surface-2:#1B272C; --ink:#E4EAEC; --muted:#96A5AB; --faint:#6E7F86;
+  --line:#26343A; --line-strong:#3A4B52;
+  --accent:#56B8C0; --accent-ink:#8ED2D8; --accent-soft:#143236; --accent-text:#7FCBD2;
+  --good:#5FC084; --good-soft:#163A26; --warn:#E0A94A; --warn-soft:#3D2C0F; --crit:#E07070; --crit-soft:#43201F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:var(--accent-text)}
+a > svg{width:13px;height:13px;vertical-align:-2px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.display{font-family:var(--display)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.9em}
+.muted{color:var(--muted)}
+.faint{color:var(--faint)}
+.small{font-size:13px}
+.hidden{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- header / nav ---------- */
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.brand .repo{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.search{flex:1 1 260px;display:flex;align-items:center;position:relative;min-width:200px}
+.search input[type=text]{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
+.search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+.savestate{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.savestate .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.savestate.saving .dot{background:var(--warn);animation:pulse 1s infinite}
+.savestate.saved .dot{background:var(--good)}
+.savestate.error .dot{background:var(--crit)}
+.savestate.readonly .dot{background:var(--faint)}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.savestate.saving .dot{animation:none}}
+nav.tabs{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;color:var(--muted);font-weight:500;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button.active{color:var(--accent-text);border-bottom-color:var(--accent)}
+nav.tabs .count{font-family:var(--mono);font-size:11px;background:var(--accent-soft);color:var(--accent-text);padding:1px 6px;border-radius:999px}
+
+main{max-width:1180px;margin:0 auto;padding:20px}
+.banner{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--surface);border-radius:var(--radius-sm);margin-bottom:16px}
+.banner.warn{border-left-color:var(--warn)}
+.banner.crit{border-left-color:var(--crit)}
+.banner p{flex:1}
+
+/* ---------- controls ---------- */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-weight:500;line-height:1.2;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent-text)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
+.btn.danger{color:var(--crit);border-color:var(--crit)}
+.btn.danger:hover{background:var(--crit-soft)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.quiet:hover{background:var(--surface-2);color:var(--ink)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn svg{width:15px;height:15px}
+input[type=text],input[type=url],input[type=date],input[type=datetime-local],input[type=email],input[type=password],input[type=number],select,textarea{
+  width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input:disabled,select:disabled,textarea:disabled{background:var(--surface-2);color:var(--muted);border-style:dashed;cursor:not-allowed}
+textarea{min-height:88px;resize:vertical;line-height:1.4}
+label.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+label.field > span{text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.span2{grid-column:span 2}
+@media (max-width:720px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}.span2{grid-column:auto}}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.row.end{justify-content:flex-end}
+.stack{display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:13px;cursor:pointer;color:var(--muted)}
+.chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.01em;white-space:nowrap;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.pill.accent{background:var(--accent-soft);color:var(--accent-text);border-color:transparent}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.meter{height:6px;background:var(--line);border-radius:999px;overflow:hidden;min-width:60px}
+.meter > i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.meter.done > i{background:var(--good)}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;cursor:pointer}
+.stat:hover{border-color:var(--line-strong)}
+.stat .n{font-family:var(--mono);font-size:26px;font-weight:500;line-height:1.1}
+.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px}
+.stat.hot .n{color:var(--crit)}
+
+/* ---------- jobs list ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.toolbar select{width:auto}
+.joblist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.jobrow{display:grid;grid-template-columns:minmax(0,1.6fr) 130px 150px 140px;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%;color:inherit}
+.jobrow:last-child{border-bottom:0}
+.jobrow:hover{background:var(--surface-2)}
+.jobrow.selected{background:var(--accent-soft)}
+.jobrow .inst{font-family:var(--display);font-size:17px;font-weight:600;line-height:1.2}
+.jobrow .ttl{color:var(--ink);margin-top:1px}
+.jobrow .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.jobrow .dl{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.jobrow .dl .days{display:block;font-size:11px;color:var(--muted)}
+.jobrow .dl.soon .days{color:var(--warn);font-weight:500}
+.jobrow .dl.past .days{color:var(--faint)}
+.jobrow .dl.urgent .days{color:var(--crit);font-weight:500}
+.jobrow .ready{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+@media (max-width:820px){
+  .jobrow{grid-template-columns:1fr;gap:6px}
+  .jobrow .ready{flex-direction:row;align-items:center}
+  .jobrow .dl .days{display:inline;margin-left:8px}
+}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty h3{font-family:var(--display);font-size:20px;color:var(--ink);margin-bottom:6px}
+.empty p{max-width:52ch;margin:0 auto 12px}
+
+/* ---------- detail ---------- */
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:16px}
+.joblist > .detail{margin:0;border-radius:0;border-width:0 0 1px 0;border-left:4px solid var(--accent);box-shadow:inset 0 6px 12px -10px rgba(0,0,0,.25)}
+.jobrow{scroll-margin-top:118px}
+.jobrow.selected{border-left:4px solid var(--accent);padding-left:12px}
+.detail-head{padding:18px 20px 0;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.detail-head h2{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.15}
+.detail-head .ttl{font-size:16px;color:var(--muted);margin-top:2px}
+.subtabs{display:flex;gap:2px;padding:12px 20px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.subtabs button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 10px;color:var(--muted);font-weight:500;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.subtabs button.active{color:var(--accent-text);border-bottom-color:var(--accent)}
+.detail-body{padding:18px 20px 22px}
+.section-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:6px 0 8px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+@media (max-width:600px){.kv{grid-template-columns:1fr}.kv dt{margin-top:6px}}
+
+/* materials checklist */
+.mat{display:grid;grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1.4fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.mat:last-child{border-bottom:0}
+.mat .name{font-weight:500}
+.mat .name input{font-weight:500}
+.mat .att{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+@media (max-width:820px){.mat{grid-template-columns:1fr 1fr}.mat .att{grid-column:span 2}}
+.status-needed{color:var(--muted)} .status-draft{color:var(--warn)} .status-revising{color:var(--warn)} .status-ready{color:var(--good)} .status-submitted{color:var(--good)} .status-not_required{color:var(--faint)} .status-finalists_only{color:var(--faint)}
+select.st{padding:5px 8px;font-size:13px;font-weight:600}
+select.st.status-ready,select.st.status-submitted{border-color:var(--good)}
+select.st.status-draft,select.st.status-revising{border-color:var(--warn)}
+
+/* interviews */
+.round{border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;background:var(--surface-2)}
+.round + .round{margin-top:10px}
+.tasks{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.tasks li{display:flex;align-items:center;gap:8px}
+.tasks li.done span{text-decoration:line-through;color:var(--faint)}
+.tasks input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+
+/* ---------- documents ---------- */
+.dropzone{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:22px;text-align:center;color:var(--muted);background:var(--surface);transition:border-color .15s,background .15s}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.dropzone input{display:none}
+.doclist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:14px}
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.doc .name{font-weight:600;word-break:break-word}
+.doc .meta{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.versions{list-style:none;margin:0;padding:0;font-size:13px;display:flex;flex-direction:column;gap:3px}
+.versions li{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.uploads{margin-top:10px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.uploads .u{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+.uploads .u.ok{color:var(--good)} .uploads .u.err{color:var(--crit)}
+
+/* ---------- discover ---------- */
+.feeditem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.feeditem:last-child{border-bottom:0}
+.feeditem .t{font-weight:600}
+.feeditem .s{font-size:13px;color:var(--muted);margin-top:2px}
+.feeditem.added{opacity:.6}
+.statuses{list-style:none;margin:6px 0 0;padding:0;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.statuses li{padding-left:12px;position:relative;color:var(--muted)}
+.statuses li::before{content:'';position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:50%;background:var(--line-strong)}
+.statuses li.new{color:var(--ink);font-weight:500}
+.statuses li.new::before{background:var(--warn)}
+.terms{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.term{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text)}
+.term.neg{background:var(--crit-soft);color:var(--crit);text-decoration:line-through}
+.source{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.source:last-child{border-bottom:0}
+.source .n{font-weight:600}
+.source .u{font-family:var(--mono);font-size:12px;color:var(--muted);word-break:break-all}
+.source .st{font-size:13px;margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.card h3{font-family:var(--display);font-size:20px;margin-bottom:8px}
+.verdict{margin-top:12px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface-2)}
+.verdict.ok{border-color:var(--good);background:var(--good-soft)}
+.verdict.bad{border-color:var(--crit);background:var(--crit-soft)}
+.verdict.meh{border-color:var(--warn);background:var(--warn-soft)}
+.verdict ul{margin:6px 0 0;padding-left:18px;font-size:13px}
+.two{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+
+/* ---------- settings ---------- */
+.settings{max-width:720px}
+ol.steps{padding-left:20px;margin:8px 0;display:flex;flex-direction:column;gap:6px}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+
+/* ---------- toasts / dialogs ---------- */
+.toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;max-width:min(92vw,520px)}
+.toast{background:var(--ink);color:var(--ground);padding:10px 14px;border-radius:var(--radius-sm);box-shadow:var(--shadow);font-size:14px;display:flex;gap:12px;align-items:center}
+.toast.err{background:var(--crit);color:#fff}
+.toast button{background:none;border:1px solid rgba(255,255,255,.4);color:inherit;border-radius:4px;padding:2px 8px;cursor:pointer}
+.confirm{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
+.confirm .box{background:var(--surface);border-radius:var(--radius);padding:20px;max-width:420px;box-shadow:var(--shadow)}
+.confirm h3{margin-bottom:8px}
+.searchresults{display:flex;flex-direction:column;gap:6px}
+.sr{display:flex;gap:10px;align-items:baseline;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;text-align:left;width:100%}
+.sr:hover{border-color:var(--accent)}
+.sr .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);min-width:70px}
+.contact{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center}
+@media (max-width:720px){.contact{grid-template-columns:1fr}}
+.readout{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.callbox{border:1px dashed var(--line-strong);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface-2)}
+.example-tag{font-family:var(--mono);font-size:11px;color:var(--warn);border:1px dashed var(--warn);padding:1px 6px;border-radius:4px;margin-left:8px;vertical-align:middle}
+footer{max-width:1180px;margin:30px auto 20px;padding:0 20px;font-size:12px;color:var(--faint)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1>Faculty Search Desk</h1>
+      <span class="repo" id="repoLabel"></span>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchBox" type="text" placeholder="Search jobs, documents, postings…" autocomplete="off" aria-label="Search">
+    </div>
+    <div class="savestate readonly" id="saveState"><span class="dot"></span><span id="saveText">Loading…</span></div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button data-view="jobs" class="active">Jobs <span class="count" id="cntJobs">0</span></button>
+    <button data-view="materials">Materials <span class="count" id="cntDocs">0</span></button>
+    <button data-view="discover">Discover <span class="count" id="cntFeed">0</span></button>
+    <button data-view="settings">Settings</button>
+  </nav>
+</header>
+
+<main id="main"></main>
+<footer>Your data lives in <span id="footRepo" class="mono">this repository</span> — every change you make here is a commit. Nothing is stored anywhere else.</footer>
+
+<div class="toasts" id="toasts"></div>
+<div id="confirmHost"></div>
+<script>
+/* =====================================================================
+   Faculty Search Desk — single-file app.
+   Data lives in the GitHub repository that serves this page:
+     data/tracker.json      your jobs, materials, interviews, documents
+     data/sources.json      job boards the daily collector watches
+     data/feed.json         postings the collector found (written by Actions)
+     data/link-checks.json  results of "check this link" (written by Actions)
+     files/<doc>/v<N>/...   uploaded documents
+   With a GitHub token saved in this browser, edits are committed through
+   the GitHub API. Without one, the page is read-only.
+   ===================================================================== */
+
+/* ---------- constants ---------- */
+const STAGES = [
+  ['preparing','Preparing'], ['submitted','Submitted'], ['under_review','Under review'],
+  ['zoom_scheduled','Zoom interview scheduled'], ['zoom_done','Zoom interview done'],
+  ['campus_scheduled','Campus visit scheduled'], ['campus_done','Campus visit done'], ['offer','Offer']
+];
+const OUTCOMES = [['active','Active'],['rejected','Rejected'],['withdrawn','Withdrawn'],['accepted','Accepted'],['declined','Declined offer']];
+const MAT_STATUS = [
+  ['needed','Needed'], ['draft','Draft'], ['revising','Revising'], ['ready','Done / ready'],
+  ['submitted','Uploaded / submitted'], ['not_required','Not required'], ['finalists_only','Finalists only']
+];
+const MAT_PCT = {needed:0, draft:30, revising:60, ready:100, submitted:100};
+const STANDARD_MATERIALS = [
+  ['cover_letter','Cover letter'], ['cv','Curriculum vitae'], ['research_statement','Research statement'],
+  ['teaching_statement','Teaching statement'], ['teaching_evals','Teaching evaluations'], ['syllabus','Syllabus'],
+  ['writing_sample','Writing sample'], ['dei_statement','DEI statement'], ['service_statement','Service statement'],
+  ['transcripts','Transcripts'], ['reference_names','Reference names'], ['reference_letters','Reference letters']
+];
+const DOC_CATEGORIES = [...STANDARD_MATERIALS, ['job_call','Job call / posting'], ['other','Other']];
+const INTERVIEW_KINDS = [['zoom','Zoom / video'],['phone','Phone'],['campus','Campus visit'],['conference','Conference interview'],['other','Other']];
+const INTERVIEW_STATUS = [['planning','Planning'],['scheduled','Scheduled'],['completed','Completed'],['cancelled','Cancelled']];
+const INTERVIEW_RESULT = [['pending','Pending'],['advanced','Advanced'],['not_advanced','Not advanced'],['offer','Offer']];
+const DEFAULT_PREP = {
+  zoom: ['Re-read the job ad and my cover letter','Prepare 2-minute research summary','Prepare teaching answer for their courses','Look up each committee member','Questions to ask them','Test camera, light, and background'],
+  campus: ['Job talk draft','Job talk practice run','Teaching demo plan','Meeting schedule reviewed','Questions for the dean / chair','Travel and reimbursement details'],
+  phone: ['Re-read the job ad','Two-minute research summary','Questions to ask them'],
+  conference: ['Re-read the job ad','Two-minute research summary','Questions to ask them'],
+  other: ['Re-read the job ad','Questions to ask them']
+};
+const LS = { token:'fsd.token', owner:'fsd.owner', repo:'fsd.repo', branch:'fsd.branch', view:'fsd.view' };
+
+/* ---------- utils ---------- */
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+const nowIso = () => new Date().toISOString();
+const label = (list, key) => (list.find(([k]) => k === key) || [key, key])[1];
+const opts = (list, sel) => list.map(([k,v]) => `<option value="${esc(k)}"${k===sel?' selected':''}>${esc(v)}</option>`).join('');
+function fmtDate(s){ if(!s) return ''; const d = new Date(s.length===10 ? s+'T12:00:00' : s); if(isNaN(d)) return s; return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }
+function fmtDateTime(s){ if(!s) return ''; const d=new Date(s); if(isNaN(d)) return s; return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function fmtAgo(s){ if(!s) return 'never'; const ms=Date.now()-new Date(s).getTime(); const m=Math.round(ms/60000); if(m<1) return 'just now'; if(m<60) return m+' min ago'; const h=Math.round(m/60); if(h<48) return h+' h ago'; return Math.round(h/24)+' days ago'; }
+function daysUntil(s){ if(!s) return null; const d=new Date(s.slice(0,10)+'T12:00:00'); const t=new Date(); t.setHours(12,0,0,0); return Math.round((d-t)/86400000); }
+function fmtBytes(n){ if(!n&&n!==0) return ''; if(n<1024) return n+' B'; if(n<1048576) return (n/1024).toFixed(0)+' KB'; return (n/1048576).toFixed(1)+' MB'; }
+function safeName(name){ return name.replace(/[^\w.\-() ]+/g,'_').replace(/\s+/g,' ').trim().slice(0,120) || 'file'; }
+function b64encodeUtf8(str){ return btoa(String.fromCharCode(...new TextEncoder().encode(str))); }
+function b64decodeUtf8(b64){ const bin = atob(b64.replace(/\n/g,'')); const bytes = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+function arrayBufferToB64(buf){ let s=''; const bytes=new Uint8Array(buf); const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk) s+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); return btoa(s); }
+function guessCategory(fileName){
+  const n = fileName.toLowerCase();
+  if(/\bcv\b|curriculum|vitae|resume/.test(n)) return 'cv';
+  if(/cover/.test(n)) return 'cover_letter';
+  if(/research/.test(n)) return 'research_statement';
+  if(/teaching.*(eval|evaluation)|evaluation/.test(n)) return 'teaching_evals';
+  if(/teaching/.test(n)) return 'teaching_statement';
+  if(/syllab/.test(n)) return 'syllabus';
+  if(/writing|sample|paper|manuscript/.test(n)) return 'writing_sample';
+  if(/dei|diversity|inclusion/.test(n)) return 'dei_statement';
+  if(/service/.test(n)) return 'service_statement';
+  if(/transcript/.test(n)) return 'transcripts';
+  if(/reference|letter|recommend/.test(n)) return 'reference_letters';
+  if(/job|posting|call|ad\b|position/.test(n)) return 'job_call';
+  return 'other';
+}
+
+/* ---------- settings (this browser only) ---------- */
+const settings = {
+  get(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } },
+  set(k,v){ try { v ? localStorage.setItem(k,v) : localStorage.removeItem(k); } catch(e){} }
+};
+function detectRepo(){
+  const h = location.hostname, p = location.pathname.split('/').filter(Boolean);
+  if(h.endsWith('.github.io')) return { owner: h.split('.')[0], repo: p[0] || (h.split('.')[0] + '.github.io') };
+  return { owner: settings.get(LS.owner), repo: settings.get(LS.repo) };
+}
+function repoConf(){
+  const d = detectRepo();
+  return { owner: settings.get(LS.owner) || d.owner, repo: settings.get(LS.repo) || d.repo, branch: settings.get(LS.branch) || 'main', token: settings.get(LS.token) };
+}
+
+/* ---------- GitHub client ---------- */
+class GHError extends Error { constructor(msg, status, body){ super(msg); this.status=status; this.body=body; } }
+const gh = {
+  base: 'https://api.github.com',
+  headers(extra={}){
+    const c = repoConf();
+    const h = { 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28', ...extra };
+    if(c.token) h['Authorization'] = 'Bearer ' + c.token;
+    return h;
+  },
+  async req(method, path, body, extraHeaders){
+    const res = await fetch(this.base + path, { method, headers: this.headers(extraHeaders), body: body ? JSON.stringify(body) : undefined });
+    if(res.status === 204) return null;
+    const text = await res.text();
+    let data = null; try { data = text ? JSON.parse(text) : null; } catch(e){ data = text; }
+    if(!res.ok) throw new GHError((data && data.message) || res.statusText || ('HTTP '+res.status), res.status, data);
+    return data;
+  },
+  contentsPath(p){ const c = repoConf(); return `/repos/${c.owner}/${c.repo}/contents/${p.split('/').map(encodeURIComponent).join('/')}`; },
+  async getFile(p){
+    const c = repoConf();
+    const d = await this.req('GET', this.contentsPath(p) + '?ref=' + encodeURIComponent(c.branch) + '&t=' + Date.now());
+    return { text: d.content ? b64decodeUtf8(d.content) : null, sha: d.sha, size: d.size, download_url: d.download_url };
+  },
+  async getJson(p){ const f = await this.getFile(p); return { data: f.text ? JSON.parse(f.text) : null, sha: f.sha }; },
+  async getSha(p){ try { const f = await this.getFile(p); return f.sha; } catch(e){ if(e.status===404) return null; throw e; } },
+  async putFile(p, base64, sha, message){
+    const c = repoConf();
+    const body = { message, content: base64, branch: c.branch };
+    if(sha) body.sha = sha;
+    return this.req('PUT', this.contentsPath(p), body);
+  },
+  async putJson(p, obj, sha, message){ return this.putFile(p, b64encodeUtf8(JSON.stringify(obj, null, 2) + '\n'), sha, message); },
+  async deleteFile(p, sha, message){ const c = repoConf(); return this.req('DELETE', this.contentsPath(p), { message, sha, branch: c.branch }); },
+  async rawBlob(p){
+    const c = repoConf();
+    const res = await fetch(this.base + this.contentsPath(p) + '?ref=' + encodeURIComponent(c.branch), { headers: this.headers({ 'Accept':'application/vnd.github.raw+json' }) });
+    if(!res.ok) throw new GHError('Could not download file', res.status);
+    return res.blob();
+  },
+  async dispatch(workflowFile, inputs){
+    const c = repoConf();
+    return this.req('POST', `/repos/${c.owner}/${c.repo}/actions/workflows/${workflowFile}/dispatches`, { ref: c.branch, inputs: inputs || {} });
+  },
+  async whoami(){ return this.req('GET', '/user'); },
+  async repoInfo(){ const c = repoConf(); return this.req('GET', `/repos/${c.owner}/${c.repo}`); },
+  async latestRun(workflowFile){ const c = repoConf(); const d = await this.req('GET', `/repos/${c.owner}/${c.repo}/actions/workflows/${workflowFile}/runs?per_page=1`); return d && d.workflow_runs && d.workflow_runs[0]; }
+};
+
+/* ---------- application state ---------- */
+const S = {
+  tracker: null, trackerSha: null,
+  sources: null, sourcesSha: null,
+  feed: null, checks: null, profile: null, profileSha: null,
+  readonly: true, loaded: false, loadError: null,
+  view: settings.get(LS.view) || 'jobs',
+  selectedJobId: null, jobTab: 'overview', jobFilter: 'active', jobSort: 'deadline',
+  docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', showAddJob: false, editingJob: false,
+  query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set(), showAdded: false, callDraft: null
+};
+function emptyTracker(){ return { schemaVersion: 1, updatedAt: nowIso(), jobs: [], documents: [], dismissedFeedIds: [], settings: {} }; }
+function normalizeTracker(t){
+  t = t && typeof t === 'object' ? t : emptyTracker();
+  t.schemaVersion = t.schemaVersion || 1; t.jobs = t.jobs || []; t.documents = t.documents || []; t.dismissedFeedIds = t.dismissedFeedIds || []; t.settings = t.settings || {};
+  for(const j of t.jobs){ j.materials = j.materials || []; j.interviews = j.interviews || []; j.contacts = j.contacts || []; j.stage = j.stage || 'preparing'; j.outcome = j.outcome || 'active'; for(const r of j.interviews) r.tasks = r.tasks || []; }
+  for(const d of t.documents){ d.versions = d.versions || []; }
+  return t;
+}
+async function fetchStatic(p){
+  const res = await fetch(p + '?t=' + Date.now(), { cache: 'no-store' });
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' for ' + p);
+  return res.json();
+}
+async function loadAll(){
+  const c = repoConf();
+  S.loadError = null;
+  try {
+    if(c.token && c.owner && c.repo){
+      const [t, s, f, k, p] = await Promise.all([
+        gh.getJson('data/tracker.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
+        gh.getJson('data/sources.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
+        gh.getJson('data/feed.json').catch(() => ({data:null})),
+        gh.getJson('data/link-checks.json').catch(() => ({data:null})),
+        gh.getJson('data/profile.json').catch(() => ({data:null, sha:null}))
+      ]);
+      S.profile = normalizeProfile(p.data); S.profileSha = p.sha;
+      S.tracker = normalizeTracker(t.data); S.trackerSha = t.sha;
+      S.sources = s.data || { sources: [] }; S.sourcesSha = s.sha;
+      S.feed = f.data || { generatedAt: null, sources: [], jobs: [] };
+      S.checks = k.data || { checks: {} };
+      S.readonly = false;
+    } else {
+      const [t, s, f, k, p] = await Promise.all([
+        fetchStatic('data/tracker.json').catch(() => null),
+        fetchStatic('data/sources.json').catch(() => null),
+        fetchStatic('data/feed.json').catch(() => null),
+        fetchStatic('data/link-checks.json').catch(() => null),
+        fetchStatic('data/profile.json').catch(() => null)
+      ]);
+      S.profile = normalizeProfile(p);
+      S.tracker = normalizeTracker(t); S.sources = s || { sources: [] }; S.feed = f || { generatedAt:null, sources:[], jobs:[] }; S.checks = k || { checks:{} };
+      S.readonly = true;
+      if(!t && location.protocol === 'file:') S.loadError = 'This page was opened as a local file, so it cannot read the data files. Open it from your GitHub Pages address, or add a token in Settings to read through the GitHub API.';
+    }
+    S.loaded = true;
+  } catch(e){
+    S.loaded = true; S.loadError = describeError(e);
+    S.profile = S.profile || normalizeProfile(null); S.tracker = S.tracker || emptyTracker(); S.sources = S.sources || { sources: [] }; S.feed = S.feed || { generatedAt:null, sources:[], jobs:[] }; S.checks = S.checks || { checks:{} };
+    S.readonly = true;
+  }
+}
+function describeError(e){
+  if(e instanceof GHError){
+    if(e.status === 401) return 'GitHub rejected the token (401). Check that it was copied completely and has not expired.';
+    if(e.status === 403) return 'GitHub refused (403): the token probably lacks permission for this repository. It needs Contents: read & write, and Actions: read & write.';
+    if(e.status === 404) return 'GitHub could not find that (404). Check the owner and repository name in Settings — or the token has no access to the repo.';
+    if(e.status === 409) return 'Someone else changed the file at the same time (409). Retrying…';
+    return 'GitHub error ' + e.status + ': ' + e.message;
+  }
+  if(e && /Failed to fetch|NetworkError/.test(e.message)) return 'Could not reach GitHub — check your connection.';
+  return e && e.message ? e.message : String(e);
+}
+
+/* ---------- saving (debounced, merge on conflict) ---------- */
+let saveTimer = null, saving = false, dirty = false, lastSaveError = null;
+function setSaveState(cls, text){ const el = $('#saveState'); el.className = 'savestate ' + cls; $('#saveText').textContent = text; }
+function touch(msg){
+  if(S.readonly){ toast('Read-only: add your GitHub token in Settings to save changes.', 'err'); return; }
+  S.tracker.updatedAt = nowIso();
+  dirty = true; S.pendingMessage = msg || 'Update tracker';
+  setSaveState('saving', 'Unsaved…');
+  clearTimeout(saveTimer); saveTimer = setTimeout(flush, 900);
+}
+async function flush(){
+  if(saving || !dirty) return;
+  saving = true; dirty = false; setSaveState('saving', 'Saving…');
+  const msg = S.pendingMessage || 'Update tracker';
+  try {
+    await putTrackerWithRetry(msg);
+    lastSaveError = null; setSaveState('saved', 'Saved ' + new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));
+  } catch(e){
+    lastSaveError = describeError(e); dirty = true; setSaveState('error', 'Not saved');
+    toast('Save failed: ' + lastSaveError, 'err', { label:'Retry', fn: () => flush() });
+  } finally { saving = false; if(dirty) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 1500); } }
+}
+async function putTrackerWithRetry(msg){
+  for(let attempt=0; attempt<3; attempt++){
+    try {
+      const res = await gh.putJson('data/tracker.json', S.tracker, S.trackerSha, msg);
+      S.trackerSha = res.content.sha; return;
+    } catch(e){
+      if((e.status === 409 || e.status === 422) && attempt < 2){
+        const remote = await gh.getJson('data/tracker.json').catch(() => ({data:null, sha:null}));
+        S.trackerSha = remote.sha;
+        if(remote.data) S.tracker = mergeTrackers(normalizeTracker(remote.data), S.tracker);
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+function mergeTrackers(remote, local){
+  const byId = (arr) => Object.fromEntries(arr.map(x => [x.id, x]));
+  const mergeList = (a, b) => { const m = byId(a); for(const x of b){ const y = m[x.id]; if(!y || (x.updatedAt||'') >= (y.updatedAt||'')) m[x.id] = x; } return Object.values(m); };
+  const out = { ...remote, ...local };
+  out.jobs = mergeList(remote.jobs, local.jobs).filter(j => !S.deletedIds.has(j.id));
+  out.documents = mergeList(remote.documents, local.documents).filter(d => !S.deletedIds.has(d.id));
+  out.dismissedFeedIds = Array.from(new Set([...(remote.dismissedFeedIds||[]), ...(local.dismissedFeedIds||[])]));
+  return out;
+}
+window.addEventListener('beforeunload', e => { if(dirty || saving){ e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden' && dirty) flush(); });
+
+/* ---------- derived data ---------- */
+function jobById(id){ return S.tracker.jobs.find(j => j.id === id); }
+function docById(id){ return S.tracker.documents.find(d => d.id === id); }
+function docCurrent(d){ return d.versions[d.versions.length-1]; }
+function readiness(job){
+  const req = job.materials.filter(m => !['not_required','finalists_only'].includes(m.status));
+  if(!req.length) return { pct: 0, ready: false, total: 0, done: 0 };
+  const pct = Math.round(req.reduce((a,m) => a + (MAT_PCT[m.status] ?? 0), 0) / req.length);
+  const done = req.filter(m => m.status === 'ready' || m.status === 'submitted').length;
+  return { pct, ready: done === req.length, total: req.length, done };
+}
+function isClosed(job){ return job.outcome !== 'active'; }
+function isInterviewing(job){ return ['zoom_scheduled','zoom_done','campus_scheduled','campus_done','offer'].includes(job.stage); }
+function jobUsesDoc(docId){ return S.tracker.jobs.filter(j => j.materials.some(m => m.documentId === docId)); }
+/* ---------- fit profile ---------- */
+function normalizeProfile(p){
+  p = p && typeof p === 'object' ? p : {};
+  const list = (x) => Array.isArray(x) ? x.map(t => String(t).trim()).filter(Boolean) : [];
+  return { updatedAt: p.updatedAt || '', core: list(p.core), related: list(p.related), avoid: list(p.avoid), weights: { core: 3, related: 1, avoid: -3, ...(p.weights||{}) }, goodFit: Number(p.goodFit) || 4, note: p.note || '' };
+}
+let _termCache = null;
+function profileTerms(){
+  if(_termCache && _termCache.src === S.profile) return _termCache.terms;
+  const rxEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const terms = [];
+  for(const tier of ['core','related','avoid']) for(const t of S.profile[tier]) terms.push({ term: t, tier, w: S.profile.weights[tier], rx: new RegExp('(?<![a-z0-9])' + rxEsc(t.toLowerCase()) + '(?:s|es)?(?![a-z0-9])', 'i') });
+  _termCache = { src: S.profile, terms }; return terms;
+}
+function hasProfile(){ return S.profile && (S.profile.core.length + S.profile.related.length + S.profile.avoid.length) > 0; }
+function fitScore(text){
+  let score = 0; const matched = [];
+  for(const t of profileTerms()) if(t.rx.test(text || '')){ score += t.w; matched.push(t.tier === 'avoid' ? '-' + t.term : t.term); }
+  return { score, matched };
+}
+function jobFit(job){ return fitScore([job.title, job.department, job.area, job.summary, job.notes, job.rawText].join(' ')); }
+function feedFit(f){
+  if(typeof f.score === 'number') return { score: f.score, matched: f.matched || [], on: f.scoredOn || 'page' };
+  const r = fitScore([f.title, f.institution, f.location, f.snippet].join(' ')); return { score: r.score, matched: r.matched, on: 'title' };
+}
+function fitClass(score){ const g = S.profile ? S.profile.goodFit : 4; return score >= g ? 'good' : score >= 1 ? 'accent' : score < 0 ? 'crit' : ''; }
+function fitPill(fit, small){ return `<span class="pill ${fitClass(fit.score)}" title="${esc(fit.matched.join(', ') || 'no profile terms found')}">fit ${fit.score > 0 ? '+' : ''}${fit.score}${fit.on==='title' && !small ? ' <span class="faint">·title only</span>' : ''}</span>`; }
+
+/* A feed posting counts as "in the tracker" if a job points at it, shares its URL, or has the same title at the same institution. */
+function normUrl(u){ try { const x = new URL(u); x.hash = ''; ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','gclid','ref','source','src'].forEach(k => x.searchParams.delete(k)); return (x.origin + x.pathname.replace(/\/$/,'') + (x.searchParams.toString() ? '?' + x.searchParams.toString() : '')).toLowerCase(); } catch(e){ return (u||'').trim().toLowerCase(); } }
+function titleKey(t){ return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function instKey(i){ return (i||'').toLowerCase().replace(/^(the )/,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+function trackerIndex(){
+  const byFeed = new Map(), byUrl = new Map(), byTitle = new Map();
+  for(const j of S.tracker.jobs){
+    if(j.feedId) byFeed.set(j.feedId, j);
+    if(j.url) byUrl.set(normUrl(j.url), j);
+    const tk = titleKey(j.title); if(tk){ if(!byTitle.has(tk)) byTitle.set(tk, []); byTitle.get(tk).push(j); }
+  }
+  return { byFeed, byUrl, byTitle };
+}
+function trackerJobForFeed(f, idx){
+  if(idx.byFeed.has(f.id)) return idx.byFeed.get(f.id);
+  if(f.url && idx.byUrl.has(normUrl(f.url))) return idx.byUrl.get(normUrl(f.url));
+  const cands = idx.byTitle.get(titleKey(f.title)) || [];
+  const fi = instKey(f.institution);
+  return cands.find(j => { const ji = instKey(j.institution); return !fi || !ji || ji.includes(fi) || fi.includes(ji); }) || null;
+}
+function matchFeedForJob(job){
+  const u = job.url ? normUrl(job.url) : '', tk = titleKey(job.title), ji = instKey(job.institution);
+  return (S.feed.jobs || []).find(f => (u && f.url && normUrl(f.url) === u) || (tk && titleKey(f.title) === tk && (!ji || !instKey(f.institution) || instKey(f.institution).includes(ji) || ji.includes(instKey(f.institution))))) || null;
+}
+function feedInbox(){
+  const dismissed = new Set(S.tracker.dismissedFeedIds);
+  const idx = trackerIndex();
+  return (S.feed.jobs || []).filter(f => !dismissed.has(f.id)).map(f => { const j = trackerJobForFeed(f, idx); return { ...f, added: !!j, jobId: j ? j.id : null }; });
+}
+</script>
+<script>
+/* =====================================================================
+   Rendering
+   ===================================================================== */
+const ICON = {
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 13v6H5V6h6"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>',
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6zM14 3v5h5"/></svg>'
+};
+
+function isWikiEntry(f){ return Array.isArray(f.statuses); }
+function sectionPill(f){ const sec = (f.section||'').toLowerCase(); const lbl = /tenure|full[- ]time/.test(sec) ? 'TT' : /visiting|limited|lecturer|non-tenure/.test(sec) ? 'Visiting' : /postdoc/.test(sec) ? 'Postdoc' : ''; return lbl ? `<span class="pill">${lbl}</span>` : ''; }
+function wikiStatusList(f, max){
+  const st = f.statuses || []; const fresh = new Set(f.newStatuses || []);
+  const shown = st.slice(-max);
+  return `<ul class="statuses">${st.length > max ? `<li class="faint">… ${st.length - max} earlier</li>` : ''}${shown.map(x => `<li class="${fresh.has(x) ? 'new' : ''}">${esc(x)}</li>`).join('')}</ul>` + (f.changedAt && fresh.size ? `<div class="small" style="color:var(--warn);margin-top:3px">Updated ${esc(fmtAgo(f.changedAt))}</div>` : '');
+}
+function wikiEntriesFor(job){
+  const ji = instKey(job.institution); if(!ji) return [];
+  return (S.feed.jobs || []).filter(f => isWikiEntry(f) && (() => { const fi = instKey(f.institution); return fi && (fi === ji || fi.includes(ji) || ji.includes(fi)); })());
+}
+
+function render(){
+  const c = repoConf();
+  $('#repoLabel').textContent = c.owner && c.repo ? `${c.owner}/${c.repo}` : '';
+  $('#footRepo').textContent = c.owner && c.repo ? `${c.owner}/${c.repo}` : 'this repository';
+  $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === S.view));
+  $('#cntJobs').textContent = S.tracker.jobs.filter(j => !isClosed(j)).length;
+  $('#cntDocs').textContent = S.tracker.documents.length;
+  $('#cntFeed').textContent = feedInbox().filter(f => !f.added).length;
+  if(S.readonly && !dirty && !saving) setSaveState('readonly', S.loaded ? 'Read-only' : 'Loading…');
+  const main = $('#main');
+  let html = '';
+  if(S.loadError) html += `<div class="banner crit"><p>${esc(S.loadError)}</p><button class="btn sm" data-action="reload">Try again</button></div>`;
+  if(S.readonly && S.loaded && !S.loadError) html += `<div class="banner"><p><strong>Viewing only.</strong> To add jobs, upload files, or change anything, save your GitHub token under <a href="#" data-action="goto" data-view="settings">Settings</a>. The token stays in this browser.</p></div>`;
+  if(S.query.trim()) html += renderSearch();
+  else if(S.view === 'jobs') html += renderJobs();
+  else if(S.view === 'materials') html += renderMaterials();
+  else if(S.view === 'discover') html += renderDiscover();
+  else html += renderSettings();
+  main.innerHTML = html;
+  if(S.view === 'jobs' && S.selectedJobId && S.scrollToJob){ S.scrollToJob = false; const r = $('.jobrow.selected') || $('.detail'); if(r) r.scrollIntoView({ block:'start', behavior:'smooth' }); }
+}
+
+/* ---------- search ---------- */
+function renderSearch(){
+  const q = S.query.trim().toLowerCase();
+  const hit = (...fields) => fields.some(f => String(f||'').toLowerCase().includes(q));
+  const jobs = S.tracker.jobs.filter(j => hit(j.institution, j.title, j.department, j.location, j.notes, j.summary, j.area, j.rawText, ...j.contacts.map(c => c.name+' '+c.email)));
+  const docs = S.tracker.documents.filter(d => hit(d.name, d.notes, label(DOC_CATEGORIES,d.category), ...d.versions.map(v => v.fileName)));
+  const feed = feedInbox().filter(f => hit(f.title, f.institution, f.location, f.snippet));
+  let h = `<div class="row between" style="margin-bottom:12px"><h2 class="display">Search: “${esc(S.query)}”</h2><button class="btn sm quiet" data-action="clearsearch">Clear</button></div><div class="searchresults">`;
+  if(!jobs.length && !docs.length && !feed.length) h += `<div class="empty"><p>Nothing matches yet.</p></div>`;
+  for(const j of jobs) h += `<button class="sr" data-action="openjob" data-id="${j.id}"><span class="k">Job</span><span><strong>${esc(j.institution)}</strong> — ${esc(j.title)} <span class="muted small">${esc(label(STAGES,j.stage))}${j.deadline?' · due '+esc(fmtDate(j.deadline)):''}</span></span></button>`;
+  for(const d of docs) h += `<button class="sr" data-action="opendocs" data-id="${d.id}"><span class="k">Document</span><span><strong>${esc(d.name)}</strong> <span class="muted small">${esc(label(DOC_CATEGORIES,d.category))} · ${d.versions.length} version${d.versions.length===1?'':'s'}</span></span></button>`;
+  for(const f of feed.slice(0,40)) h += `<button class="sr" data-action="openfeed" data-id="${f.id}"><span class="k">Posting</span><span><strong>${esc(f.title)}</strong> <span class="muted small">${esc(f.institution||'')} · ${esc(sourceName(f.sourceId))}</span></span></button>`;
+  return h + '</div>';
+}
+
+/* ---------- jobs ---------- */
+function filteredJobs(){
+  const f = S.jobFilter;
+  let list = S.tracker.jobs.filter(j => {
+    if(f === 'all') return true;
+    if(f === 'closed') return isClosed(j);
+    if(isClosed(j)) return false;
+    if(f === 'active') return true;
+    if(f === 'preparing') return j.stage === 'preparing';
+    if(f === 'submitted') return j.stage === 'submitted' || j.stage === 'under_review';
+    if(f === 'interviewing') return isInterviewing(j);
+    if(f === 'due') { const d = daysUntil(j.deadline); return d !== null && d >= 0 && d <= 14; }
+    if(f === 'ready') return j.stage === 'preparing' && readiness(j).ready;
+    return true;
+  });
+  const s = S.jobSort;
+  list.sort((a,b) => {
+    if(s === 'deadline'){ const da = a.deadline || '9999', db = b.deadline || '9999'; return da < db ? -1 : da > db ? 1 : 0; }
+    if(s === 'updated') return (b.updatedAt||'') < (a.updatedAt||'') ? -1 : 1;
+    return (a.institution||'').localeCompare(b.institution||'');
+  });
+  return list;
+}
+function renderJobs(){
+  const active = S.tracker.jobs.filter(j => !isClosed(j));
+  const due = active.filter(j => { const d = daysUntil(j.deadline); return d !== null && d >= 0 && d <= 14; });
+  const interviewing = active.filter(isInterviewing);
+  const ready = active.filter(j => j.stage === 'preparing' && readiness(j).ready);
+  let h = `<div class="stats">
+    <div class="stat${due.length?' hot':''}" data-action="filter" data-filter="due"><div class="n">${due.length}</div><div class="l">Due in 14 days</div></div>
+    <div class="stat" data-action="filter" data-filter="active"><div class="n">${active.length}</div><div class="l">Active applications</div></div>
+    <div class="stat" data-action="filter" data-filter="interviewing"><div class="n">${interviewing.length}</div><div class="l">Interviewing</div></div>
+    <div class="stat" data-action="filter" data-filter="ready"><div class="n">${ready.length}</div><div class="l">Ready to submit</div></div>
+  </div>`;
+  const chips = [['active','Active'],['due','Due soon'],['preparing','Preparing'],['submitted','Submitted'],['interviewing','Interviewing'],['ready','Ready'],['closed','Closed'],['all','All']];
+  h += `<div class="toolbar"><div class="chips">${chips.map(([k,v]) => `<button class="chip${S.jobFilter===k?' active':''}" data-action="filter" data-filter="${k}">${v}</button>`).join('')}</div>
+    <div class="row"><select data-action="sort" aria-label="Sort"><option value="deadline"${S.jobSort==='deadline'?' selected':''}>By deadline</option><option value="updated"${S.jobSort==='updated'?' selected':''}>Recently updated</option><option value="institution"${S.jobSort==='institution'?' selected':''}>By institution</option></select>
+    <button class="btn primary" data-action="showadd"${S.readonly?' disabled':''}>${ICON.plus} Add job</button></div></div>`;
+  if(S.showAddJob) h += renderAddJob();
+  const list = filteredJobs();
+  if(!S.tracker.jobs.length){
+    h += `<div class="joblist"><div class="empty"><h3>No jobs yet</h3><p>Add the first position you're applying to, or open <a href="#" data-action="goto" data-view="discover">Discover</a> to pull postings from the boards you follow.</p>${S.readonly?'':'<button class="btn primary" data-action="showadd">'+ICON.plus+' Add job</button>'}</div></div>`;
+  } else if(!list.length){
+    h += `<div class="joblist"><div class="empty"><p>Nothing in this view. Try another filter.</p></div></div>`;
+  } else {
+    h += `<div class="joblist">` + list.map(j => renderJobRow(j) + (j.id === S.selectedJobId ? renderJobDetail(j) : '')).join('') + `</div>`;
+  }
+  const job = S.selectedJobId && jobById(S.selectedJobId);
+  if(job && !list.some(j => j.id === job.id)) h += renderJobDetail(job);
+  return h;
+}
+function deadlineCell(job){
+  if(!job.deadline) return `<div class="dl muted">${job.deadlineNote ? esc(job.deadlineNote) : 'No deadline'}</div>`;
+  const d = daysUntil(job.deadline);
+  const cls = d < 0 ? 'past' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : '';
+  const txt = d < 0 ? `${-d} day${d===-1?'':'s'} ago` : d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+  return `<div class="dl ${cls}">${esc(fmtDate(job.deadline))}<span class="days">${txt}</span></div>`;
+}
+function stagePill(job){
+  if(isClosed(job)) return `<span class="pill ${job.outcome==='accepted'?'good':job.outcome==='rejected'?'crit':''}">${esc(label(OUTCOMES,job.outcome))}</span>`;
+  const cls = job.stage === 'offer' ? 'good' : isInterviewing(job) ? 'accent' : job.stage === 'preparing' ? '' : 'accent';
+  return `<span class="pill ${cls}">${esc(label(STAGES,job.stage))}</span>`;
+}
+function renderJobRow(job){
+  const r = readiness(job);
+  const readyTxt = job.stage === 'preparing' ? (r.total ? `${r.done}/${r.total} materials ready` : 'No checklist yet') : (job.stage === 'submitted' || job.stage === 'under_review' ? 'Submitted' : '');
+  return `<button class="jobrow${S.selectedJobId===job.id?' selected':''}" data-action="openjob" data-id="${job.id}">
+    <div><div class="inst">${esc(job.institution)}${job.example?'<span class="example-tag">example</span>':''}</div><div class="ttl">${esc(job.title)}</div><div class="sub">${esc([job.department, job.location].filter(Boolean).join(' · '))}</div></div>
+    ${deadlineCell(job)}
+    <div class="stack" style="gap:4px;align-items:flex-start">${stagePill(job)}${hasProfile() ? fitPill(jobFit(job), true) : ''}</div>
+    <div class="ready">${job.stage==='preparing' && r.total ? `<div class="meter${r.ready?' done':''}"><i style="width:${r.pct}%"></i></div>` : ''}<span>${esc(readyTxt)}</span></div>
+  </button>`;
+}
+function renderAddJob(){
+  const d = S.callDraft || {};
+  const v = k => esc(d[k] || '');
+  const ck = k => d.confidence && d[k] && d.confidence[k] && d.confidence[k] !== 'high' ? ' <span class="pill warn" style="font-size:10px;padding:0 6px">check</span>' : (d.confidence && d[k] && !d.confidence[k] && ['deadline','department','location','area','startDate'].includes(k) ? ' <span class="pill warn" style="font-size:10px;padding:0 6px">check</span>' : '');
+  return `<form class="card" id="addJobForm" style="margin-bottom:14px" data-action-submit="addjob">
+    <div class="row between"><h3>New job</h3><button type="button" class="btn sm quiet" data-action="hideadd">${ICON.x}</button></div>
+    <div class="callbox" style="margin-top:10px">
+      <div class="row between"><div><strong>Start from the job call</strong> <span class="small muted">— drop the PDF or DOCX, or paste the ad. The fields below fill in for you to check.</span></div>
+        <label class="btn sm">${ICON.file} Choose file<input type="file" class="hidden" accept=".pdf,.docx,.txt,.md,.rtf,application/pdf" data-action-file="readcall"></label></div>
+      ${d.fileName ? `<div class="small" style="margin-top:6px">Attached: <strong>${esc(d.fileName)}</strong> (${esc(fmtBytes(d.fileSize))}) — it will be saved with the job.${d.reading?' Reading…':''}</div>` : ''}
+      ${d.readError ? `<div class="small" style="margin-top:6px;color:var(--crit)">${esc(d.readError)}</div>` : ''}
+      <textarea name="rawText" placeholder="…or paste the posting text here, then press Fill in fields" style="margin-top:8px;min-height:90px;font-size:13px">${v('rawText')}</textarea>
+      <div class="row end" style="margin-top:6px"><button type="button" class="btn sm" data-action="fillfromtext">Fill in fields from the text</button></div>
+      ${Array.isArray(d.materials) ? `<div class="readout"><div class="section-title" style="margin:10px 0 4px">What I read from the call</div>
+        ${d.materials.length ? `<div class="small"><strong>Materials:</strong> ${d.materials.map(m => `<span class="pill ${m.status==='finalists_only'?'':'accent'}" title="${esc(m.note||'')}">${esc(m.name)}${m.status==='finalists_only'?' · later stage':''}</span>`).join(' ')}</div>` : `<div class="small muted">No materials list found — the standard checklist will be used.</div>`}
+        ${d.extras ? `<div class="small muted" style="margin-top:4px">${[d.extras.rank ? 'Rank: ' + esc(d.extras.rank) + (d.extras.tenureTrack ? ' (tenure-track)' : d.extras.termLimited ? ' (term-limited)' : '') : '', d.extras.teachingLoad ? 'Load: ' + esc(d.extras.teachingLoad) : '', d.extras.salary ? 'Salary: ' + esc(d.extras.salary) : '', d.extras.contact && (d.extras.contact.name || d.extras.contact.email) ? 'Contact: ' + esc([d.extras.contact.name, d.extras.contact.email].filter(Boolean).join(', ')) : ''].filter(Boolean).join(' · ') || 'No rank, load, salary, or contact found.'}</div>` : ''}
+        <div class="small faint" style="margin-top:4px">These go into the job's checklist, summary, and contacts when you save. Fields marked “check” were a guess — look them over.</div></div>` : ''}
+    </div>
+    <div class="grid c3" style="margin-top:12px">
+      <label class="field"><span>Institution *${ck('institution')}</span><input type="text" name="institution" required placeholder="University of …" value="${v('institution')}"></label>
+      <label class="field"><span>Position title *${ck('title')}</span><input type="text" name="title" required placeholder="Assistant Professor of Communication" value="${v('title')}"></label>
+      <label class="field"><span>Department${ck('department')}</span><input type="text" name="department" value="${v('department')}"></label>
+      <label class="field"><span>Location${ck('location')}</span><input type="text" name="location" placeholder="City, State" value="${v('location')}"></label>
+      <label class="field"><span>Deadline${ck('deadline')}</span><input type="date" name="deadline" value="${v('deadline')}"></label>
+      <label class="field"><span>Deadline note</span><input type="text" name="deadlineNote" placeholder="Review begins Oct 15; open until filled" value="${v('deadlineNote')}"></label>
+      <label class="field span2"><span>Posting URL</span><input type="url" name="url" placeholder="https://" value="${v('url')}"></label>
+      <label class="field"><span>Position start${ck('startDate')}</span><input type="text" name="startDate" placeholder="Fall 2027" value="${v('startDate')}"></label>
+      <label class="field span2"><span>Area / specialization${ck('area')}</span><input type="text" name="area" placeholder="Organizational communication, human-AI teaming" value="${v('area')}"></label>
+    </div>
+    <div class="row between" style="margin-top:12px"><label class="row small"><input type="checkbox" name="standard" checked> Add the standard materials checklist</label><button class="btn primary" type="submit"${d.reading?' disabled':''}>Save job</button></div>
+  </form>`;
+}
+function renderJobDetail(job){
+  const tabs = [['overview','Overview'],['materials','Materials'],['interviews','Interviews'],['notes','Notes']];
+  const r = readiness(job);
+  let h = `<section class="detail" id="detail">
+    <div class="detail-head">
+      <div><div class="row" style="margin-bottom:4px">${stagePill(job)}${job.stage==='preparing' && r.total ? `<span class="pill ${r.ready?'good':''}">${r.ready?'Ready to submit':r.pct+'% prepared'}</span>`:''}${hasProfile() ? fitPill(jobFit(job)) : ''}${job.example?'<span class="example-tag">example — delete when you add your own</span>':''}</div>
+        <h2>${esc(job.institution)}</h2><div class="ttl">${esc(job.title)}${job.department?' · '+esc(job.department):''}</div></div>
+      <div class="row">${job.url?`<a class="btn sm" href="${esc(job.url)}" target="_blank" rel="noopener">${ICON.ext} Posting</a>`:''}${job.callDocumentId && docById(job.callDocumentId) ? `<a class="btn sm" href="#" data-action="opendoc" data-id="${job.callDocumentId}" data-v="${docCurrent(docById(job.callDocumentId)).v}">${ICON.file} Job call</a>` : ''}<button class="btn sm danger" data-action="deletejob" data-id="${job.id}"${S.readonly?' disabled':''}>Delete job</button><button class="btn sm quiet" data-action="closejob">${ICON.x} Close</button></div>
+    </div>
+    <div class="subtabs">${tabs.map(([k,v]) => `<button class="${S.jobTab===k?'active':''}" data-action="jobtab" data-tab="${k}">${v}${k==='materials'&&r.total?` <span class="muted">(${r.done}/${r.total})</span>`:''}${k==='interviews'&&job.interviews.length?` <span class="muted">(${job.interviews.length})</span>`:''}</button>`).join('')}</div>
+    <div class="detail-body">`;
+  if(S.jobTab === 'overview') h += renderOverview(job);
+  else if(S.jobTab === 'materials') h += renderMaterialsTab(job);
+  else if(S.jobTab === 'interviews') h += renderInterviewsTab(job);
+  else h += renderNotesTab(job);
+  h += `</div></section>`;
+  return h;
+}
+function jf(job, field, type='text', extra=''){ return `<input type="${type}" data-job="${job.id}" data-job-field="${field}" value="${esc(job[field]||'')}" ${extra}${S.readonly?' disabled':''}>`; }
+function renderOverview(job){
+  return `<div class="grid c3">
+    <label class="field"><span>Institution</span>${jf(job,'institution')}</label>
+    <label class="field"><span>Position title</span>${jf(job,'title')}</label>
+    <label class="field"><span>Department</span>${jf(job,'department')}</label>
+    <label class="field"><span>Area / specialization</span>${jf(job,'area')}</label>
+    <label class="field"><span>Location</span>${jf(job,'location')}</label>
+    <label class="field"><span>Position start</span>${jf(job,'startDate','text','placeholder="Fall 2027"')}</label>
+    <label class="field"><span>Deadline</span>${jf(job,'deadline','date')}</label>
+    <label class="field span2"><span>Deadline / review note</span>${jf(job,'deadlineNote','text','placeholder="Review begins …; open until filled"')}</label>
+    <label class="field span2"><span>Posting URL</span>${jf(job,'url','url')}</label>
+    <label class="field"><span>Salary</span>${jf(job,'salary')}</label>
+    <label class="field"><span>Stage</span><select data-job="${job.id}" data-job-field="stage"${S.readonly?' disabled':''}>${opts(STAGES, job.stage)}</select></label>
+    <label class="field"><span>Outcome</span><select data-job="${job.id}" data-job-field="outcome"${S.readonly?' disabled':''}>${opts(OUTCOMES, job.outcome)}</select></label>
+  </div>
+  ${(() => { const w = wikiEntriesFor(job); if(!w.length) return ''; return `<div class="section-title" style="margin-top:18px">On the Academic Jobs Wiki</div><div class="stack" style="gap:8px">${w.map(f => `<div class="callbox"><div class="row between"><div><strong>${esc(f.title)}</strong> ${sectionPill(f)}</div><a class="small" href="${esc(f.url)}" target="_blank" rel="noopener">open on the wiki ${ICON.ext}</a></div>${wikiStatusList(f, 8)}</div>`).join('')}</div>`; })()}
+  <div class="section-title" style="margin-top:18px">Contacts</div>
+  <div class="stack">${job.contacts.map((c,i) => `<div class="contact">
+      <input type="text" placeholder="Name" data-job="${job.id}" data-contact="${i}" data-contact-field="name" value="${esc(c.name||'')}"${S.readonly?' disabled':''}>
+      <input type="email" placeholder="Email" data-job="${job.id}" data-contact="${i}" data-contact-field="email" value="${esc(c.email||'')}"${S.readonly?' disabled':''}>
+      <input type="text" placeholder="Role (search chair, dept admin…)" data-job="${job.id}" data-contact="${i}" data-contact-field="role" value="${esc(c.role||'')}"${S.readonly?' disabled':''}>
+      <button class="btn sm quiet" data-action="rmcontact" data-id="${job.id}" data-idx="${i}" title="Remove"${S.readonly?' disabled':''}>${ICON.x}</button></div>`).join('')}
+    <div><button class="btn sm" data-action="addcontact" data-id="${job.id}"${S.readonly?' disabled':''}>${ICON.plus} Add contact</button></div></div>
+  <div class="row between" style="margin-top:22px"><span class="small faint">Added ${esc(fmtDate(job.createdAt))}${job.source==='feed'?' from the job feed':''} · updated ${esc(fmtAgo(job.updatedAt))}</span></div>`;
+}
+function renderMaterialsTab(job){
+  const docsOpts = (m) => {
+    const same = S.tracker.documents.filter(d => d.category === m.category);
+    const rest = S.tracker.documents.filter(d => d.category !== m.category);
+    const o = (d) => `<option value="${d.id}"${m.documentId===d.id?' selected':''}>${esc(d.name)} (v${d.versions.length})</option>`;
+    return `<option value="">— no file attached —</option>` + (same.length?`<optgroup label="${esc(label(DOC_CATEGORIES,m.category))}">${same.map(o).join('')}</optgroup>`:'') + (rest.length?`<optgroup label="Other documents">${rest.map(o).join('')}</optgroup>`:'');
+  };
+  const missing = STANDARD_MATERIALS.filter(([k]) => !job.materials.some(m => m.category === k));
+  let h = `<div class="row between" style="margin-bottom:6px"><div class="section-title" style="margin:0">Checklist</div><div class="row">
+      ${!S.readonly && S.tracker.documents.length && job.materials.some(m => !m.documentId && m.category !== 'cover_letter' && m.status !== 'not_required') ? `<button class="btn sm" data-action="autoattach" data-id="${job.id}" title="Attach the newest document of each category (cover letters excluded)">${ICON.file} Attach my documents</button>`:''}
+      ${missing.length && !S.readonly ? `<button class="btn sm" data-action="addstandard" data-id="${job.id}">${ICON.plus} Add standard items (${missing.length})</button>`:''}
+    </div></div>`;
+  if(!job.materials.length) h += `<p class="muted small" style="margin:8px 0 12px">No materials listed yet. Add the standard checklist, then mark what this search actually asks for.</p>`;
+  h += job.materials.map(m => {
+    const d = m.documentId ? docById(m.documentId) : null;
+    const pinned = d && m.documentVersion ? d.versions.find(v => v.v === m.documentVersion) : null;
+    const cur = d ? docCurrent(d) : null;
+    return `<div class="mat">
+      <div class="name"><input type="text" data-job="${job.id}" data-mat="${m.id}" data-mat-field="name" value="${esc(m.name)}"${S.readonly?' disabled':''}></div>
+      <div><select class="st status-${m.status}" data-job="${job.id}" data-mat="${m.id}" data-mat-field="status"${S.readonly?' disabled':''}>${opts(MAT_STATUS, m.status)}</select></div>
+      <div class="att"><select data-job="${job.id}" data-mat="${m.id}" data-mat-field="documentId"${S.readonly?' disabled':''}>${docsOpts(m)}</select>
+        ${d ? `<span>${pinned && m.status==='submitted' ? `Submitted v${pinned.v} · ${esc(pinned.fileName)}${cur && cur.v!==pinned.v?` <span class="warn" style="color:var(--warn)">(newer v${cur.v} exists)</span>`:''}` : `Latest v${cur.v} · ${esc(cur.fileName)}`} <a href="#" data-action="opendoc" data-id="${d.id}" data-v="${pinned && m.status==='submitted' ? pinned.v : cur.v}">open</a></span>` : ''}
+        <input type="text" placeholder="Note (length limit, portal quirks…)" data-job="${job.id}" data-mat="${m.id}" data-mat-field="notes" value="${esc(m.notes||'')}"${S.readonly?' disabled':''} style="font-size:13px;padding:4px 8px">
+      </div>
+      <div><button class="btn sm quiet" data-action="rmmat" data-id="${job.id}" data-mat="${m.id}" title="Remove"${S.readonly?' disabled':''}>${ICON.x}</button></div>
+    </div>`;
+  }).join('');
+  h += `<form class="row" style="margin-top:12px" data-action-submit="addmat" data-id="${job.id}"><input type="text" name="name" placeholder="Custom item (e.g., diversity statement, 2 syllabi)" style="max-width:360px" ${S.readonly?' disabled':''}><button class="btn sm" type="submit"${S.readonly?' disabled':''}>${ICON.plus} Add item</button></form>
+  <p class="small faint" style="margin-top:12px">Ready to submit = every item that isn't “Not required” or “Finalists only” is Done or Submitted. Marking an item Submitted pins the file version that was attached at that moment.</p>`;
+  return h;
+}
+function renderInterviewsTab(job){
+  let h = '';
+  if(!job.interviews.length) h += `<p class="muted small" style="margin-bottom:12px">No interview rounds yet. Add one when a Zoom or campus visit is scheduled — each round carries its own prep checklist.</p>`;
+  h += job.interviews.map(r => `<div class="round">
+    <div class="grid c4">
+      <label class="field"><span>Kind</span><select data-job="${job.id}" data-round="${r.id}" data-round-field="kind"${S.readonly?' disabled':''}>${opts(INTERVIEW_KINDS, r.kind)}</select></label>
+      <label class="field"><span>Status</span><select data-job="${job.id}" data-round="${r.id}" data-round-field="status"${S.readonly?' disabled':''}>${opts(INTERVIEW_STATUS, r.status)}</select></label>
+      <label class="field"><span>When</span><input type="datetime-local" data-job="${job.id}" data-round="${r.id}" data-round-field="scheduledAt" value="${esc(r.scheduledAt||'')}"${S.readonly?' disabled':''}></label>
+      <label class="field"><span>Result</span><select data-job="${job.id}" data-round="${r.id}" data-round-field="result"${S.readonly?' disabled':''}>${opts(INTERVIEW_RESULT, r.result)}</select></label>
+      <label class="field span2"><span>Location / meeting link</span><input type="text" data-job="${job.id}" data-round="${r.id}" data-round-field="location" value="${esc(r.location||'')}"${S.readonly?' disabled':''}></label>
+      <label class="field span2"><span>Contact</span><input type="text" data-job="${job.id}" data-round="${r.id}" data-round-field="contact" value="${esc(r.contact||'')}"${S.readonly?' disabled':''}></label>
+    </div>
+    <div class="section-title" style="margin-top:12px">Preparation</div>
+    <ul class="tasks">${r.tasks.map(t => `<li class="${t.done?'done':''}"><input type="checkbox" data-job="${job.id}" data-round="${r.id}" data-task="${t.id}" ${t.done?'checked':''}${S.readonly?' disabled':''}><span>${esc(t.label)}</span><button class="btn sm quiet" data-action="rmtask" data-id="${job.id}" data-round="${r.id}" data-task="${t.id}"${S.readonly?' disabled':''}>${ICON.x}</button></li>`).join('')}</ul>
+    <form class="row" style="margin-top:8px" data-action-submit="addtask" data-id="${job.id}" data-round="${r.id}"><input type="text" name="label" placeholder="Add a prep task" style="max-width:320px"${S.readonly?' disabled':''}><button class="btn sm" type="submit"${S.readonly?' disabled':''}>${ICON.plus}</button></form>
+    <label class="field" style="margin-top:12px"><span>Notes</span><textarea data-job="${job.id}" data-round="${r.id}" data-round-field="notes"${S.readonly?' disabled':''}>${esc(r.notes||'')}</textarea></label>
+    <div class="row end" style="margin-top:8px"><button class="btn sm danger" data-action="rmround" data-id="${job.id}" data-round="${r.id}"${S.readonly?' disabled':''}>Remove round</button></div>
+  </div>`).join('');
+  h += `<form class="row" style="margin-top:14px" data-action-submit="addround" data-id="${job.id}"><select name="kind" style="width:auto"${S.readonly?' disabled':''}>${opts(INTERVIEW_KINDS,'zoom')}</select><button class="btn" type="submit"${S.readonly?' disabled':''}>${ICON.plus} Add interview round</button></form>`;
+  return h;
+}
+function renderNotesTab(job){
+  const call = job.callDocumentId ? docById(job.callDocumentId) : null;
+  const callDocs = S.tracker.documents.filter(d => d.category === 'job_call');
+  return `<div class="stack">
+    <div class="callbox"><div class="row between"><div><strong>Job call</strong> <span class="small muted">${call ? `— ${esc(docCurrent(call).fileName)} <a href="#" data-action="opendoc" data-id="${call.id}" data-v="${docCurrent(call).v}">open</a>` : '— no file attached yet'}</span></div>
+      <div class="row"><label class="btn sm">${ICON.file} ${call ? 'Replace file' : 'Attach PDF / DOCX'}<input type="file" class="hidden" accept=".pdf,.docx,.txt,.md,.rtf,application/pdf" data-action-file="attachcall" data-id="${job.id}"${S.readonly?' disabled':''}></label>
+      ${callDocs.length ? `<select data-job="${job.id}" data-job-field="callDocumentId" style="width:auto;font-size:13px;padding:4px 8px"${S.readonly?' disabled':''}><option value="">— pick an uploaded call —</option>${callDocs.map(d => `<option value="${d.id}"${job.callDocumentId===d.id?' selected':''}>${esc(d.name)}</option>`).join('')}</select>` : ''}</div></div>
+      ${S.callBusy===job.id ? '<div class="small muted" style="margin-top:6px">Uploading and reading…</div>' : ''}</div>
+    <label class="field"><span>Full posting text <span class="faint" style="text-transform:none;letter-spacing:0">(searchable; used for the fit score)</span></span><textarea data-job="${job.id}" data-job-field="rawText" style="min-height:140px;font-size:13px" placeholder="Paste the whole ad here, or attach the file above and it fills in."${S.readonly?' disabled':''}>${esc(job.rawText||'')}</textarea></label>
+    ${job.rawText && !S.readonly ? `<div class="row end"><button class="btn sm" data-action="refill" data-id="${job.id}">Fill empty fields from this text</button></div>` : ''}
+    <label class="field"><span>Posting summary (what they ask for)</span><textarea data-job="${job.id}" data-job-field="summary" placeholder="Key requirements: materials requested, teaching load, start date…"${S.readonly?' disabled':''}>${esc(job.summary||'')}</textarea></label>
+    <label class="field"><span>My notes</span><textarea data-job="${job.id}" data-job-field="notes" style="min-height:160px" placeholder="Fit, people to mention, portal quirks, what I heard…"${S.readonly?' disabled':''}>${esc(job.notes||'')}</textarea></label>
+  </div>`;
+}
+
+/* ---------- materials (documents) ---------- */
+function renderMaterials(){
+  const cats = ['all', ...new Set(S.tracker.documents.map(d => d.category))];
+  let h = `<div class="dropzone" id="dropzone"><input type="file" id="fileInput" multiple>
+    <p><strong>Drop files here</strong> or <a href="#" data-action="pickfiles">choose files</a> — PDF, DOCX, anything up to 25 MB.</p>
+    <p class="small" style="margin-top:6px">A file with the same name as an existing document becomes its next version. <label><input type="checkbox" id="optVersion" checked> Match by filename</label></p>
+    ${S.readonly?'<p class="small" style="color:var(--crit);margin-top:6px">Uploads need a GitHub token (Settings).</p>':''}</div>`;
+  if(S.uploads.length) h += `<div class="uploads">${S.uploads.map(u => `<div class="u ${u.state}"><span>${esc(u.name)}</span><span>${esc(u.msg)}</span></div>`).join('')}${S.uploads.every(u => u.state!=='busy')?`<div class="row end"><button class="btn sm quiet" data-action="clearuploads">Clear list</button></div>`:''}</div>`;
+  h += `<div class="toolbar" style="margin-top:14px"><div class="chips">${cats.map(c => `<button class="chip${S.docFilter===c?' active':''}" data-action="docfilter" data-filter="${c}">${c==='all'?'All':esc(label(DOC_CATEGORIES,c))}</button>`).join('')}</div></div>`;
+  const docs = S.tracker.documents.filter(d => S.docFilter==='all' || d.category===S.docFilter).sort((a,b) => (b.updatedAt||'') < (a.updatedAt||'') ? -1 : 1);
+  if(!S.tracker.documents.length) h += `<div class="joblist"><div class="empty"><h3>No documents yet</h3><p>Upload your CV, statements, and cover letters here, then attach them to each job's checklist. Every upload is kept as a version, so you can always see exactly which file went to which school.</p></div></div>`;
+  else h += `<div class="doclist">` + docs.map(renderDoc).join('') + `</div>`;
+  return h;
+}
+function renderDoc(d){
+  const cur = docCurrent(d);
+  const used = jobUsesDoc(d.id);
+  return `<div class="doc" id="doc-${d.id}">
+    <div class="row between"><div class="name">${esc(d.name)}</div><select data-doc="${d.id}" data-doc-field="category" style="width:auto;font-size:13px;padding:4px 8px"${S.readonly?' disabled':''}>${opts(DOC_CATEGORIES, d.category)}</select></div>
+    <div class="meta">${cur ? `v${cur.v} · ${esc(fmtBytes(cur.size))} · ${esc(fmtDate(cur.uploadedAt))}` : 'no file'}</div>
+    <ul class="versions">${d.versions.slice().reverse().map(v => `<li><span>v${v.v} <span class="muted">${esc(v.fileName)}</span></span><span><a href="#" data-action="opendoc" data-id="${d.id}" data-v="${v.v}">open</a></span></li>`).join('')}</ul>
+    <input type="text" placeholder="Notes (tailored for R1s, 2-page version…)" data-doc="${d.id}" data-doc-field="notes" value="${esc(d.notes||'')}" style="font-size:13px;padding:4px 8px"${S.readonly?' disabled':''}>
+    <div class="small muted">${used.length ? 'Used in: ' + used.map(j => `<a href="#" data-action="openjob" data-id="${j.id}">${esc(j.institution)}</a>`).join(', ') : 'Not attached to any job yet'}</div>
+    <div class="row between"><label class="btn sm">${ICON.plus} New version<input type="file" class="hidden" data-action-file="replace" data-id="${d.id}"${S.readonly?' disabled':''}></label><button class="btn sm quiet danger" data-action="deletedoc" data-id="${d.id}"${S.readonly?' disabled':''}>Delete</button></div>
+  </div>`;
+}
+
+/* ---------- discover ---------- */
+function sourceName(id){ const s = (S.sources.sources||[]).find(x => x.id === id) || (S.feed.sources||[]).find(x => x.id === id); return s ? s.name : (id || 'unknown source'); }
+function sourceStatus(src){
+  const st = (S.feed.sources||[]).find(x => x.id === src.id);
+  if(src.enabled === false) return { cls:'', text:'Paused' };
+  if(!st || !st.checkedAt) return { cls:'', text:'Not checked yet — the collector runs daily at 11:23 UTC (7:23 am Eastern)' };
+  const when = fmtAgo(st.checkedAt);
+  if(st.status === 'ok') return { cls:'good', text:`Reachable · ${st.found} posting${st.found===1?'':'s'} seen${st.new?`, ${st.new} new`:''} · ${when}` };
+  if(st.status === 'no_postings') return { cls:'warn', text:`Reachable, but no postings found — the listings are probably drawn by JavaScript · ${when}` };
+  if(st.status === 'blocked') return { cls:'crit', text:`Blocked — the site refuses automated visits (HTTP ${st.httpStatus||'?'}) · ${when}` };
+  if(st.status === 'robots') return { cls:'warn', text:`Skipped — the site's robots.txt asks bots to stay out · ${when}` };
+  if(st.status === 'error') return { cls:'crit', text:`Error: ${st.error||'unknown'} · ${when}` };
+  return { cls:'', text: (st.status||'unknown') + ' · ' + when };
+}
+function renderDiscover(){
+  const prof = hasProfile();
+  const good = S.profile ? S.profile.goodFit : 4;
+  const allInbox = feedInbox();
+  const addedCount = allInbox.filter(f => f.added).length;
+  let inbox = allInbox.filter(f => (S.showAdded || !f.added) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
+  const stamp = f => f.changedAt && f.changedAt > (f.firstSeen||'') ? f.changedAt : (f.firstSeen||'');
+  if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || (stamp(b) < stamp(a) ? -1 : 1));
+  else inbox.sort((a,b) => stamp(b) < stamp(a) ? -1 : stamp(b) > stamp(a) ? 1 : 0);
+  const srcs = S.sources.sources || [];
+  let h = `<div class="two"><div>
+    <div class="row between" style="margin-bottom:10px"><h2 class="display" style="font-size:22px">New postings</h2><span class="small muted">${S.feed.generatedAt ? 'Feed updated ' + esc(fmtAgo(S.feed.generatedAt)) : 'The collector has not run yet'}</span></div>
+    <div class="toolbar"><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
+      ${addedCount ? `<label class="row small muted" style="gap:4px"><input type="checkbox" data-action-check="showadded"${S.showAdded?' checked':''}> show ${addedCount} already in tracker</label>` : ''}
+      <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
+      ${prof ? `<select data-action="feedsort"><option value="fit"${S.feedSort==='fit'?' selected':''}>Best fit first</option><option value="new"${S.feedSort==='new'?' selected':''}>Newest / recently updated</option></select>
+      <select data-action="feedmin"><option value="all"${S.feedMin==='all'?' selected':''}>Any fit</option><option value="some"${S.feedMin==='some'?' selected':''}>Some fit (1+)</option><option value="good"${S.feedMin==='good'?' selected':''}>Good fit (${good}+)</option></select>` : `<a href="#" class="small" data-action="goto" data-view="settings">Set up a fit profile to rank these</a>`}</div>
+    <div class="joblist">`;
+  if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting here is already in your tracker or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
+  else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
+      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
+      <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener">${ICON.ext}</a>`:''}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
+    </div>`).join('');
+  h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
+
+  /* right column: checker + sources */
+  h += `<div class="stack">
+    <div class="card"><h3>Check a link</h3><p class="small muted" style="margin-bottom:10px">Paste a job board, search page, or RSS feed. GitHub fetches it the same way the daily collector will and reports back — usually within a minute.</p>
+      <form class="row" data-action-submit="checklink"><input type="url" name="url" placeholder="https://" required value="${esc(S.checking?.url||'')}" style="flex:1;min-width:200px"${S.readonly?' disabled':''}><button class="btn primary" type="submit"${S.readonly||S.checking?.busy?' disabled':''}>${S.checking?.busy?'Checking…':'Check'}</button></form>
+      ${renderVerdict()}
+    </div>
+    <div class="card"><div class="row between"><h3>Sources</h3><button class="btn sm" data-action="runcollector"${S.readonly?' disabled':''}>${ICON.play} Run collector now</button></div>
+      ${S.collectorMsg?`<p class="small muted" style="margin:6px 0">${esc(S.collectorMsg)}</p>`:''}
+      <div class="joblist" style="margin-top:10px">${srcs.length ? srcs.map(s => { const st = sourceStatus(s); return `<div class="source"><div><div class="n">${esc(s.name)} <span class="pill" style="margin-left:4px">${esc(((S.feed.sources||[]).find(x => x.id === s.id) || {}).kind || s.kind || 'auto')}</span>${s.enabled===false?' <span class="pill">paused</span>':''}</div><div class="u">${esc(s.url)}</div><div class="st"><span class="pill ${st.cls}"><span class="dot"></span>${esc(st.text)}</span></div>${(s.include&&s.include.length)||(s.exclude&&s.exclude.length)?`<div class="small muted" style="margin-top:4px">${s.include&&s.include.length?'includes: '+esc(s.include.join(', ')):''}${s.exclude&&s.exclude.length?' · excludes: '+esc(s.exclude.join(', ')):''}</div>`:''}</div>
+        <div class="stack" style="gap:4px"><button class="btn sm quiet" data-action="togglesource" data-id="${s.id}"${S.readonly?' disabled':''}>${s.enabled===false?'Resume':'Pause'}</button><button class="btn sm quiet danger" data-action="rmsource" data-id="${s.id}"${S.readonly?' disabled':''}>Remove</button></div></div>`; }).join('') : `<div class="empty"><p>No sources yet. Check a link above, then add it.</p></div>`}</div>
+    </div>
+  </div></div>`;
+  return h;
+}
+function renderVerdict(){
+  const c = S.checking; if(!c) return '';
+  if(c.busy) return `<div class="verdict"><strong>Asking GitHub to fetch it…</strong><div class="small muted">${esc(c.note||'This takes 30–90 seconds. You can keep working; the result appears here.')}</div></div>`;
+  if(c.error) return `<div class="verdict bad"><strong>Couldn't start the check.</strong><div class="small">${esc(c.error)}</div></div>`;
+  const r = c.result; if(!r) return '';
+  let cls = 'meh', head = '', body = '';
+  if(r.status === 'ok'){ cls = 'ok'; head = `Reachable — found ${r.jobLinksFound} posting${r.jobLinksFound===1?'':'s'}${r.kind?` (read as ${r.kind})`:''}.`; }
+  else if(r.status === 'no_postings'){ cls = 'meh'; head = 'Reachable, but no postings could be read from it.'; body = 'The page most likely draws its listings with JavaScript after loading, which a plain fetch never sees. Look for an RSS link on the site, or search for the same board with “rss” in the address.'; }
+  else if(r.status === 'blocked'){ cls = 'bad'; head = `Blocked — the site refuses automated visits (HTTP ${r.httpStatus||'?'}).`; body = 'You will need to browse this one by hand. The collector will not try to get around it.'; }
+  else if(r.status === 'robots'){ cls = 'meh'; head = 'Not checked — the site\'s robots.txt asks bots to stay out.'; body = 'The collector respects that. Browse it by hand.'; }
+  else { cls = 'bad'; head = 'Could not fetch it.'; body = r.error || ''; }
+  let h = `<div class="verdict ${cls}"><strong>${esc(head)}</strong>${body?`<div class="small" style="margin-top:4px">${esc(body)}</div>`:''}`;
+  if(r.title) h += `<div class="small muted" style="margin-top:4px">Page title: ${esc(r.title)}</div>`;
+  if(r.sample && r.sample.length) h += `<ul>${r.sample.slice(0,4).map(s => `<li>${esc(s.title)}${s.institution?` — ${esc(s.institution)}`:''}${s.statuses && s.statuses.length ? ` <span class="muted">(${esc(s.statuses[s.statuses.length-1])})</span>` : ''}</li>`).join('')}</ul>`;
+  if(r.status === 'ok' || r.status === 'no_postings'){
+    const already = (S.sources.sources||[]).some(s => s.url === r.url);
+    h += already ? `<p class="small muted" style="margin-top:8px">Already in your sources.</p>` : `<form class="stack" style="margin-top:10px" data-action-submit="addsource">
+      <input type="hidden" name="url" value="${esc(r.url)}"><input type="hidden" name="kind" value="${esc(r.kind||'auto')}">
+      <div class="grid c2"><label class="field"><span>Name</span><input type="text" name="name" value="${esc(r.suggestedName||r.title||'')}" required></label>
+      <label class="field"><span>Check</span><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label>
+      <label class="field"><span>Only keep postings mentioning (comma-separated, optional)</span><input type="text" name="include" placeholder="communication, media"></label>
+      <label class="field"><span>Skip postings mentioning (optional)</span><input type="text" name="exclude" placeholder="adjunct, part-time"></label></div>
+      <div class="row end"><button class="btn primary" type="submit">${ICON.plus} Add as a source</button></div></form>`;
+  }
+  return h + '</div>';
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const c = repoConf(); const d = detectRepo();
+  if(!c.token && !S.showConnect) return `<div class="settings stack">
+    <div class="card"><h3>This desk belongs to its owner</h3>
+      <p class="small muted">It is a personal job-application tracker. Visitors can look, but nothing here can be changed from this browser.</p>
+      <p class="small" style="margin-top:10px">If it is yours and you want to work from this device: <a href="#" data-action="showconnect">connect this browser</a>.</p>
+    </div></div>`;
+  return `<div class="settings stack">
+    <div class="card"><h3>Connect to GitHub</h3>
+      <p class="small muted">Everything you do on this page is saved as a commit in your repository. To allow that, this browser needs a personal access token. It is stored only in this browser (never in the repo) and you can revoke it on GitHub at any time.</p>
+      <form class="grid c3" style="margin-top:12px" data-action-submit="savesettings">
+        <label class="field"><span>Owner</span><input type="text" name="owner" value="${esc(c.owner||'')}" placeholder="${esc(d.owner||'your-github-username')}"></label>
+        <label class="field"><span>Repository</span><input type="text" name="repo" value="${esc(c.repo||'')}" placeholder="${esc(d.repo||'faculty-search-desk')}"></label>
+        <label class="field"><span>Branch</span><input type="text" name="branch" value="${esc(c.branch||'main')}"></label>
+        <label class="field span2"><span>Token</span><input type="password" name="token" value="" placeholder="${c.token ? 'saved in this browser — paste a new one only to replace it' : 'github_pat_…'}" autocomplete="off"></label>
+        <div class="row" style="align-self:end"><button class="btn primary" type="submit">Save &amp; test</button>${c.token?`<button class="btn quiet" type="button" data-action="forgettoken">Forget token</button>`:''}</div>
+      </form>
+      ${S.settingsMsg?`<p class="small" style="margin-top:10px">${esc(S.settingsMsg)}</p>`:''}
+    </div>
+    <div class="card"><h3>Fit profile</h3>
+      <p class="small muted">Postings are scored against these lists: each term found adds its weight once (core +${S.profile.weights.core}, related +${S.profile.weights.related}, red flags ${S.profile.weights.avoid}). Plurals match automatically. The collector reads each posting's full page to score it; jobs in your tracker are scored from their title, area, summary, and notes.</p>
+      <form class="grid c3" style="margin-top:12px" data-action-submit="saveprofile">
+        <label class="field"><span>Core terms (+${S.profile.weights.core})</span><textarea name="core" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.core.join('\n'))}</textarea></label>
+        <label class="field"><span>Related terms (+${S.profile.weights.related})</span><textarea name="related" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.related.join('\n'))}</textarea></label>
+        <label class="field"><span>Red flags (${S.profile.weights.avoid})</span><textarea name="avoid" style="min-height:220px" placeholder="one per line"${S.readonly?' disabled':''}>${esc(S.profile.avoid.join('\n'))}</textarea></label>
+        <label class="field"><span>"Good fit" starts at</span><input type="number" name="goodFit" value="${S.profile.goodFit}" min="1" max="50"${S.readonly?' disabled':''}></label>
+        <div class="row span2" style="align-self:end;justify-content:flex-end"><span class="small muted">${S.profile.updatedAt ? 'Last saved ' + esc(fmtAgo(S.profile.updatedAt)) : 'Not saved yet'}</span><button class="btn primary" type="submit"${S.readonly?' disabled':''}>Save profile &amp; rescore</button></div>
+      </form>
+      ${S.profileMsg?`<p class="small" style="margin-top:10px">${esc(S.profileMsg)}</p>`:''}
+    </div>
+    <div class="card"><h3>How to make the token</h3>
+      <ol class="steps small">
+        <li>On GitHub: your profile picture → <strong>Settings</strong> → <strong>Developer settings</strong> (bottom of the left menu) → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → <strong>Generate new token</strong>.</li>
+        <li>Name it “Faculty Search Desk”. Set the expiration as long as GitHub allows (you can make a new one later).</li>
+        <li>Under <strong>Repository access</strong> choose <em>Only select repositories</em> and pick <code>${esc(c.repo||'faculty-search-desk')}</code>.</li>
+        <li>Under <strong>Permissions → Repository permissions</strong> set <strong>Contents</strong> to <em>Read and write</em> and <strong>Actions</strong> to <em>Read and write</em>. Leave everything else alone.</li>
+        <li>Generate, copy the token (it starts with <code>github_pat_</code>), paste it above, and press Save &amp; test.</li>
+      </ol>
+      <p class="small muted">On your phone, open this same page and paste the same token once — it is remembered per browser.</p>
+    </div>
+    <div class="card"><h3>Backup</h3>
+      <p class="small muted">Your data is already versioned by Git (every save is a commit you can go back to). For an extra copy, download the tracker file; to merge one back in, import it.</p>
+      <div class="row" style="margin-top:10px"><button class="btn" data-action="export">Download tracker.json</button><label class="btn">Import tracker.json<input type="file" accept="application/json" class="hidden" data-action-file="import"${S.readonly?' disabled':''}></label></div>
+    </div>
+    <div class="card"><h3>About this page</h3>
+      <p class="small muted">One HTML file, no build step, no server. The daily collector is a short Python script run by GitHub Actions (<code>scripts/collect.py</code>); it reads <code>data/sources.json</code>, writes <code>data/feed.json</code>, and never touches your tracker. Uploaded files live under <code>files/</code>. If GitHub is ever the wrong home, the whole folder can move anywhere that serves static files.</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- toasts & confirm ---------- */
+function toast(msg, kind='', action){
+  const host = $('#toasts'); const el = document.createElement('div'); el.className = 'toast ' + kind;
+  el.innerHTML = `<span>${esc(msg)}</span>` + (action ? `<button type="button">${esc(action.label)}</button>` : '');
+  if(action) el.querySelector('button').addEventListener('click', () => { action.fn(); el.remove(); });
+  host.appendChild(el); setTimeout(() => el.remove(), kind==='err' ? 9000 : 3500);
+}
+function confirmDialog(title, text, okLabel='Delete'){
+  return new Promise(resolve => {
+    const host = $('#confirmHost');
+    host.innerHTML = `<div class="confirm"><div class="box"><h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="row end" style="margin-top:14px"><button class="btn" data-c="0">Cancel</button><button class="btn danger" data-c="1">${esc(okLabel)}</button></div></div></div>`;
+    host.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { host.innerHTML = ''; resolve(b.dataset.c === '1'); }));
+  });
+}
+</script>
+<script>
+/* =====================================================================
+   Actions & events
+   ===================================================================== */
+function newJob(fields){
+  const j = { id: uid(), institution:'', department:'', title:'', area:'', location:'', startDate:'', deadline:'', deadlineNote:'', url:'', contacts:[], salary:'', summary:'', notes:'',
+    stage:'preparing', outcome:'active', materials:[], interviews:[], source:'manual', feedId:null, createdAt: nowIso(), updatedAt: nowIso(), ...fields };
+  return j;
+}
+function addStandardMaterials(job){
+  for(const [k,v] of STANDARD_MATERIALS) if(!job.materials.some(m => m.category === k)) job.materials.push({ id: uid(), category:k, name:v, status:'needed', documentId:null, documentVersion:null, notes:'' });
+}
+function selectJob(id, tab){ S.selectedJobId = id; if(tab) S.jobTab = tab; S.view = 'jobs'; S.query = ''; $('#searchBox').value = ''; S.scrollToJob = true; render(); }
+function setView(v){ S.view = v; settings.set(LS.view, v); S.query=''; $('#searchBox').value=''; render(); }
+
+/* ---------- reading job calls (PDF / DOCX / text) ---------- */
+const _scripts = {};
+function loadScript(url){ if(!_scripts[url]) _scripts[url] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = url; el.onload = res; el.onerror = () => rej(new Error('Could not load ' + url)); document.head.appendChild(el); }); return _scripts[url]; }
+async function extractText(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.pdf') || file.type === 'application/pdf'){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    let out = [], links = [];
+    for(let i = 1; i <= Math.min(pdf.numPages, 12); i++){
+      const page = await pdf.getPage(i); const tc = await page.getTextContent();
+      let line = '', lastY = null;
+      for(const it of tc.items){ if(lastY !== null && Math.abs(it.transform[5] - lastY) > 3){ out.push(line); line = ''; } line += (line && !line.endsWith(' ') && !it.str.startsWith(' ') ? ' ' : '') + it.str; lastY = it.transform[5]; }
+      out.push(line);
+      try { for(const a of await page.getAnnotations()) if(a.subtype === 'Link' && a.url && /^https?:/i.test(a.url)) links.push(a.url); } catch(e){}
+    }
+    return withLinks(out.join('\n').replace(/[ \t]+\n/g, '\n').trim(), links);
+  }
+  if(name.endsWith('.docx')){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const xml = await zip.file('word/document.xml').async('string');
+    const text = xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab\/>/g, '\t').replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").trim();
+    let links = [];
+    try { const rels = zip.file('word/_rels/document.xml.rels'); if(rels){ const rx = await rels.async('string'); for(const m of rx.matchAll(/<Relationship[^>]*Type="[^"]*\/hyperlink"[^>]*Target="([^"]+)"/g)) links.push(m[1].replace(/&amp;/g,'&')); for(const m of rx.matchAll(/<Relationship[^>]*Target="([^"]+)"[^>]*Type="[^"]*\/hyperlink"/g)) links.push(m[1].replace(/&amp;/g,'&')); } } catch(e){}
+    return withLinks(text, links);
+  }
+  if(name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf') || file.type.startsWith('text/')) return (await file.text()).replace(/\\[a-z]+\d* ?|[{}]/g, m => name.endsWith('.rtf') ? '' : m).trim();
+  return '';
+}
+/* ---------- job-call reader v2: structure-aware, candidate-scored ---------- */
+/* Hyperlinks hidden behind "Apply here" text are appended so the reader can see them. */
+function withLinks(text, links){
+  const seen = new Set(Array.from(text.matchAll(/https?:\/\/[^\s)>"'\]]+/g)).map(m => m[0].replace(/[.,;:]+$/, '')));
+  const extra = Array.from(new Set(links.filter(u => /^https?:/i.test(u) && !/^mailto:/i.test(u)))).filter(u => !seen.has(u));
+  return extra.length ? text + '\n\nLinks in the document: ' + extra.join(' ') : text;
+}
+const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12 };
+const MONTH_RX = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\\.?';
+const DATE_RX = new RegExp(`\\b(?:(${MONTH_RX})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?|(\\d{1,2})\\s+(${MONTH_RX}),?\\s*(\\d{4})?|(\\d{1,2})/(\\d{1,2})/(\\d{2,4})|(\\d{4})-(\\d{2})-(\\d{2}))`, 'ig');
+const COUNTRIES = 'Qatar|Canada|Australia|Singapore|Hong Kong|United Kingdom|UK|England|Scotland|Wales|Ireland|Netherlands|Germany|Denmark|Sweden|Norway|Finland|Belgium|Switzerland|Austria|Italy|France|Spain|Portugal|New Zealand|South Korea|Korea|Japan|China|Taiwan|UAE|United Arab Emirates|Israel|Mexico|Brazil|Chile|South Africa';
+const STATES = 'AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC';
+const STATE_NAMES = 'Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming';
+const RANK_WORD = /\b(?:assistant|associate|full|visiting|clinical|open[- ]rank|tenure[- ]track|tenured|teaching|research)\b[^.\n]{0,30}?\b(?:professor|lecturer|instructor|faculty|fellow)\b|\b(?:professor|lecturer|instructor|postdoctoral|post-?doc|faculty position|open[- ]rank|endowed chair)\b/i;
+const NAME_AFTER_TITLE = /\b(?:Dr|Professor|Prof|Mr|Ms|Mrs)\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z'\-]+)+/;
+
+function normalizeCallText(raw){
+  let t = (raw || '').replace(/\r/g, '').replace(/ /g, ' ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+  t = t.replace(/\b(Dr|Prof|Mr|Ms|Mrs|St|Jr|Sr|vs|etc|e\.g|i\.e)\.(?=\s)/g, '$1').replace(/\bPh\.\s?D\./g, 'PhD').replace(/\bU\.S\./g, 'US').replace(/\bp\.m\./gi, 'pm').replace(/\ba\.m\./gi, 'am');
+  let lines = t.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim());
+  const counts = {}; for(const l of lines) if(l && l.length < 80) counts[l] = (counts[l] || 0) + 1;
+  lines = lines.filter(l => !(counts[l] > 1 && !/[.:]$/.test(l)) && !/^(page\s+\d+(\s+of\s+\d+)?|\d+\s*\/\s*\d+|\d{1,2})$/i.test(l));
+  const out = [];
+  for(const l of lines){
+    if(!l){ out.push(''); continue; }
+    const prev = out.length ? out[out.length - 1] : null;
+    if(prev && /[a-z]-$/.test(prev) && /^[a-z]/.test(l)){ out[out.length - 1] = prev.slice(0, -1) + l; continue; }
+    const listy = /^[•\-*–●▪]\s|^\d{1,2}[.)]\s/.test(l), labelish = /^[A-Z][A-Za-z\/ ]{2,40}:/.test(l), capsHeading = l.length > 6 && l === l.toUpperCase() && /[A-Z]/.test(l);
+    const words = l.split(' '), headingLike = l.length < 70 && words.filter(w => /^[A-Z]/.test(w)).length / words.length >= 0.6;
+    const prevProse = prev && prev.length >= 55 && (prev.match(/\b[a-z]{2,}\b/g) || []).length >= 4;
+    if(prev && !/[.:;!?)\]"]$/.test(prev) && prev.length > 40 && !listy && !labelish && !capsHeading && (/^[a-z(]/.test(l) || (prevProse && !headingLike))){ out[out.length - 1] = prev + ' ' + l; continue; }
+    out.push(l);
+  }
+  return out.join('\n');
+}
+function tidy(s){ return (s || '').replace(/\s+/g, ' ').replace(/^[\s:;,.\-–—]+|[\s:;,\-–—]+$/g, '').trim(); }
+function titleCase(s){ return s.toLowerCase().replace(/(^|[\s\-\/(])(\w)/g, (m, a, b) => a + b.toUpperCase()).replace(/\b(Of|In|And|Or|The|For|At|On|A|An|To|With)\b/g, w => w.toLowerCase()).replace(/^\w/, c => c.toUpperCase()); }
+function fixCaps(s){ const letters = s.replace(/[^A-Za-z]/g, ''); return letters.length > 8 && letters === letters.toUpperCase() ? titleCase(s) : s; }
+function dateFrom(str, cycleYear){
+  DATE_RX.lastIndex = 0; const m = DATE_RX.exec(str); if(!m) return null;
+  let y, mo, d;
+  const monthNum = w => { w = w.toLowerCase().replace('.', ''); return MONTHS[w.startsWith('sept') ? 'sept' : w.slice(0, 3)]; };
+  if(m[1]){ mo = monthNum(m[1]); d = +m[2]; y = m[3] ? +m[3] : null; }
+  else if(m[5]){ mo = monthNum(m[5]); d = +m[4]; y = m[6] ? +m[6] : null; }
+  else if(m[7]){ mo = +m[7]; d = +m[8]; y = +m[9]; if(y < 100) y += 2000; }
+  else { y = +m[10]; mo = +m[11]; d = +m[12]; }
+  if(!mo || mo > 12 || !d || d > 31) return null;
+  if(!y) y = mo >= 7 ? cycleYear : cycleYear + 1;
+  return { iso: `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`, text: m[0], index: m.index };
+}
+function sentencesOf(t){ return t.split(/(?<=[.!?])\s+(?=[A-Z("•\-])|\n+/).map(s => tidy(s)).filter(Boolean); }
+function labeled(t, labels){
+  const rx = new RegExp(`^(?:${labels})\\s*[:\\-–—]\\s*(.+)$`, 'im');
+  const m = t.match(rx); if(m) return tidy(m[1]);
+  const rx2 = new RegExp(`^(?:${labels})\\s*$\\n+(.+)$`, 'im');
+  const m2 = t.match(rx2); return m2 ? tidy(m2[1]) : '';
+}
+function bestByFrequency(cands){
+  const score = {}; const orig = {};
+  for(const c of cands){ const k = c.toLowerCase().replace(/^the /, ''); score[k] = (score[k] || 0) + 1; orig[k] = orig[k] && orig[k].length >= c.length ? orig[k] : c; }
+  const keys = Object.keys(score); if(!keys.length) return '';
+  keys.sort((a, b) => score[b] - score[a] || a.length - b.length);
+  return orig[keys[0]];
+}
+function cutAt(s, rx){ const m = s.match(rx); return m ? s.slice(0, m.index) : s; }
+
+/* ---- materials ---- */
+const MATERIAL_PATTERNS = [
+  ['cover_letter', /\b(?:cover(?:ing)? letter|letter of (?:application|interest|intent)|application letter)\b/i, 'Cover letter'],
+  ['cv', /\b(?:curriculum vitae|c\.?v\.?(?![a-z])|résumé|resume)\b/i, 'Curriculum vitae'],
+  ['research_statement', /\b(?:research statement|statement of research(?: interests| agenda| program| accomplishments)?|research agenda|description of (?:current and future )?research|research narrative)\b/i, 'Research statement'],
+  ['teaching_statement', /\b(?:teaching statement|statement of teaching(?: philosophy| interests| experience)?|teaching philosophy(?: statement)?|teaching portfolio|philosophy of teaching)\b/i, 'Teaching statement'],
+  ['teaching_evals', /\b(?:teaching evaluations?|course evaluations?|student evaluations?|evidence of teaching (?:effectiveness|excellence)|summary of teaching evaluations)\b/i, 'Teaching evaluations'],
+  ['syllabus', /\b(?:sample syllab(?:us|i)|syllab(?:us|i))\b/i, 'Syllabus'],
+  ['writing_sample', /\b(?:writing samples?|sample publications?|(?:one|two|three|four|1|2|3|4|up to \w+) (?:representative |recent |sample |scholarly )?(?:publications?|papers?|articles?|manuscripts?|writing samples?)|(?:representative|recent) (?:publications?|scholarly work|papers?|manuscripts?)|samples? of (?:scholarly|written|published) work|examples? of (?:scholarship|published work))\b/i, 'Writing sample'],
+  ['dei_statement', /\b(?:diversity statement|statement (?:of|on) (?:contributions to )?(?:diversity|inclusion|equity|dei)|dei statement|inclusive excellence statement|statement (?:of|on) (?:commitment to )?(?:diversity|inclusive))\b/i, 'DEI statement'],
+  ['service_statement', /\b(?:service statement|statement of service)\b/i, 'Service statement'],
+  ['transcripts', /\b(?:(?:unofficial |official |graduate |doctoral )?transcripts?)\b/i, 'Transcripts'],
+  ['reference_letters', /\b(?:letters? of (?:recommendation|reference|support)|recommendation letters?|reference letters?|letters? (?:will be|to be|are|may be) (?:solicited|requested|sought|contacted))\b/i, 'Reference letters'],
+  ['reference_names', /\b(?:(?:names|list|contact (?:information|details))(?: and contact (?:information|details))? (?:of|for) (?:(?:at least |up to )?(?:\w+) )?(?:references|referees|recommenders)|details of (?:\w+ )?referees|(?:three|four|five|3|4|5) (?:professional )?references\b(?! letters)|references?(?: list)?\b(?! letter)|referees)\b/i, 'Reference names'],
+];
+const NUM_WORDS = { one:1, two:2, three:3, four:4, five:5, six:6 };
+const NUM_RX = /\b(one|two|three|four|five|six|[1-6])\b(?!\s*(?:[- ]?page|pages|year|month|semester))/i;
+function materialsBlock(t){
+  const lines = t.split('\n');
+  const trigger = /\b(?:should (?:submit|include|upload|provide|send)|must (?:submit|include|upload|provide)|are asked to (?:submit|upload|provide)|please (?:submit|upload|include|provide|send)|to apply,?|application(?:s)? (?:should|must|will) (?:include|consist of|contain|comprise)|application (?:materials|packet|package|file|dossier|requirements|documents)|required (?:documents|materials|application materials|attachments)|(?:documents|materials) (?:required|needed)|submit the following|include the following|the following (?:materials|documents|items)|consisting of|along with|upload(?:ed)?|attach|materials:?|documents:?|optional (?:documents|materials|attachments))\b/i;
+  const isHeading = l => l.length < 60 && !/[.,;]$/.test(l) && (/^[A-Z][A-Za-z\/&' ]{2,50}:?$/.test(l) || l === l.toUpperCase());
+  const chunks = [];
+  for(let i = 0; i < lines.length; i++){
+    const l = lines[i]; if(!l) continue;
+    const matCount = MATERIAL_PATTERNS.filter(([, rx]) => rx.test(l)).length;
+    if(trigger.test(l) || matCount >= 2){
+      const block = [l];
+      let blanks = 0;
+      for(let j = i + 1; j < lines.length; j++){
+        const n = lines[j];
+        if(!n){ blanks++; if(blanks > 2) break; continue; }
+        const listy = /^(?:[•\-*–●▪◦o]|\d{1,2}[.)]|[a-z][.)]|\(\d{1,2}\))\s*/i.test(n);
+        const matLine = n.length < 140 && MATERIAL_PATTERNS.some(([, rx]) => rx.test(n));
+        const optionalHead = /^optional\b/i.test(n) && n.length < 60;
+        if(optionalHead){ block.push(n); blanks = 0; continue; }
+        if(isHeading(n) && !matLine) break;
+        if(!listy && !matLine){ if(blanks) break; if(n.length > 140) break; }
+        if(listy || matLine){ block.push(n); blanks = 0; continue; }
+        break;
+      }
+      if(block.some(b => MATERIAL_PATTERNS.some(([, rx]) => rx.test(b)))) chunks.push(block.join('\n'));
+      i += block.length - 1;
+    }
+  }
+  return chunks.join('\n');
+}
+function extractMaterials(t){
+  let text = materialsBlock(t);
+  let scope = 'block';
+  if(!text){
+    // fallback: sentences anywhere that both name a material and talk about submitting it
+    const strong = /\b(?:submit|include|upload|provide|attach|send|required|application|apply)\b/i;
+    text = sentencesOf(t).filter(u => strong.test(u) && MATERIAL_PATTERNS.some(([, rx]) => rx.test(u))).join('\n');
+    scope = 'sentences';
+  }
+  if(!text) return { materials: [], text: '', scope: 'none' };
+  const rawUnits = text.split('\n');
+  const units = []; let optional = false;
+  for(const l of rawUnits){
+    if(/^optional\b/i.test(l) && l.length < 60){ optional = true; continue; }
+    if(/^(?:required|mandatory)\b/i.test(l) && l.length < 60){ optional = false; continue; }
+    for(const u of sentencesOf(l)) units.push({ u, optional: optional || /\b(?:optional|if (?:available|applicable|desired)|encouraged but not required|not required)\b/i.test(u) });
+  }
+  const found = new Map();
+  const laterRx = /\b(?:finalists?|later stage|at a later|upon request|semi-?finalists?|short-?list(?:ed)?|will be (?:requested|solicited|sought|contacted)|if (?:selected|advanced|invited)|at the (?:interview|campus)|subsequently|second[- ]round|advanced candidates)\b/i;
+  const hasLettersLater = units.some(({u}) => MATERIAL_PATTERNS[10][1].test(u) && laterRx.test(u));
+  for(const {u, optional: opt} of units){
+    const later = laterRx.test(u);
+    for(const [cat, rx, name] of MATERIAL_PATTERNS){
+      const m = u.match(rx); if(!m) continue;
+      if(cat === 'reference_names' && /letters? of (?:recommendation|reference)|recommendation letters?/i.test(u) && !/(?:names|list|contact information|contact details|details) (?:and contact information )?(?:of|for)/i.test(u)) continue;
+      if(cat === 'cv' && /\bcv\b/i.test(m[0]) && /\b(?:cv[- ]style|cv (?:format|template))/i.test(u)) continue;
+      const inMatch = m[0].match(NUM_RX); let n = inMatch ? (NUM_WORDS[inMatch[1].toLowerCase()] || +inMatch[1]) : null;
+      if(!n){ const before = u.slice(Math.max(0, m.index - 28), m.index); const b = before.match(/\b(one|two|three|four|five|six|[1-6])\b(?!\s*(?:[- ]?page|pages|year))[^,;]*$/i); if(b) n = NUM_WORDS[b[1].toLowerCase()] || +b[1]; }
+      if(!n){ const after = u.slice(m.index + m[0].length, m.index + m[0].length + 6); const a = after.match(/^\s*\((\d)\)/); if(a) n = +a[1]; }
+      const isLater = later && !(cat !== 'reference_letters' && hasLettersLater && !/\b(?:finalist|later)/i.test(u.slice(0, m.index + m[0].length)) && /letters?/i.test(u.slice(m.index + m[0].length)));
+      const prev = found.get(cat);
+      const label = name + (n && n > 1 && ['reference_letters','reference_names','writing_sample','syllabus'].includes(cat) ? ` (${n})` : '');
+      const status = opt ? 'not_required' : isLater ? 'finalists_only' : 'needed';
+      const note = opt ? 'Optional per the call' : isLater ? 'Requested at a later stage' : '';
+      if(!prev || (prev.status !== 'needed' && status === 'needed')) found.set(cat, { category: cat, name: label, status, note });
+    }
+  }
+  return { materials: Array.from(found.values()), text: text.slice(0, 1200), scope };
+}
+
+function parseJobCall(raw){
+  const t = normalizeCallText(raw);
+  const lines = t.split('\n').map(tidy).filter(Boolean);
+  const head = lines.slice(0, 40);
+  const sents = sentencesOf(t);
+  const cycleYear = new Date().getMonth() >= 6 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+  const out = { fields: {}, materials: [], extras: {}, confidence: {} };
+  const F = out.fields;
+
+  /* ---- institution (single-line matches only) ---- */
+  const INST = /((?:[A-Z][A-Za-z&'.\-]+ ){0,4}(?:University|College|Institute|Polytechnic)(?: (?:of|at|in|for|and|&|the) (?:[A-Z][A-Za-z&'.\-]+ ?){1,4})?(?:, [A-Z][a-zA-Z]+)?)/g;
+  let inst = labeled(t, 'institution|employer|university|organization|hiring institution|hiring organization');
+  const instCands = [];
+  for(const line of lines) for(const m of line.matchAll(INST)){
+    let c = tidy(m[1]).replace(/\s+(?:invites?|seeks?|is|has|announces?|welcomes?|offers?|located|in the|at the|and the|the|Department|School|Faculty)$/i, '').replace(/\s*\((?:[A-Z\-]{2,8})\)$/, '');
+    if(c.length < 7 || c.length > 90) continue;
+    if(/^(?:the )?(?:college|school|department|faculty|institute|division) (?:of|for) (?:communication|journalism|media|arts|liberal|humanities|social|business|information|education|letters|fine|graduate|law|medicine|engineering|science|public)/i.test(c)) continue;
+    if(/^(?:Community|Junior|Technical) College$/i.test(c)) continue;
+    instCands.push(c);
+  }
+  if(!inst){
+    const atThe = t.match(/\b(?:at|of) (?:the )?((?:[A-Z][A-Za-z&'.\-]+ ){0,4}(?:University|College|Institute)(?: (?:of|at|in|,) ?(?:[A-Z][A-Za-z&'.\-]+ ?){1,4})?)/);
+    const freq = bestByFrequency(instCands);
+    const atCand = atThe && tidy(atThe[1]).replace(/\s+(?:invites?|seeks?|is|has|announces?)$/i, '');
+    inst = (atCand && instCands.filter(c => c.toLowerCase().replace(/^the /, '') === atCand.toLowerCase().replace(/^the /, '')).length >= 1 && instCands.filter(c => c.toLowerCase() === freq.toLowerCase()).length <= instCands.filter(c => c.toLowerCase().replace(/^the /, '') === atCand.toLowerCase().replace(/^the /, '')).length) ? atCand : freq;
+  }
+  if(inst){ F.institution = inst.replace(/^the /i, '').replace(/[,.]$/, ''); out.confidence.institution = instCands.filter(c => c.toLowerCase().replace(/^the /,'') === F.institution.toLowerCase()).length >= 2 ? 'high' : 'medium'; }
+
+  /* ---- department ---- */
+  const DEPT = /((?:Department|School|College|Division|Program|Faculty|Center|Centre|Institute) (?:of|for) (?:[A-Z][A-Za-z&'.\-]+,?(?: (?:and|&|of|the|for))? ?){1,8})/g;
+  let dept = labeled(t, 'department|dept\\.?|academic unit|unit|school\\/department');
+  if(!dept){
+    const dc = [];
+    for(const line of lines) for(const m of line.matchAll(DEPT)){
+      let c = tidy(m[1]).replace(/[,\s]+(?:and|&|of|the|for)$/i, '').replace(/,$/, '').replace(/\s+(?:at|invites?|seeks?|is|announces?|welcomes?)$/i, '');
+      if(F.institution && c.toLowerCase() === F.institution.toLowerCase()) continue;
+      if(/^(?:Institute|Center|Centre) /.test(c) && c.split(' ').length > 8) continue;
+      dc.push(c);
+    }
+    const depts = dc.filter(c => /^Department/i.test(c));
+    const schools = dc.filter(c => /^(?:School|Faculty|Division|Program)/i.test(c));
+    dept = bestByFrequency(depts.length ? depts : schools.length ? schools : dc.filter(c => !/^College of (?:Arts|Liberal|Humanities|Social|Letters|Fine)/i.test(c)));
+  }
+  if(dept) F.department = dept;
+
+  /* ---- title ---- */
+  const isName = s => NAME_AFTER_TITLE.test(s);
+  let title = labeled(t, 'position title|job title|title|working title|posting title|position');
+  let how = title ? 'label' : '';
+  if(!title){
+    const first = lines.slice(0, 4).filter(l => RANK_WORD.test(l) && l.length < 120 && !/[.!?]$/.test(l) && !/\b(?:invites?|seeks?|should|must|will|the department|the school|announcement|posting|advertisement|vacancy notice)\b/i.test(l) && !isName(l));
+    if(first.length){ title = first.find(l => /professor|lecturer/i.test(l)) || first[0]; how = 'heading'; }
+  }
+  if(!title){
+    const inv = t.match(/\b(?:invites?|seeks?|is seeking|is accepting|announces?|solicits?|welcomes?|is recruiting)\b (?:applications|nominations|candidates|applicants)?(?: and nominations)?\s*(?:for|to fill)? (?:a |an |the |one |two |multiple |several )?([^.;\n]{5,170}?\b(?:professor(?:ship)?|lecturer|instructor|faculty|postdoctoral|position|fellow)\b[^.;\n]{0,110})/i);
+    if(inv){
+      let p = tidy(inv[1]);
+      const rankM = p.match(/\bat the (?:rank|level) of (?:an? )?((?:assistant|associate|full|open[- ]rank)?(?: or (?:assistant|associate|full))?\s*professor|lecturer|instructor)/i);
+      let areaM = null;
+      if(rankM){
+        const after = p.slice(rankM.index + rankM[0].length);
+        areaM = after.match(/^\s*(?:in|of|for) ([^,.;]+?)(?=,|\s+(?:with|beginning|starting|to begin|effective|who|whose|that|which|at the|in the (?:department|school|college)|for the)\b|$)/i)
+             || p.slice(0, rankM.index).match(/\b(?:in|of) ([^,.;]+?)(?=\s+(?:at the (?:rank|level)|with|beginning|starting|to begin)\b|$)/i);
+      }
+      if(rankM){ title = tidy(rankM[1]) + (areaM && !/\b(?:rank|level)\b/i.test(areaM[1]) ? ' in ' + tidy(areaM[1]) : ''); if(/tenure[- ]track/i.test(p) && !/tenure/i.test(title)) title = 'Tenure-track ' + title; }
+      else { title = cutAt(p, /\s+(?:beginning|starting|to begin|effective|with a start|who|whose|that|which|at the rank|at the level|in the (?:department|school|college|program)|at (?:the )?[A-Z]|for the (?:20|academic))/i).replace(/\s+(?:position|appointment)(?=\s+in\b|$)/i, ''); }
+      how = 'sentence';
+    }
+  }
+  if(!title){ const s = sents.find(s => RANK_WORD.test(s) && !isName(s) && s.length < 160); if(s){ const m = s.match(RANK_WORD); title = tidy(s.slice(m.index)).split(/[,;]/)[0]; how = 'fallback'; } }
+  if(title){
+    title = tidy(title).replace(/^(?:position|job|title)\s*[:\-]\s*/i, '').replace(/\s*\((?:job|req|posting|position|requisition)?\s*(?:id|#|no\.?|number)[^)]*\)\s*/i, ' ').replace(/\s+[-–—]\s+(?:job|req|posting|requisition)\b.*$/i, '').replace(/[.;,]$/, '');
+    title = fixCaps(title).replace(/\b(?:Of|In|And|Or|The|For|At|On|A|An|To|With)\b/g, w => w.toLowerCase()).replace(/^\w/, c => c.toUpperCase());
+    F.title = title; out.confidence.title = how === 'label' || how === 'heading' ? 'high' : how === 'sentence' ? 'medium' : 'low';
+  }
+  const rankSrc = F.title && /\b(?:professor|lecturer|instructor|postdoc|open[- ]rank|visiting)\b/i.test(F.title) ? F.title : t;
+  const rankM = rankSrc.match(/\b(assistant professor|associate professor|full professor|assistant or associate professor|open[- ]rank|visiting assistant professor|visiting professor|professor|senior lecturer|lecturer|instructor|postdoctoral)\b/i); if(rankM) out.extras.rank = rankM[1].toLowerCase();
+  out.extras.tenureTrack = /\btenure[- ](?:track|system|stream|line|eligible)\b/i.test(t) && !/\bnon[- ]tenure/i.test(F.title || '');
+  if(/\b(?:one[- ]year|two[- ]year|fixed[- ]term|limited[- ]term|renewable|non[- ]tenure[- ]track|visiting)\b/i.test(F.title || '') || /\bnon[- ]tenure[- ]track\b/i.test(t)) out.extras.termLimited = true;
+
+  /* ---- area ---- */
+  const fromTitle = (F.title || '').replace(/\s*\([^)]*\)\s*/g, ' ').match(/\b(?:in|of)\s+(.+)$/i);
+  let area = fromTitle && !/^(?:communication|the|arts|sciences|communication studies|communications)$/i.test(tidy(fromTitle[1])) ? tidy(fromTitle[1]) : '';
+  const spec = t.match(/\b(?:specializ(?:ing|ation|es|e) in|with (?:a |an )?(?:research )?(?:focus|emphasis|specialization|concentration) (?:in|on)|whose (?:research|work) (?:focuses|centers|centres) on|with (?:an )?emphasis in)\s+([^.;\n?]{6,120}?)(?=\s+(?:is|are|will|would|and (?:who|a)|with|who|the successful)\b|[.;\n?]|$)/i);
+  if(spec) area = [area, tidy(spec[1])].filter(Boolean).join('; ');
+  const paren = (F.title || '').match(/\(([^)]{4,80})\)/); if(paren && !/one[- ]year|renewable|term|\d/i.test(paren[1])) area = [paren[1], area].filter(Boolean).join('; ');
+  area = area.split('; ').filter((x, i, a) => x && a.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i).map(x => x.replace(/^\w/, c => c.toUpperCase())).join('; ');
+  if(area) F.area = area;
+
+  /* ---- location ---- */
+  let loc = labeled(t, 'location|campus location|city|work location|job location|campus');
+  if(!loc){
+    const cands = [];
+    const LOC = new RegExp(`\\b([A-Z][a-zA-Z.'\\-]+(?: [A-Z][a-zA-Z.'\\-]+){0,3}), (${STATES}|${STATE_NAMES}|${COUNTRIES})\\b(?![\\w-])`, 'g');
+    for(const line of lines) for(const m of line.matchAll(LOC)){ const city = m[1].replace(/^(?:in|at|the|of|downtown) /i, ''); if(!/^(?:University|College|School|Department|Institute|Suite|Box|Street|Ave|Avenue|Road|Campus|Hall)/.test(city) && !/^\d/.test(city) && !/(?:University|College)$/.test(city)) cands.push(`${city}, ${m[2]}`); }
+    loc = bestByFrequency(cands);
+    if(!loc){ const m = t.match(/\b(?:located in|campus in|based in|situated in|located on the .{0,30} campus in)\s+(?:downtown |the city of )?([A-Z][a-zA-Z.'\-]+(?: [A-Z][a-zA-Z.'\-]+){0,3}(?:, [A-Z][a-zA-Z ]+)?)/); if(m) loc = m[1]; }
+  }
+  if(loc) F.location = loc.replace(/[.,]$/, '');
+
+  /* ---- deadline ---- */
+  const DL_CTX = /\b(?:deadline|due|review(?:s)? of (?:applications?|materials|files|candidates)|review (?:will )?(?:begin|start|commence)|reviewed|received by|received on or before|submitted by|no later than|apply by|closing date|closes?|close date|priority (?:consideration |deadline |date |review )?|full consideration|until (?:the position is )?filled|open until|consideration will be given|guaranteed (?:full )?consideration|must be (?:received|submitted|completed)|best consideration|applications? (?:will be )?(?:accepted|considered) (?:until|through))\b/i;
+  const dlLabel = labeled(t, 'application deadline|deadline|closing date|close date|review date|priority deadline|priority date|applications? due|date to be filled|review begins?|open until|closes on|apply by|initial review date|first consideration date');
+  let dl = null, dlNote = '';
+  if(dlLabel){ const d = dateFrom(dlLabel, cycleYear); if(d){ dl = d; const lm = t.match(/^(application deadline|deadline|closing date|close date|review date|priority deadline|priority date|applications? due|date to be filled|review begins?|open until|closes on|apply by|initial review date|first consideration date)\s*[:\-–—]/im); dlNote = (lm ? lm[1].replace(/^\w/, c => c.toUpperCase()) + ': ' : '') + dlLabel; out.confidence.deadline = 'high'; } }
+  if(!dl){
+    const cands = [];
+    for(const s of sents){
+      if(!DL_CTX.test(s)) continue;
+      const d = dateFrom(s, cycleYear); if(!d) continue;
+      let w = 0;
+      if(/\bdeadline\b/i.test(s)) w += 4;
+      if(/\b(?:review|full consideration|priority|guaranteed|best consideration|first consideration)\b/i.test(s)) w += 3;
+      if(/\b(?:closes?|closing|no later than|received by|due|must be (?:received|submitted))\b/i.test(s)) w += 3;
+      if(/\b(?:start|begin(?:ning)?|effective|appoint|commence)/i.test(s) && !/review/i.test(s)) w -= 5;
+      if(/\b(?:posted|posting date|date posted|published|open date|opened)\b/i.test(s)) w -= 6;
+      if(/\b(?:interview|campus visit|decision|notif)/i.test(s)) w -= 4;
+      cands.push({ d, s, w });
+    }
+    if(cands.length){ cands.sort((a, b) => b.w - a.w || a.d.iso.localeCompare(b.d.iso)); dl = cands[0].d; dlNote = cands[0].s; out.confidence.deadline = cands[0].w >= 3 ? 'high' : 'medium'; }
+  }
+  if(dl) F.deadline = dl.iso;
+  const ouf = /\b(?:open until filled|until (?:the )?(?:position|search) is (?:filled|closed)|until filled|remain open until filled)\b/i.test(t);
+  if(dlNote || ouf) F.deadlineNote = tidy([dlNote.slice(0, 160), ouf && !/until (?:the )?(?:(?:position|search) is )?(?:filled|closed)/i.test(dlNote) ? 'open until filled' : ''].filter(Boolean).join('; '));
+
+  /* ---- start ---- */
+  const start = t.match(/\b(?:start(?:ing)? date|anticipated start|expected start|(?:appointment|position|employment|contract) (?:will |would |is expected to |is anticipated to )?(?:begin|start|commence)s?|to begin|beginning(?: in| on)?|effective|starting|commencing|from)\b[^.;\n]{0,50}?\b((?:fall|spring|summer|autumn|winter)\s+(?:semester\s+|term\s+|quarter\s+)?(?:of\s+)?\d{4}|(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+(?:\d{1,2},?\s+)?\d{4}|\d{1,2} (?:january|february|march|april|may|june|july|august|september|october|november|december) \d{4}|\d{1,2}\/\d{1,2}\/\d{4}|academic year \d{4}[-–]\d{2,4})/i);
+  if(start) F.startDate = start[1].replace(/^\w/, c => c.toUpperCase());
+
+  /* ---- url / contact / salary / load ---- */
+  const urls = Array.from(new Set(Array.from(t.matchAll(/(?:https?:\/\/|www\.)[^\s)>"'\]]+/gi)).map(m => m[0].replace(/[.,;:]+$/, '').replace(/^www\./i, 'https://www.')))).filter(u => !/\.(?:png|jpg|jpeg|gif|css|js)$/i.test(u));
+  const applyScore = u => { let sc = 0; if(/interfolio|academicjobsonline|apply|jobs?[.\/]|careers?[.\/]|hr[.\/]|recruit|workday|peopleadmin|pageup|taleo|icims|employment|hiring|posting|position|opportunit|vacanc|jobapply|facultyjobs|applicant/i.test(u)) sc += 3; if(/\/[^\/]+\/?$/.test(u.replace(/^https?:\/\/[^\/]+/, '')) || /\/.+\/.+/.test(u.replace(/^https?:\/\/[^\/]+/, ''))) sc += 1; if(/^https?:\/\/[^\/]+\/?$/.test(u)) sc -= 2; if(/eeo|equal|nondiscrimination|privacy|accessibility|title-?ix|clery|benefits|about|linkedin|twitter|facebook|instagram|youtube/i.test(u)) sc -= 4; if(/mailto:/i.test(u)) sc -= 9; return sc; };
+  const apply = urls.slice().sort((a, b) => applyScore(b) - applyScore(a))[0];
+  if(apply && applyScore(apply) > -2) F.url = apply;
+  const applyM = t.match(/\b(?:apply (?:online )?(?:at|via|through|here)|application(?:s)? (?:should|must|may) be (?:submitted|made) (?:at|via|through|online at)|submit(?:ted)? (?:online )?(?:at|via|through))\s*[:\-]?\s*((?:https?:\/\/|www\.)[^\s)>"']+)/i);
+  if(applyM) F.url = applyM[1].replace(/[.,;:]+$/, '').replace(/^www\./i, 'https://www.');
+  const emails = Array.from(t.matchAll(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi)).map(m => m[0]);
+  const contactS = sents.find(s => /\b(?:search (?:committee )?chair|chair of the search|chairs? the search|chaired by|questions|inquiries|enquiries|contact|for (?:more|further|additional) information|direct(?:ed)? to)\b/i.test(s) && (/@/.test(s) || NAME_AFTER_TITLE.test(s)));
+  if(contactS || emails.length){
+    const nm = contactS && contactS.match(/\b(?:Dr|Professor|Prof|Mr|Ms|Mrs)\.?\s+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){1,2})/);
+    const em = (contactS && contactS.match(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i)) || null;
+    const email = em ? em[0] : (emails.find(e => !/hr@|jobs@|noreply|no-reply|employment@|careers@|recruit|apply@/i.test(e)) || '');
+    if(nm || email) out.extras.contact = { name: nm ? nm[1] : '', email, role: /search/i.test(contactS || '') ? 'Search chair' : /department chair|chair of the department/i.test(contactS || '') ? 'Department chair' : 'Contact' };
+  }
+  const sal = t.match(/(?:\$|£|€)\s?\d{2,3},\d{3}(?:\s*(?:-|–|—|to)\s*(?:\$|£|€)?\s?\d{2,3},\d{3})?/); if(sal) out.extras.salary = sal[0].replace(/\s+/g, '');
+  const loadM = t.match(/\b([1-4])\s*[-\/–]\s*([1-4])\b(?=[^.\n]{0,40}\b(?:teaching|load|courses?)\b)|\bteaching load (?:of|is)\s+(?:a\s+)?([1-4])\s*[-\/–]\s*([1-4])\b|\b(?:teaching load (?:of|is)|teach(?:es|ing)?)\s+(?:a\s+)?((?:one|two|three|four|five|six|\d) courses? (?:per|each|a) (?:semester|year|term|quarter))/i);
+  if(loadM) out.extras.teachingLoad = loadM[1] ? `${loadM[1]}-${loadM[2]}` : loadM[3] ? `${loadM[3]}-${loadM[4]}` : tidy(loadM[5]);
+
+  /* ---- materials ---- */
+  const mats = extractMaterials(t); out.materials = mats.materials; out.extras.materialsText = mats.text;
+
+  /* ---- summary line ---- */
+  const bits = [];
+  if(out.materials.length) bits.push('Materials: ' + out.materials.map(m => m.name + (m.status === 'finalists_only' ? ' (later stage)' : '')).join(', ') + '.');
+  if(F.deadlineNote) bits.push('Deadline: ' + F.deadlineNote + (/[.]$/.test(F.deadlineNote) ? '' : '.'));
+  if(F.startDate) bits.push('Start: ' + F.startDate + '.');
+  if(out.extras.rank) bits.push('Rank: ' + out.extras.rank + (out.extras.tenureTrack ? ', tenure-track' : out.extras.termLimited ? ', term-limited' : '') + '.');
+  if(out.extras.teachingLoad) bits.push('Teaching load: ' + out.extras.teachingLoad + '.');
+  if(out.extras.salary) bits.push('Salary: ' + out.extras.salary + '.');
+  if(out.extras.contact && (out.extras.contact.name || out.extras.contact.email)) bits.push('Contact: ' + [out.extras.contact.name, out.extras.contact.email].filter(Boolean).join(', ') + (out.extras.contact.role !== 'Contact' ? ' (' + out.extras.contact.role.toLowerCase() + ')' : '') + '.');
+  out.summary = bits.join(' ');
+  return out;
+}
+
+/* apply a parse result to the add-job draft: only fills fields that are still empty */
+function applyGuess(target, g){
+  for(const k of Object.keys(g.fields)) if(g.fields[k] && !target[k]) target[k] = g.fields[k];
+  target.materials = g.materials; target.readSummary = g.summary; target.extras = g.extras; target.confidence = g.confidence;
+  if(!target.summary && g.summary) target.summary = g.summary;
+}
+/* Attach the newest document of each category to matching checklist items (cover letters are job-specific, so they are skipped). */
+function autoAttachDocuments(job){
+  let n = 0;
+  for(const m of job.materials){
+    if(m.documentId || m.category === 'cover_letter' || m.category === 'custom' || m.status === 'not_required') continue;
+    const docs = S.tracker.documents.filter(d => d.category === m.category && d.versions.length);
+    if(!docs.length) continue;
+    docs.sort((a, b) => (b.updatedAt || '') < (a.updatedAt || '') ? -1 : 1);
+    m.documentId = docs[0].id; m.documentVersion = null; n++;
+    if(m.status === 'needed' && ['cv','teaching_evals','syllabus','transcripts','writing_sample','reference_names'].includes(m.category)) m.status = 'ready';
+  }
+  return n;
+}
+function captureAddForm(){
+  const form = $('#addJobForm'); if(!form) return;
+  const f = Object.fromEntries(new FormData(form).entries());
+  S.callDraft = { ...(S.callDraft || {}), ...f };
+}
+async function uploadCallFile(file, job){
+  const d = { id: uid(), name: `${job.institution || 'Job'} — job call`, category: 'job_call', notes: '', versions: [], createdAt: nowIso(), updatedAt: nowIso() };
+  const fname = safeName(file.name); const path = `files/${d.id}/v1/${fname}`;
+  await gh.putFile(path, arrayBufferToB64(await file.arrayBuffer()), await gh.getSha(path), `Upload job call: ${fname}`);
+  d.versions.push({ v: 1, path, fileName: fname, size: file.size, uploadedAt: nowIso(), mime: file.type || '' });
+  S.tracker.documents.push(d); return d;
+}
+
+const actions = {
+  reload: async () => { setSaveState('saving','Loading…'); await loadAll(); render(); },
+  goto: (el) => setView(el.dataset.view),
+  clearsearch: () => { S.query=''; $('#searchBox').value=''; render(); },
+  filter: (el) => { S.jobFilter = el.dataset.filter; render(); },
+  showadd: () => { S.showAddJob = true; render(); $('#addJobForm input[name=institution]')?.focus(); },
+  showconnect: () => { S.showConnect = true; render(); },
+  hideadd: () => { S.showAddJob = false; S.callDraft = null; render(); },
+  fillfromtext: () => { captureAddForm(); const text = (S.callDraft.rawText || '').trim(); if(!text){ toast('Paste the posting text first, or choose a file.'); return; } const keep = { fileName: S.callDraft.fileName, fileSize: S.callDraft.fileSize, file: S.callDraft.file }; applyGuess(S.callDraft, parseJobCall(text)); Object.assign(S.callDraft, keep); render(); toast('Read the posting — please check the fields marked “check”.'); },
+  refill: (el) => {
+    const j = jobById(el.dataset.id); const g = parseJobCall(j.rawText || ''); let n = 0;
+    for(const k of ['title','institution','department','area','location','deadline','deadlineNote','startDate','url']) if(g.fields[k] && !j[k]){ j[k] = g.fields[k]; n++; }
+    if(!j.summary && g.summary){ j.summary = g.summary; n++; }
+    if(g.extras.salary && !j.salary){ j.salary = g.extras.salary; n++; }
+    if(g.extras.contact && (g.extras.contact.name || g.extras.contact.email) && !j.contacts.some(c => c.email === g.extras.contact.email)){ j.contacts.push({ name: g.extras.contact.name, email: g.extras.contact.email, role: g.extras.contact.role }); n++; }
+    for(const m of g.materials){ const ex = j.materials.find(x => x.category === m.category); if(ex){ if(ex.status === 'needed' && m.status === 'finalists_only'){ ex.status = 'finalists_only'; n++; } if(!ex.notes && m.note) ex.notes = m.note; } else { j.materials.push({ id: uid(), category: m.category, name: m.name, status: m.status, documentId: null, documentVersion: null, notes: m.note || '' }); n++; } }
+    if(g.materials.length) for(const x of j.materials) if(x.status === 'needed' && !g.materials.some(m => m.category === x.category) && x.category !== 'custom'){ x.status = 'not_required'; x.notes = x.notes || 'Not mentioned in the call'; }
+    if(n){ j.updatedAt = nowIso(); touch(`Read job call: ${j.institution}`); }
+    toast(n ? `Filled ${n} thing${n===1?'':'s'} from the posting text.` : 'Nothing new to fill — everything is already set.'); render();
+  },
+  openjob: (el) => selectJob(el.dataset.id, S.selectedJobId === el.dataset.id ? S.jobTab : 'overview'),
+  closejob: () => { S.selectedJobId = null; render(); },
+  jobtab: (el) => { S.jobTab = el.dataset.tab; render(); },
+  opendocs: (el) => { setView('materials'); const d = $('#doc-'+el.dataset.id); if(d) d.scrollIntoView({block:'center'}); },
+  openfeed: (el) => { setView('discover'); const d = $('#feed-'+el.dataset.id); if(d) d.scrollIntoView({block:'center'}); },
+  deletejob: async (el) => {
+    const j = jobById(el.dataset.id); if(!j) return;
+    if(!await confirmDialog('Delete this job?', `${j.institution} — ${j.title}. Its checklist and interview notes go with it; uploaded files stay in Materials.`)) return;
+    S.tracker.jobs = S.tracker.jobs.filter(x => x.id !== j.id); S.deletedIds.add(j.id);
+    S.selectedJobId = null; touch(`Delete job: ${j.institution}`); render();
+  },
+  addcontact: (el) => { const j = jobById(el.dataset.id); j.contacts.push({name:'',email:'',role:''}); j.updatedAt = nowIso(); touch('Add contact'); render(); },
+  rmcontact: (el) => { const j = jobById(el.dataset.id); j.contacts.splice(+el.dataset.idx,1); j.updatedAt = nowIso(); touch('Remove contact'); render(); },
+  autoattach: (el) => { const j = jobById(el.dataset.id); const n = autoAttachDocuments(j); if(n){ j.updatedAt = nowIso(); touch(`Attach documents: ${j.institution}`); } toast(n ? `Attached ${n} document${n===1?'':'s'}.` : 'Nothing to attach — every item already has a file, or no document of that category is uploaded yet.'); render(); },
+  addstandard: (el) => { const j = jobById(el.dataset.id); addStandardMaterials(j); j.updatedAt = nowIso(); touch(`Add standard checklist: ${j.institution}`); render(); },
+  rmmat: (el) => { const j = jobById(el.dataset.id); j.materials = j.materials.filter(m => m.id !== el.dataset.mat); j.updatedAt = nowIso(); touch('Remove checklist item'); render(); },
+  rmround: async (el) => { const j = jobById(el.dataset.id); if(!await confirmDialog('Remove this interview round?', 'Its notes and prep tasks will be removed.', 'Remove')) return; j.interviews = j.interviews.filter(r => r.id !== el.dataset.round); j.updatedAt = nowIso(); touch('Remove interview round'); render(); },
+  rmtask: (el) => { const j = jobById(el.dataset.id); const r = j.interviews.find(r => r.id === el.dataset.round); r.tasks = r.tasks.filter(t => t.id !== el.dataset.task); j.updatedAt = nowIso(); touch('Remove prep task'); render(); },
+  opendoc: async (el) => {
+    const d = docById(el.dataset.id); if(!d) return; const v = d.versions.find(x => String(x.v) === el.dataset.v) || docCurrent(d);
+    if(repoConf().token){
+      try { const blob = await gh.rawBlob(v.path); const url = URL.createObjectURL(blob); const w = window.open(url, '_blank'); if(!w){ const a = document.createElement('a'); a.href = url; a.download = v.fileName; a.click(); } }
+      catch(e){ toast('Could not open the file: ' + describeError(e), 'err'); }
+    } else { window.open(v.path.split('/').map(encodeURIComponent).join('/'), '_blank'); }
+  },
+  deletedoc: async (el) => {
+    const d = docById(el.dataset.id); if(!d) return;
+    const used = jobUsesDoc(d.id);
+    if(!await confirmDialog('Delete this document?', `${d.name} and its ${d.versions.length} version${d.versions.length===1?'':'s'} will be removed from the repository.${used.length?` It is attached to ${used.length} job${used.length===1?'':'s'}; those attachments will be cleared.`:''}`)) return;
+    setSaveState('saving','Deleting…');
+    try {
+      for(const v of d.versions){ const sha = await gh.getSha(v.path); if(sha) await gh.deleteFile(v.path, sha, `Delete ${v.fileName}`); }
+      S.tracker.documents = S.tracker.documents.filter(x => x.id !== d.id); S.deletedIds.add(d.id);
+      for(const j of S.tracker.jobs) for(const m of j.materials) if(m.documentId === d.id){ m.documentId = null; m.documentVersion = null; j.updatedAt = nowIso(); }
+      touch(`Delete document: ${d.name}`); render();
+    } catch(e){ toast('Delete failed: ' + describeError(e), 'err'); setSaveState('error','Not saved'); }
+  },
+  docfilter: (el) => { S.docFilter = el.dataset.filter; render(); },
+  pickfiles: () => $('#fileInput').click(),
+  clearuploads: () => { S.uploads = []; render(); },
+  addfeed: (el) => {
+    const f = (S.feed.jobs||[]).find(x => x.id === el.dataset.id); if(!f) return;
+    const j = newJob({ institution: f.institution || '', title: f.title || '', location: f.location || '', url: f.url || '', deadline: f.deadline || '', summary: f.snippet || '', source:'feed', feedId: f.id });
+    addStandardMaterials(j); S.tracker.jobs.push(j); touch(`Add job from feed: ${j.institution || j.title}`);
+    toast('Added to your jobs.', '', { label:'Open', fn: () => selectJob(j.id, 'overview') }); render();
+  },
+  dismissfeed: (el) => { S.tracker.dismissedFeedIds.push(el.dataset.id); touch('Dismiss posting'); render(); },
+  feedsource: (el) => { S.feedSource = el.value; render(); },
+  feedsort: (el) => { S.feedSort = el.value; render(); },
+  feedmin: (el) => { S.feedMin = el.value; render(); },
+  sort: (el) => { S.jobSort = el.value; render(); },
+  runcollector: async () => {
+    try { await gh.dispatch('collect.yml', {}); S.collectorMsg = 'Started. New postings appear here in a few minutes — reload the page to see them.'; toast('Collector started on GitHub.'); }
+    catch(e){ S.collectorMsg = 'Could not start it: ' + describeError(e); }
+    render();
+  },
+  togglesource: async (el) => { const s = S.sources.sources.find(x => x.id === el.dataset.id); s.enabled = s.enabled === false ? true : false; await saveSources(`${s.enabled?'Resume':'Pause'} source: ${s.name}`); render(); },
+  rmsource: async (el) => { const s = S.sources.sources.find(x => x.id === el.dataset.id); if(!await confirmDialog('Remove this source?', `${s.name} will no longer be checked. Postings already collected stay in the inbox.`, 'Remove')) return; S.sources.sources = S.sources.sources.filter(x => x.id !== s.id); await saveSources(`Remove source: ${s.name}`); render(); },
+  forgettoken: () => { settings.set(LS.token, ''); S.settingsMsg = 'Token removed from this browser.'; actions.reload(); },
+  export: () => { const blob = new Blob([JSON.stringify(S.tracker, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tracker-' + new Date().toISOString().slice(0,10) + '.json'; a.click(); }
+};
+
+const submits = {
+  addjob: async (form) => {
+    const f = Object.fromEntries(new FormData(form).entries());
+    const d = S.callDraft || {};
+    const j = newJob({ institution: f.institution.trim(), title: f.title.trim(), department: f.department.trim(), location: f.location.trim(), deadline: f.deadline, deadlineNote: f.deadlineNote.trim(), url: f.url.trim(), area: f.area.trim(), startDate: (f.startDate||'').trim(), rawText: (f.rawText || '').trim().slice(0, 40000), summary: d.readSummary || '', salary: (d.extras && d.extras.salary) || '' });
+    if(d.extras && d.extras.contact && (d.extras.contact.name || d.extras.contact.email)) j.contacts.push({ name: d.extras.contact.name, email: d.extras.contact.email, role: d.extras.contact.role });
+    const found = Array.isArray(d.materials) ? d.materials : [];
+    for(const m of found) j.materials.push({ id: uid(), category: m.category, name: m.name, status: m.status, documentId: null, documentVersion: null, notes: m.note || '' });
+    if(f.standard){ const before = j.materials.length; addStandardMaterials(j); if(found.length) for(const x of j.materials.slice(before)){ x.status = 'not_required'; x.notes = 'Not mentioned in the call'; } }
+    const match = matchFeedForJob(j); if(match){ j.feedId = match.id; if(!j.url && match.url) j.url = match.url; }
+    const attached = autoAttachDocuments(j);
+    const file = S.callDraft && S.callDraft.file;
+    S.tracker.jobs.push(j); S.showAddJob = false; S.callDraft = null;
+    touch(`Add job: ${j.institution}`); selectJob(j.id, 'overview');
+    if(match) toast('Also removed it from the Discover queue.');
+    if(attached) toast(`Attached ${attached} of your documents to the checklist — check them in the Materials tab.`);
+    if(file){
+      try { const d = await uploadCallFile(file, j); j.callDocumentId = d.id; j.updatedAt = nowIso(); touch(`Attach job call: ${j.institution}`); toast('Job call file saved with the job.'); render(); }
+      catch(e){ toast('The job was saved, but the file upload failed: ' + describeError(e), 'err'); }
+    }
+  },
+  addmat: (form) => { const j = jobById(form.dataset.id); const name = form.name.value.trim(); if(!name) return; j.materials.push({ id: uid(), category:'custom', name, status:'needed', documentId:null, documentVersion:null, notes:'' }); j.updatedAt = nowIso(); touch('Add checklist item'); render(); },
+  addround: (form) => { const j = jobById(form.dataset.id); const kind = form.kind.value; j.interviews.push({ id: uid(), kind, status:'planning', scheduledAt:'', location:'', contact:'', notes:'', result:'pending', tasks: (DEFAULT_PREP[kind]||[]).map(l => ({ id: uid(), label:l, done:false })) }); j.updatedAt = nowIso(); touch('Add interview round'); render(); },
+  addtask: (form) => { const j = jobById(form.dataset.id); const r = j.interviews.find(r => r.id === form.dataset.round); const l = form.label.value.trim(); if(!l) return; r.tasks.push({ id: uid(), label:l, done:false }); j.updatedAt = nowIso(); touch('Add prep task'); render(); },
+  checklink: (form) => startLinkCheck(form.url.value.trim()),
+  addsource: async (form) => {
+    const f = Object.fromEntries(new FormData(form).entries());
+    const split = s => s.split(',').map(x => x.trim()).filter(Boolean);
+    const id = (f.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'source') + '-' + uid().slice(0,4);
+    (S.sources.sources ||= []).push({ id, name: f.name.trim(), url: f.url, kind: f.kind || 'auto', enabled: true, frequency: f.frequency || 'daily', include: split(f.include||''), exclude: split(f.exclude||''), limit: 60 });
+    S.checking = null;
+    if(await saveSources(`Add source: ${f.name.trim()}`)) toast('Source added. The collector will run for it within a few minutes.');
+    render();
+  },
+  saveprofile: async (form) => {
+    const f = Object.fromEntries(new FormData(form).entries());
+    const lines = t => t.split(/\n|,/).map(x => x.trim()).filter(Boolean).filter((x,i,a) => a.indexOf(x) === i);
+    S.profile = normalizeProfile({ ...S.profile, core: lines(f.core), related: lines(f.related), avoid: lines(f.avoid), goodFit: Number(f.goodFit) || 4, updatedAt: nowIso() });
+    _termCache = null;
+    setSaveState('saving','Saving…'); S.profileMsg = 'Saving…'; render();
+    for(let attempt=0; attempt<2; attempt++){
+      try {
+        const res = await gh.putJson('data/profile.json', S.profile, S.profileSha, 'Update fit profile'); S.profileSha = res.content.sha; break;
+      } catch(e){
+        if((e.status===409||e.status===422) && attempt===0){ S.profileSha = await gh.getSha('data/profile.json'); continue; }
+        S.profileMsg = 'Could not save: ' + describeError(e); setSaveState('error','Not saved'); render(); return;
+      }
+    }
+    setSaveState('saved','Saved');
+    try { await gh.dispatch('collect.yml', {}); S.profileMsg = 'Saved. GitHub is re-reading recent postings against the new profile — reload Discover in a few minutes. Tracker jobs are rescored right away.'; }
+    catch(e){ S.profileMsg = 'Saved, but the collector could not be started (' + describeError(e) + '). It will rescore at the next daily run.'; }
+    toast('Fit profile saved.'); render();
+  },
+  savesettings: async (form) => {
+    const f = Object.fromEntries(new FormData(form).entries());
+    settings.set(LS.owner, f.owner.trim()); settings.set(LS.repo, f.repo.trim()); settings.set(LS.branch, f.branch.trim() || 'main'); if(f.token.trim()) settings.set(LS.token, f.token.trim());
+    S.settingsMsg = 'Testing…'; render();
+    try {
+      const me = await gh.whoami(); const r = await gh.repoInfo();
+      S.settingsMsg = `Connected as ${me.login}. Repository ${r.full_name} (${r.private?'private':'public'}), ${r.permissions && r.permissions.push ? 'write access confirmed' : 'read-only — this token cannot write here'}.`;
+      await loadAll(); render();
+    } catch(e){ S.settingsMsg = 'Connection failed: ' + describeError(e); S.readonly = true; render(); }
+  }
+};
+
+async function saveSources(msg){
+  if(S.readonly){ toast('Read-only: add your token in Settings.', 'err'); return false; }
+  setSaveState('saving','Saving…');
+  for(let attempt=0; attempt<2; attempt++){
+    try { const res = await gh.putJson('data/sources.json', S.sources, S.sourcesSha, msg); S.sourcesSha = res.content.sha; setSaveState('saved','Saved'); return true; }
+    catch(e){ if((e.status===409||e.status===422) && attempt===0){ S.sourcesSha = await gh.getSha('data/sources.json'); continue; } toast('Could not save sources: ' + describeError(e), 'err'); setSaveState('error','Not saved'); return false; }
+  }
+}
+
+/* ---------- link checker ---------- */
+async function startLinkCheck(url){
+  if(!url) return;
+  S.checking = { url, busy:true, startedAt: Date.now() }; render();
+  try { await gh.dispatch('check-link.yml', { url }); }
+  catch(e){ S.checking = { url, busy:false, error: describeError(e) + (e.status===404 ? ' — is .github/workflows/check-link.yml in the repository and are Actions enabled?' : '') }; render(); return; }
+  const started = S.checking.startedAt;
+  for(let i=0; i<40; i++){
+    await new Promise(r => setTimeout(r, i < 4 ? 10000 : 8000));
+    if(!S.checking || S.checking.url !== url || S.checking.startedAt !== started) return;
+    try {
+      const k = await gh.getJson('data/link-checks.json').catch(() => ({data:null}));
+      const rec = k.data && k.data.checks && k.data.checks[url];
+      if(rec && new Date(rec.checkedAt).getTime() > started - 60000){ S.checks = k.data; S.checking = { url, busy:false, result: rec }; render(); return; }
+      S.checking.note = `Still waiting for GitHub (${Math.round((Date.now()-started)/1000)} s)… If nothing comes back, look at the Actions tab of the repository.`; if(S.view==='discover') render();
+    } catch(e){ /* keep polling */ }
+  }
+  S.checking = { url, busy:false, error: 'No result after five minutes. Check the Actions tab on GitHub — the workflow may have failed or Actions may be disabled for this repository.' }; render();
+}
+
+/* ---------- uploads ---------- */
+async function uploadFiles(fileList, replaceDocId){
+  if(S.readonly){ toast('Uploads need your GitHub token — see Settings.', 'err'); return; }
+  const files = Array.from(fileList); if(!files.length) return;
+  const matchByName = !replaceDocId && ($('#optVersion')?.checked ?? true);
+  for(const file of files){
+    const u = { name: file.name, state:'busy', msg:'Uploading…' }; S.uploads.unshift(u); render();
+    try {
+      if(file.size > 25*1024*1024) throw new Error('larger than 25 MB');
+      let d = replaceDocId ? docById(replaceDocId) : (matchByName ? S.tracker.documents.find(x => x.versions.some(v => v.fileName.toLowerCase() === file.name.toLowerCase()) || x.name.toLowerCase() === file.name.replace(/\.[^.]+$/,'').toLowerCase()) : null);
+      const isNew = !d;
+      if(isNew) d = { id: uid(), name: file.name.replace(/\.[^.]+$/,''), category: guessCategory(file.name), notes:'', versions:[], createdAt: nowIso(), updatedAt: nowIso() };
+      const v = (d.versions.length ? d.versions[d.versions.length-1].v : 0) + 1;
+      const fname = safeName(file.name);
+      const path = `files/${d.id}/v${v}/${fname}`;
+      const b64 = arrayBufferToB64(await file.arrayBuffer());
+      const existingSha = await gh.getSha(path);
+      await gh.putFile(path, b64, existingSha, `Upload ${fname} (${d.name} v${v})`);
+      d.versions.push({ v, path, fileName: fname, size: file.size, uploadedAt: nowIso(), mime: file.type || '' }); d.updatedAt = nowIso();
+      if(isNew) S.tracker.documents.push(d);
+      u.state = 'ok'; u.msg = isNew ? `Added as “${d.name}”` : `Now v${v} of “${d.name}”`;
+      touch(`Register upload: ${d.name} v${v}`);
+    } catch(e){ u.state = 'err'; u.msg = 'Failed: ' + describeError(e); }
+    render();
+  }
+}
+async function importTracker(file){
+  try {
+    const incoming = normalizeTracker(JSON.parse(await file.text()));
+    const before = S.tracker.jobs.length + S.tracker.documents.length;
+    S.tracker = mergeTrackers(S.tracker, incoming);
+    const after = S.tracker.jobs.length + S.tracker.documents.length;
+    touch('Import tracker backup'); render(); toast(`Imported — ${after-before} new record${after-before===1?'':'s'} merged.`);
+  } catch(e){ toast('That file could not be read as a tracker backup.', 'err'); }
+}
+
+/* ---------- field bindings ---------- */
+function bindField(el){
+  const jobId = el.dataset.job; if(!jobId) return false;
+  const j = jobById(jobId); if(!j) return false;
+  const val = el.type === 'checkbox' ? el.checked : el.value;
+  if(el.dataset.jobField){ j[el.dataset.jobField] = val; }
+  else if(el.dataset.mat && el.dataset.matField){
+    const m = j.materials.find(m => m.id === el.dataset.mat); if(!m) return false;
+    if(el.dataset.matField === 'documentId'){ m.documentId = val || null; m.documentVersion = null; }
+    else if(el.dataset.matField === 'status'){ m.status = val; if(val === 'submitted' && m.documentId){ const d = docById(m.documentId); m.documentVersion = d ? docCurrent(d).v : null; } else if(val !== 'submitted') m.documentVersion = null; }
+    else m[el.dataset.matField] = val;
+  }
+  else if(el.dataset.round){
+    const r = j.interviews.find(r => r.id === el.dataset.round); if(!r) return false;
+    if(el.dataset.task){ const t = r.tasks.find(t => t.id === el.dataset.task); if(t) t.done = el.checked; }
+    else if(el.dataset.roundField){ r[el.dataset.roundField] = val; if(el.dataset.roundField === 'kind' && r.status === 'planning' && !r.tasks.some(t => t.done)) r.tasks = (DEFAULT_PREP[val]||[]).map(l => ({ id: uid(), label:l, done:false })); }
+  }
+  else if(el.dataset.contactField){ const c = j.contacts[+el.dataset.contact]; if(c) c[el.dataset.contactField] = val; }
+  else return false;
+  j.updatedAt = nowIso();
+  return true;
+}
+function bindDocField(el){
+  const d = docById(el.dataset.doc); if(!d) return false;
+  d[el.dataset.docField] = el.value; d.updatedAt = nowIso(); return true;
+}
+
+/* ---------- wiring ---------- */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-action]'); if(!a) return;
+  if(a.tagName === 'A' && a.getAttribute('href') === '#') e.preventDefault();
+  if(a.tagName === 'SELECT' || a.tagName === 'INPUT') return;
+  const fn = actions[a.dataset.action]; if(fn) fn(a, e);
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-action-submit]'); if(!f) return;
+  e.preventDefault(); const fn = submits[f.dataset.actionSubmit]; if(fn) fn(f);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.matches('select[data-action]')){ const fn = actions[el.dataset.action]; if(fn) fn(el, e); return; }
+  if(el.matches('input[data-action-file]')){
+    const kind = el.dataset.actionFile, file = el.files[0];
+    if(kind === 'replace') uploadFiles(el.files, el.dataset.id);
+    else if(kind === 'import') importTracker(file);
+    else if(kind === 'readcall' && file){
+      captureAddForm(); S.callDraft = { ...(S.callDraft||{}), file, fileName: file.name, fileSize: file.size, reading: true, readError: '' }; render();
+      extractText(file).then(text => { S.callDraft.reading = false; if(text){ S.callDraft.rawText = text.slice(0, 40000); applyGuess(S.callDraft, parseJobCall(text)); } else S.callDraft.readError = 'Could not read text from that file (a scanned PDF has no text layer). The file will still be attached; fill in the fields by hand.'; render(); })
+        .catch(e => { S.callDraft.reading = false; S.callDraft.readError = 'Could not read the file: ' + (e.message || e); render(); });
+    }
+    else if(kind === 'attachcall' && file){
+      const j = jobById(el.dataset.id); if(!j || S.readonly) return;
+      S.callBusy = j.id; render();
+      (async () => {
+        try {
+          const d = await uploadCallFile(file, j); j.callDocumentId = d.id;
+          const text = await extractText(file).catch(() => '');
+          if(text && !j.rawText) j.rawText = text.slice(0, 40000);
+          j.updatedAt = nowIso(); touch(`Attach job call: ${j.institution}`); toast('Job call attached.' + (text ? ' Posting text filled in.' : ''));
+        } catch(e){ toast('Upload failed: ' + describeError(e), 'err'); }
+        S.callBusy = null; render();
+      })();
+    }
+    el.value=''; return;
+  }
+  if(el.matches('input[data-action-check=showadded]')){ S.showAdded = el.checked; render(); return; }
+  if(el.id === 'fileInput'){ uploadFiles(el.files); el.value=''; return; }
+  if(el.dataset.doc && el.dataset.docField){ if(bindDocField(el)){ touch('Update document'); if(el.tagName==='SELECT') render(); } return; }
+  if(bindField(el)){
+    const j = jobById(el.dataset.job); touch(`Update ${j.institution}`);
+    if(el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'date' || el.type === 'datetime-local') render();
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(el.id === 'searchBox'){ S.query = el.value; render(); return; }
+  if(el.dataset.actionInput === 'feedfilter'){ S.feedFilter = el.value; const list = $('.two'); if(list){ const pos = el.selectionStart; render(); const n = $('[data-action-input=feedfilter]'); if(n){ n.focus(); n.setSelectionRange(pos,pos);} } return; }
+  if(el.tagName === 'SELECT' || el.type === 'checkbox') return;
+  if(el.dataset.doc && el.dataset.docField){ if(bindDocField(el)) touch('Update document'); return; }
+  if(bindField(el)){ const j = jobById(el.dataset.job); touch(`Update ${j.institution}`); }
+});
+document.addEventListener('click', e => { const t = e.target.closest('#tabs button'); if(t) setView(t.dataset.view); });
+document.addEventListener('dragover', e => { const z = e.target.closest('#dropzone'); if(z){ e.preventDefault(); z.classList.add('over'); } });
+document.addEventListener('dragleave', e => { const z = e.target.closest('#dropzone'); if(z) z.classList.remove('over'); });
+document.addEventListener('drop', e => { const z = e.target.closest('#dropzone'); if(z){ e.preventDefault(); z.classList.remove('over'); uploadFiles(e.dataTransfer.files); } });
+document.addEventListener('keydown', e => { if(e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); $('#searchBox').focus(); } if(e.key === 'Escape' && S.query){ S.query=''; $('#searchBox').value=''; render(); } });
+
+(async function init(){
+  await loadAll();
+  render();
+  if(!S.readonly) setSaveState('saved', 'Connected');
+})();
+</script>
+</body>
+</html>
