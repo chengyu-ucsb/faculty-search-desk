@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-08T14:01:09.792Z",
+  "updatedAt": "2026-09-08T14:01:13.558Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -372,7 +372,7 @@
           "id": "3wwlgnfmdv",
           "category": "transcripts",
           "name": "Transcripts",
-          "status": "needed",
+          "status": "not_required",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-08T14:01:09.792Z"
+      "updatedAt": "2026-09-08T14:01:13.558Z"
     },
     {
       "id": "pf3rapkgkc",
