@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-08T14:01:07.036Z",
+  "updatedAt": "2026-09-08T14:01:09.792Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -381,7 +381,7 @@
           "id": "ijmpdsfmdv",
           "category": "reference_names",
           "name": "Reference names",
-          "status": "needed",
+          "status": "ready",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-08T14:01:07.036Z"
+      "updatedAt": "2026-09-08T14:01:09.792Z"
     },
     {
       "id": "pf3rapkgkc",
