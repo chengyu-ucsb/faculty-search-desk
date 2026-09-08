@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-08T13:43:59.753Z",
+  "updatedAt": "2026-09-08T14:01:07.036Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -390,7 +390,7 @@
           "id": "vy6t2afmdv",
           "category": "reference_letters",
           "name": "Reference letters",
-          "status": "needed",
+          "status": "finalists_only",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-08T13:43:59.753Z"
+      "updatedAt": "2026-09-08T14:01:07.036Z"
     },
     {
       "id": "pf3rapkgkc",
