@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-11T17:10:25.237Z",
+  "updatedAt": "2026-09-11T17:10:31.974Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -327,7 +327,7 @@
           "id": "j6sa0xfmdv",
           "category": "teaching_evals",
           "name": "Teaching evaluations",
-          "status": "needed",
+          "status": "not_required",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-11T17:10:25.237Z"
+      "updatedAt": "2026-09-11T17:10:31.974Z"
     },
     {
       "id": "pf3rapkgkc",
