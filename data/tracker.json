@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-11T17:10:49.413Z",
+  "updatedAt": "2026-09-11T17:22:14.277Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -1223,6 +1223,140 @@
       "updatedAt": "2026-09-11T13:27:32.997Z",
       "rawText": "Assistant Professor\nDepartment: Management & Organizations\nThe Management and Organizations Department of the Kellogg School of Management at Northwestern\nUniversity invites applications for tenure-track faculty positions. We are primarily interested in\napplications at the rank of Assistant Professor, but we will also consider outstanding candidates at the\nrank of Associate or Full Professor. Applicants should demonstrate an interest in topics relevant to\nmanagement or organizations and provide evidence of outstanding research potential and an ability to\nenhance the department’s research and teaching portfolio. The department supports diverse approaches\nto research, grounded in psychology, sociology, organizational behavior and theory, strategic\nmanagement and computational social science. A PhD or equivalent degree must be in hand or expected\nby employment start date.\nTo apply, please submit the following: a brief cover letter, a current CV, a research statement, one to\nthree publications or working papers, and three letters of recommendation.\nFor full consideration, all application materials must be received by September 15, 2026.\nInformation about the department can be found on our website. Further inquiries about the position can\nbe directed to MORSrecruiting@kellogg.northwestern.edu .\nApplications accepted here: https://facultyrecruiting.northwestern.edu/apply/MjU2Mw==\nThe expected base pay range for this position is $222,000 - $240,000. This base pay range is for a nine-\nmonth academic appointment, does not include summer salary, and is subject to negotiation. Research\ndiscretionary funding will also be provided. Summer salary, including from sponsored projects, may also\nbe available.\nNorthwestern University has provided a pay range representing its good faith estimate of what the\nuniversity reasonably expects to pay for the position. The pay offered to the selected candidate will be\ndetermined based on factors including but not limited to the experience and qualifications of the selected\ncandidate including years since terminal degree; training; field or discipline; departmental budget\navailability; internal comparators; and external market pay for comparable jobs.\nAt Northwestern, we are proud to provide meaningful, competitive, high-quality health care plans,\nretirement benefits, tuition discounts and more!\nVisit https://www.northwestern.edu/hr/benefits/index.html to learn more.\nNorthwestern University is an Equal Opportunity Employer and does not discriminate on the basis of\nprotected characteristics, including disability and veteran status. View Northwestern’s non-\ndiscrimination statement . Job applicants who wish to request an accommodation in the application or\nhiring process should contact the Office of Civil Rights and Title IX Compliance. View additional\ninformation on the accommodations process .",
       "callDocumentId": "q0igneeb50"
+    },
+    {
+      "id": "l9agfy4mf5",
+      "institution": "Arizona State University",
+      "department": "Department of Information Systems",
+      "title": "Assistant Professor, Department of Information",
+      "area": "Information",
+      "location": "Tempe campus",
+      "startDate": "Fall 2027",
+      "deadline": "2026-10-09",
+      "deadlineNote": "Application deadline is October 9, 2026 .; open until filled",
+      "url": "https://www.interfolio.com/careers/",
+      "contacts": [],
+      "salary": "",
+      "summary": "Materials: Cover letter, Curriculum vitae, Research statement, Teaching statement, Teaching evaluations, Reference names, Reference letters. Deadline: Application deadline is October 9, 2026 .; open until filled. Start: Fall 2027. Rank: assistant professor, tenure-track.",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "l72s8d4mf5",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "y4dtpc4mf5",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "ready",
+          "documentId": "o95ov4mxlr",
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "7kl12v4mf5",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "296bi54mf5",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Optional per the call"
+        },
+        {
+          "id": "o63cio4mf5",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Optional per the call"
+        },
+        {
+          "id": "a11po84mf5",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "9qhozw4mf5",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "u7holh4mf5",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Not mentioned in the call"
+        },
+        {
+          "id": "yd1g684mf5",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Not mentioned in the call"
+        },
+        {
+          "id": "a2bcnf4mf5",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Not mentioned in the call"
+        },
+        {
+          "id": "3vhj384mf5",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Not mentioned in the call"
+        },
+        {
+          "id": "juzyol4mf5",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Not mentioned in the call"
+        }
+      ],
+      "interviews": [],
+      "source": "manual",
+      "feedId": null,
+      "createdAt": "2026-09-11T17:22:14.273Z",
+      "updatedAt": "2026-09-11T17:22:14.273Z",
+      "rawText": "Assistant Professor, Department of Information\nSystems\nArizona State University: Office of the University Provost: W. P. Carey School of Business: Department\nof Information Systems\nLocation\nTempe campus\nOpen Date\nSep 09, 2026\nDescription\nThe Department of Information Systems in the W. P. Carey School of Business at Arizona State University invites applications for a faculty position at the Assistant Professor rank\nstarting Fall 2027.\nEssential Functions: The candidate must contribute to the Department of Information Systems’ mission in the areas of research, teaching and service, and must be able and willing to\nteach AI in business, business analytics and information systems courses to both undergraduate and graduate students.\nQualifications\nRequired Qualifications:\n1) A PhD in business administration, information systems, or a closely related field; ABD candidates must successfully defend their dissertation by July 1, 2027; 2) Evidence of\npotential for excellence in research publications at top-tier journals and a promising agenda.\nDesired Qualifications:\n1) A strong research agenda as evidenced by papers published or forthcoming in premier academic journals; 2) Demonstrated knowledge of artificial intelligence through innovative\nteaching practices, cutting-edge research, and/or thought leadership in academic or professional communities; 3) Demonstrated evidence of teaching potential for excellence at the\nundergraduate and/or graduate levels; 4) Industry partnerships or sponsored research collaborations.\nApplication Instructions\nApplication deadline is October 9, 2026 . Applications will continue to be accepted on a rolling basis for a reserve pool. Applications in the reserve pool may then be reviewed\nevery two weeks in the order in which they were received until the position is filled.\nCandidates will be asked to create or use an existing Interfolio Dossier to submit the following:\n1. A cover letter that addresses how you meet the qualifications and why you are interested in this position at ASU.\n2. A resume or CV (including a list of manuscripts under review and identifying the journal and review status).\n3. A research statement.\n4. A research portfolio (journal publications or working papers).\n5. A teaching statement with any evidence of teaching competency/teaching evaluations (if available).\n6. A list of references.\nFor additional information, please visit our department website at wpcarey.asu.edu/is (http://wpcarey.asu.edu/is) , or contact Angelina Saric, Department of Information\nSystems, W. P. Carey School of Business, PO Box 874606, Tempe, AZ 85287-4606, phone 480.965.4974, email isrecruiting@asu.edu (mailto:isrecruiting@asu.edu?\nsubject=ASU%20Information%20Systems%20Open%20Rank%20Position) .\nThe Department of Information Systems. The Department of Information Systems in the W. P. Carey School of Business at Arizona State University supports degree programs with\nmajors in AI in business, business analytics and information systems at the B.S., M.S. and Ph.D. levels at the Tempe, West, Poly, Los Angeles and online campuses. Our undergraduate\nand graduate degree programs are consistently ranked within the top 20 according to U.S. News & World Report and other media outlets. The department’s faculty consists of 25\ntenured/tenure-track faculty, 32 instructional faculty, and 1 postdoctoral scholar. The campus location, in the metro-Phoenix area, provides numerous opportunities for involvement\nwith local, regional, national, and global industries and with information systems and business analytics professionals. For more information, please visit wpcarey.asu.edu/is and\nwpcarey.asu.edu/knowIT (http://wpcarey.asu.edu/knowIT) .\nThe W. P. Carey School of Business at Arizona State University is the largest and one of the top-ranked public business schools in the United States with more than 25,000 students.\nThe school is internationally regarded for its programs and the research productivity of its distinguished faculty members. Students come from more than 120 countries, and W. P.\nCarey is represented by over 140,000 alumni worldwide.\nAlready have an account? Sign In (https://account.interfolio.com/login)\n© 2026 Elsevier Inc. or its licensors and contributors. All rights are reserved, including those for text an\nSupport (https://product-help.interfolio.com/) | Careers (https://www.interfolio.com/careers/) | Accessibility Policy (https://www.interfolio.com/accessibility-policy/) | Cook\nW. P. Carey prides itself on being a place Where Business is Personal.® We value personalization, access, and excellence in business education and believe business is about people.\nOur motto reflects a commitment to mutual respect, building community, and positively impacting lives. We’re proud of that commitment, and look forward to it shaping your\nexperience at W. P. Carey. Learn more at wpcarey.asu.edu (http://wpcarey.asu.edu/) .\nAll we do at ASU is guided and inspired by the University Charter, which reads: ASU is a comprehensive public research university, measured not by whom it excludes, but by whom it\nincludes and how they succeed; advancing research and discovery of public value; and assuming fundamental responsibility for the economic, social, cultural and overall health of the\ncommunities it serves.\nThe W. P. Carey School of Business continually strives to foster a welcoming and inclusive environment.\nSuccessful candidates should include throughout their materials how their teaching, research, and service will contribute to the fulfillment of this charter. Learn more at\nwpcarey.asu.edu (http://wpcarey.asu.edu/) .\nArizona State University , ranked the No. 1 “Most Innovative School” in the nation by U.S. News & World Report for 11 years in succession, has forged the model for a New American\nUniversity by operating on the principles that learning is a personal and original journey for each student; that they thrive on experience and that the process of discovery cannot be\nbound by traditional academic disciplines. Through innovation and a commitment to accessibility, ASU has drawn pioneering researchers to its faculty even as it expands opportunities\nfor qualified students\nASU is a tobacco-free university. For details, visit asu.edu/tobaccofree (http://www.asu.edu/tobaccofree) .\nASU conducts pre-employment screening which may include verification of work history, academic credentials, licenses, and certifications.\nApplication Process\nThis institution is using Interfolio's Faculty Search to conduct this search. Applicants to this position receive a free Dossier account and can send all application\nmaterials, including confidential letters of recommendation, free of charge.\nApply Now (https://dossier.interfolio.com/apply/191728)\nEqual Employment Opportunity Statement\nA background check is required for employment. All qualified applicants will receive consideration for employment without regard to race, color,\nreligion, sex, national origin, disability, protected veteran status, or any other basis protected by law.\nSee https://www.asu.edu/aad/manuals/acd/acd401.html\n(https://www.asu.edu/aad/manuals/acd/acd401.html) and https://www.asu.edu/titleIX/ (https://www.asu.edu/titleIX/) .\nIn compliance with federal law, ASU prepares an annual report on campus security and fire safety programs and resources. ASU’s Annual\nSecurity and Fire Safety Report is available online at https://www.asu.edu/police/PDFs/ASU-Clery-Report.pdf\n(https://www.asu.edu/police/PDFs/ASU-Clery-Report.pdf) You may request a hard copy of the report by contacting the ASU Police Department\nat 480-965-3456.\nAlready have an account? Sign In (https://account.interfolio.com/login)\n\nLinks in the document: http://interfolio.com/"
     }
   ],
   "documents": [
