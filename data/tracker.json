@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-11T17:10:20.781Z",
+  "updatedAt": "2026-09-11T17:10:23.783Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -300,7 +300,7 @@
           "id": "haevcdfmdv",
           "category": "cv",
           "name": "Curriculum vitae",
-          "status": "ready",
+          "status": "submitted",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -309,7 +309,7 @@
           "id": "qkkezkfmdv",
           "category": "research_statement",
           "name": "Research statement",
-          "status": "needed",
+          "status": "submitted",
           "documentId": null,
           "documentVersion": null,
           "notes": ""
@@ -400,7 +400,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-11T17:10:20.781Z"
+      "updatedAt": "2026-09-11T17:10:23.783Z"
     },
     {
       "id": "pf3rapkgkc",
