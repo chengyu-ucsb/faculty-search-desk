@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-16T15:45:41.053Z",
+  "updatedAt": "2026-09-16T15:45:46.755Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -140,8 +140,8 @@
     {
       "id": "8213e9g2ty",
       "institution": "University of Tampa:",
-      "department": "",
-      "title": " Assistant Professor, Communication",
+      "department": "Communication",
+      "title": " Assistant Professor, ",
       "area": "",
       "location": "",
       "startDate": "",
@@ -268,7 +268,7 @@
       "source": "feed",
       "feedId": "7ad052b97aae",
       "createdAt": "2026-09-07T16:56:28.246Z",
-      "updatedAt": "2026-09-16T15:45:41.053Z"
+      "updatedAt": "2026-09-16T15:45:46.755Z"
     },
     {
       "id": "qifygofmdv",
