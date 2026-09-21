@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-21T20:18:44.189Z",
+  "updatedAt": "2026-09-21T20:19:25.105Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -1797,6 +1797,140 @@
       "createdAt": "2026-09-21T20:17:57.336Z",
       "updatedAt": "2026-09-21T20:17:57.336Z",
       "jobNumber": "38041040"
+    },
+    {
+      "id": "x6u57puzw1",
+      "institution": "",
+      "department": "",
+      "title": "Rollins College: Assistant Professor, Communication",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://jobs.chronicle.com/job/38036325/assistant-professor-communication/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
+      "contacts": [],
+      "salary": "",
+      "summary": "Salary Not specified: Rollins College: Assistant Professor, Communication Position Summary: The Department... Florida, United States",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "waf1dpuzw1",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "j4brdyuzw1",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "hisjamuzw1",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "om7e40uzw1",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "fpmtyluzw1",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "5e82liuzw1",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "atl79tuzw1",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "mefsgcuzw1",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "bdb9mhuzw1",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "qo2cpouzw1",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "t2vb0euzw1",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "e46r3buzw1",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "fab611971673",
+      "createdAt": "2026-09-21T20:19:25.105Z",
+      "updatedAt": "2026-09-21T20:19:25.105Z",
+      "jobNumber": "38036325"
     }
   ],
   "documents": [
