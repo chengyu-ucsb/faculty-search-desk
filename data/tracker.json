@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-28T13:32:11.259Z",
+  "updatedAt": "2026-10-03T13:08:16.446Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -405,11 +405,54 @@
           "notes": ""
         }
       ],
-      "interviews": [],
+      "interviews": [
+        {
+          "id": "z8ra1oqri6",
+          "kind": "zoom",
+          "status": "planning",
+          "scheduledAt": "",
+          "location": "",
+          "contact": "",
+          "notes": "",
+          "result": "pending",
+          "tasks": [
+            {
+              "id": "wlqxf7qri6",
+              "label": "Re-read the job ad and my cover letter",
+              "done": false
+            },
+            {
+              "id": "egl6n4qri6",
+              "label": "Prepare 2-minute research summary",
+              "done": false
+            },
+            {
+              "id": "507jk0qri6",
+              "label": "Prepare teaching answer for their courses",
+              "done": false
+            },
+            {
+              "id": "j0mdy4qri6",
+              "label": "Look up each committee member",
+              "done": false
+            },
+            {
+              "id": "4rvsvzqri6",
+              "label": "Questions to ask them",
+              "done": false
+            },
+            {
+              "id": "i4m3g7qri6",
+              "label": "Test camera, light, and background",
+              "done": false
+            }
+          ]
+        }
+      ],
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-09-11T17:10:49.413Z"
+      "updatedAt": "2026-10-03T13:08:16.446Z"
     },
     {
       "id": "pf3rapkgkc",
