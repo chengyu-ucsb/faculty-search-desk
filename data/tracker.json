@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-03T13:10:08.208Z",
+  "updatedAt": "2026-10-03T13:10:49.788Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2242,6 +2242,140 @@
       "createdAt": "2026-10-03T13:09:57.936Z",
       "updatedAt": "2026-10-03T13:09:57.936Z",
       "jobNumber": "38044851"
+    },
+    {
+      "id": "u6f5lfu1to",
+      "institution": "",
+      "department": "",
+      "title": "City University of Hong Kong: Assistant Professor in the Department of Media and Communication",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://jobs.chronicle.com/job/38045231/assistant-professor-in-the-department-of-media-and-communication/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
+      "contacts": [],
+      "salary": "",
+      "summary": "Competitive: City University of Hong Kong: City University of Hong Kong (CityUHK) is one of the world’s leading universities, known for innovation, creativity and research. We are now seeki... Hong Kong",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "vtt6psu1to",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "txxk4du1to",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "7jxdisu1to",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "zm0o9ju1to",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "kk708fu1to",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "38fshqu1to",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "c4bttmu1to",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "eyii56u1to",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "840i2eu1to",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "gkjpp7u1to",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "3ddrz1u1to",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "7iwriru1to",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "bc036c290a67",
+      "createdAt": "2026-10-03T13:10:49.788Z",
+      "updatedAt": "2026-10-03T13:10:49.788Z",
+      "jobNumber": "38045231"
     }
   ],
   "documents": [
