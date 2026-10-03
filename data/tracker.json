@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-03T13:08:16.446Z",
+  "updatedAt": "2026-10-03T13:08:49.163Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -293,7 +293,7 @@
       "salary": "",
       "summary": "",
       "notes": "",
-      "stage": "submitted",
+      "stage": "zoom_scheduled",
       "outcome": "active",
       "materials": [
         {
@@ -452,7 +452,7 @@
       "source": "feed",
       "feedId": "4db9e22f2195",
       "createdAt": "2026-09-07T17:24:06.547Z",
-      "updatedAt": "2026-10-03T13:08:16.446Z"
+      "updatedAt": "2026-10-03T13:08:49.163Z"
     },
     {
       "id": "pf3rapkgkc",
