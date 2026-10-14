@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14T03:25:18.096Z",
+  "updatedAt": "2026-10-14T03:25:22.538Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2365,6 +2365,140 @@
       "createdAt": "2026-10-14T03:25:15.826Z",
       "updatedAt": "2026-10-14T03:25:15.826Z",
       "jobNumber": "38046071"
+    },
+    {
+      "id": "6f8sovrisq",
+      "institution": "",
+      "department": "",
+      "title": "University of Texas - Rio Grande Valley: Associate Professor of AI, Communication Technology, and Emerging Media/College of Liberal Arts",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://jobs.chronicle.com/job/38049622/associate-professor-of-ai-communication-technology-and-emerging-media-college-of-liberal-arts/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
+      "contacts": [],
+      "salary": "",
+      "summary": "Salary Not specified: University of Texas - Rio Grande Valley: Associate Professor of AI, Communication Technology, and Emerging Media/College of Liberal Arts Job Class Code: 10021 FLSA: Exempt Posting Texas, United States",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "63syo1risq",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "vd30fdrisq",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "lex7xlrisq",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "wn1h33risq",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "jif01krisq",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "aqu9t3risq",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "9dvchgrisq",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "oqvberrisq",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "dmarsvrisq",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "owkmfdrisq",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "5ipae7risq",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "v7crgurisq",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "246fa0dc9ab9",
+      "createdAt": "2026-10-14T03:25:22.538Z",
+      "updatedAt": "2026-10-14T03:25:22.538Z",
+      "jobNumber": "FRGV2056"
     }
   ],
   "documents": [
