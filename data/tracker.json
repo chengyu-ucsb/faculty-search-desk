@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14T03:25:22.538Z",
+  "updatedAt": "2026-10-14T03:25:59.130Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2499,6 +2499,140 @@
       "createdAt": "2026-10-14T03:25:22.538Z",
       "updatedAt": "2026-10-14T03:25:22.538Z",
       "jobNumber": "FRGV2056"
+    },
+    {
+      "id": "ft219lsb16",
+      "institution": "Fordham University",
+      "department": "",
+      "title": "Assistant Professor- Tenure Track- Leading People and Organizations",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://career-center.aom.org/job/assistant-professor-tenure-track-leading-people-and-organizations-new-york-new-york-1429",
+      "contacts": [],
+      "salary": "",
+      "summary": "Tenure-Track Assistant Professor – Leading People and Organizations Gabelli School of Business, Fordham University The Leading People and Organizations (LPO) Area at the Gabelli School of Business invites applications for a full-time, tenure-track faculty position at the rank of Assistant Professor,",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "f3obd3sb16",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "jqhvnrsb16",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "f310gdsb16",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "c2epiusb16",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "r4s4zssb16",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "pzlk4ysb16",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "zqwxy0sb16",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "itwkilsb16",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "e3537ssb16",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "uuwv3bsb16",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "nct3d8sb16",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "zgoaqwsb16",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "cdd57fec9419",
+      "createdAt": "2026-10-14T03:25:59.130Z",
+      "updatedAt": "2026-10-14T03:25:59.130Z",
+      "jobNumber": ""
     }
   ],
   "documents": [
