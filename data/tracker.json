@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14T03:23:38.745Z",
+  "updatedAt": "2026-10-14T03:25:15.826Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2231,6 +2231,140 @@
       "createdAt": "2026-10-14T03:23:38.744Z",
       "updatedAt": "2026-10-14T03:23:38.744Z",
       "jobNumber": ""
+    },
+    {
+      "id": "j1x7ksrdma",
+      "institution": "",
+      "department": "",
+      "title": "Utah Tech University: Assistant Professor of Communication",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://jobs.chronicle.com/job/38046071/assistant-professor-of-communication/?TrackID=10&utm_source=rss&utm_medium=feed&utm_campaign=general",
+      "contacts": [],
+      "salary": "",
+      "summary": "Competitive Salary: Utah Tech University: Position Announcement The Department of Communication at Utah Tech University (UT) in St. George, Utah, is seeking one creative and passionate St. George, Utah, United States",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "5z1qawrdma",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "zgwwjurdma",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "lydeyzrdma",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "dh1w4ardma",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "p6w4eprdma",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "u43vn3rdma",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "zsjt73rdma",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "a82fvrrdma",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "q567jfrdma",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "lbxjewrdma",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "u9rglprdma",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "s9r04mrdma",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "9b9399d059cf",
+      "createdAt": "2026-10-14T03:25:15.826Z",
+      "updatedAt": "2026-10-14T03:25:15.826Z",
+      "jobNumber": "38046071"
     }
   ],
   "documents": [
