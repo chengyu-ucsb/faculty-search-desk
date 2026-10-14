@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14T03:22:47.462Z",
+  "updatedAt": "2026-10-14T03:23:38.745Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2097,6 +2097,140 @@
       "createdAt": "2026-10-03T13:10:49.788Z",
       "updatedAt": "2026-10-03T13:10:49.788Z",
       "jobNumber": "38045231"
+    },
+    {
+      "id": "i0sddgpapk",
+      "institution": "University of Illinois Urbana-Champaign",
+      "department": "",
+      "title": "ASSISTANT PROFESSOR IN HR AND TECHNOLOGY",
+      "area": "",
+      "location": "Champaign, IL, Illinois",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://career-center.aom.org/job/assistant-professor-in-hr-and-technology-champaign-il-illinois-1557",
+      "contacts": [],
+      "salary": "",
+      "summary": "",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "90349rpapl",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "52ksu7papl",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "3t5culpapl",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "e4hm4ppapl",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "5m1vknpapl",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "jbyogfpapl",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "9qfls6papl",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "hr0yobpapl",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "i7oyoypapl",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "17pukfpapl",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "a70qfnpapl",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "jvm4lgpapl",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "290ce03a5c71",
+      "createdAt": "2026-10-14T03:23:38.744Z",
+      "updatedAt": "2026-10-14T03:23:38.744Z",
+      "jobNumber": ""
     }
   ],
   "documents": [
