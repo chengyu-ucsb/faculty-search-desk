@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-17T02:53:46.507Z",
+  "updatedAt": "2026-10-17T02:55:21.283Z",
   "jobs": [
     {
       "id": "i1llpg8e5d",
@@ -2634,6 +2634,140 @@
       "createdAt": "2026-10-14T03:25:59.130Z",
       "updatedAt": "2026-10-14T03:25:59.130Z",
       "jobNumber": ""
+    },
+    {
+      "id": "r1a39v0gxv",
+      "institution": "",
+      "department": "",
+      "title": "WENZHOU - KEAN UNIVERSITY: 2027 Communication Tenure Track Position in Organizational Communication and Digital Media",
+      "area": "",
+      "location": "",
+      "startDate": "",
+      "deadline": "",
+      "deadlineNote": "",
+      "url": "https://careers.insidehighered.com/job/3563416/2027-communication-tenure-track-position-in-organizational-communication-and-digital-media/?TrackID=11&utm_source=rss&utm_medium=feed&utm_campaign=general",
+      "contacts": [],
+      "salary": "",
+      "summary": "USD $67,000 - $76,000: WENZHOU - KEAN UNIVERSITY: The College of Liberal Arts is seeking highly motivated individuals to join the Communication department at WKU. Wenzhou, China",
+      "notes": "",
+      "stage": "preparing",
+      "outcome": "active",
+      "materials": [
+        {
+          "id": "13o03t0gxv",
+          "category": "cover_letter",
+          "name": "Cover letter",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "9pbtvj0gxv",
+          "category": "cv",
+          "name": "Curriculum vitae",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "lrmwpg0gxv",
+          "category": "research_statement",
+          "name": "Research statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "s5wsxi0gxv",
+          "category": "teaching_statement",
+          "name": "Teaching statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "gg3o9x0gxv",
+          "category": "teaching_evals",
+          "name": "Teaching evaluations",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "0fp8l00gxv",
+          "category": "syllabus",
+          "name": "Syllabus",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "lf6rm20gxv",
+          "category": "writing_sample",
+          "name": "Writing sample",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "wkg3v70gxv",
+          "category": "dei_statement",
+          "name": "DEI statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "ktnxro0gxv",
+          "category": "service_statement",
+          "name": "Service statement",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "gfy5ae0gxv",
+          "category": "transcripts",
+          "name": "Transcripts",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "owq8360gxv",
+          "category": "reference_names",
+          "name": "Reference names",
+          "status": "needed",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": ""
+        },
+        {
+          "id": "dcbjxl0gxv",
+          "category": "reference_letters",
+          "name": "Reference letters",
+          "status": "not_required",
+          "documentId": null,
+          "documentVersion": null,
+          "notes": "Set to Needed only if the call asks for letters with the application"
+        }
+      ],
+      "interviews": [],
+      "source": "feed",
+      "feedId": "fe1be23cd9c1",
+      "createdAt": "2026-10-17T02:55:21.283Z",
+      "updatedAt": "2026-10-17T02:55:21.283Z",
+      "jobNumber": "3563416"
     }
   ],
   "documents": [
