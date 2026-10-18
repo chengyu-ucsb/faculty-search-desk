@@ -521,7 +521,7 @@ async function loadAll(){
       const [t, s, f, k, p] = await Promise.all([
         gh.getJson('data/tracker.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
         gh.getJson('data/sources.json').catch(e => { if(e.status===404) return {data:null, sha:null}; throw e; }),
-        gh.getJson('data/feed.json').catch(() => ({data:null})),
+        fetchStatic('data/feed.json').then(data => ({data})).catch(() => ({data:null})),
         gh.getJson('data/link-checks.json').catch(() => ({data:null})),
         gh.getJson('data/profile.json').catch(() => ({data:null, sha:null}))
       ]);
@@ -1236,7 +1236,7 @@ function renderSettings(){
     </div>
     ${c.privateRepo ? `<div class="card"><h3>Private application storage</h3>
       <div class="row" style="margin-bottom:9px"><span class="pill good">Configured</span><span class="mono small">${esc(c.owner+'/'+c.privateRepo)}</span></div>
-      <p class="small muted">Your application records, notes, and uploaded documents are in the private repository. Job discovery remains public. Historical copies from older public Git commits still require separate cleanup.</p>
+      <p class="small muted">Your application records, notes, and uploaded documents are in the private repository. Job discovery remains public. The legacy repository has been made private; the new public repository contains only website code and public discovery data.</p>
       <p class="small muted" style="margin-top:8px">${S.readonly?'This browser needs an authorized GitHub token to see the private records.':'Connected: '+S.tracker.jobs.length+' jobs and '+S.tracker.documents.length+' documents.'}</p>
     </div>` : `<div class="card"><h3>Move to private storage</h3>
       <p class="small muted">Create a private GitHub repository, grant access through a fine-grained token, and verify the copied tracker before removing public originals.</p>
