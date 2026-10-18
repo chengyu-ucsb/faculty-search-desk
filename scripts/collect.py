@@ -925,7 +925,7 @@ def _structured_deadline(html, url, job):
     # Job-board validThrough describes expiration of the syndicated advertisement,
     # not necessarily the university's application closing date.
     visible=BeautifulSoup(html,"html.parser").get_text(" ",strip=True)
-    if re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\\s*(?:Open until filled|until (?:the )?position is filled)",visible,re.I):
+    if re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\s*(?:Open until filled|until (?:the )?position is filled)",visible,re.I):
         return []
     try:
         candidates = parse_jsonld(BeautifulSoup(html, "html.parser"), url)
@@ -1034,7 +1034,7 @@ def apply_scores(jobs, profile, today):
                 j["deadline"]=item["date"]
                 j["deadlineKind"]=item["type"]
                 j["deadlineEvidence"]=item
-        if "pdf" not in res["content_type"] and re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\\s*(?:Open until filled|until (?:the )?position is filled)",res["text"],re.I):
+        if "pdf" not in res["content_type"] and re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\s*(?:Open until filled|until (?:the )?position is filled)",res["text"],re.I):
             j["deadlineNote"]="Applications remain open until the position is filled; any listed review date is not a final closing date."
         try:
             structured = parse_jsonld(BeautifulSoup(res["text"], "html.parser"), target) if "pdf" not in res["content_type"] else []
