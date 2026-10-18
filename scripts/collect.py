@@ -475,19 +475,20 @@ def collapse_wiki_duplicates(jobs):
         if a and b and a!=b:continue
         # Preserve the older ID so imported Jobs entries do not lose their link.
         newer=j if (j.get("lastSeen") or "") >= (existing.get("lastSeen") or "") else existing
-        older=existing if newer is j else j
         for k in ("lastSeen","url","adUrl"):
             if newer.get(k):existing[k]=newer[k]
         for k in ("deadline","deadlineKind","deadlineEvidence","detailText",
                   "applicationEvidence","applicationCoverage","verifiedApplicationUrl","jobNumber"):
             if not existing.get(k) and j.get(k):existing[k]=j[k]
-        combined=list(dict.fromkeys((existing.get("statuses") or [])+(j.get("statuses") or [])))
+        prior_notes=list(existing.get("statuses") or [])
+        combined=list(dict.fromkeys(prior_notes+(j.get("statuses") or [])))
         existing["statuses"]=combined
-        if combined != (older.get("statuses") or []):
+        new_notes=[note for note in combined if note not in prior_notes]
+        if new_notes:
             existing["changedAt"]=max(existing.get("changedAt") or "",j.get("changedAt") or "",
                                       j.get("firstSeen") or "")
             existing["newStatuses"]=list(dict.fromkeys((existing.get("newStatuses") or [])+
-                                                    notices))[-6:]
+                                                    new_notes))[-6:]
         jobs.pop(j["id"],None)
         removed+=1
     return removed
