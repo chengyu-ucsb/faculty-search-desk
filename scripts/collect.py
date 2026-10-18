@@ -46,7 +46,7 @@ MAX_DETAIL_TRIES = 7
 MAX_HOST_FAILURES = 2
 DETAIL_TEXT_CAP = 12000
 STORED_DETAIL_CAP = 6500
-FIT_VERSION = 4
+FIT_VERSION = 5
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "faculty-search-desk")
 USER_AGENT = f"FacultySearchDesk/1.0 (+https://github.com/{REPO}; personal academic job tracker)"
@@ -489,6 +489,8 @@ def collapse_wiki_duplicates(jobs):
                                       j.get("firstSeen") or "")
             existing["newStatuses"]=list(dict.fromkeys((existing.get("newStatuses") or [])+
                                                     new_notes))[-6:]
+        existing["alternateFeedIds"]=list(dict.fromkeys(
+            (existing.get("alternateFeedIds") or [])+(j.get("alternateFeedIds") or [])+[j["id"]]))
         jobs.pop(j["id"],None)
         removed+=1
     return removed
@@ -920,6 +922,11 @@ def _same_posting(job, text):
 def _structured_deadline(html, url, job):
     if not html or "pdf" in (html[:12].lower()):
         return []
+    # Job-board validThrough describes expiration of the syndicated advertisement,
+    # not necessarily the university's application closing date.
+    visible=BeautifulSoup(html,"html.parser").get_text(" ",strip=True)
+    if re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\\s*(?:Open until filled|until (?:the )?position is filled)",visible,re.I):
+        return []
     try:
         candidates = parse_jsonld(BeautifulSoup(html, "html.parser"), url)
         matching = [x for x in candidates if x.get("deadline") and
@@ -1015,11 +1022,20 @@ def apply_scores(jobs, profile, today):
             if depth < 2 and "pdf" not in deep["content_type"]:
                 queue.extend((x, depth + 1) for x in application_links(deep["text"], deep["final_url"])[:3])
         chosen = (j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
-        if chosen and not j.get("deadline"):
-            item = next((x for x in chosen if x["type"] == "closing"), chosen[0])
-            j["deadline"] = item["date"]
-            j["deadlineKind"] = item["type"]
-            j["deadlineEvidence"] = item
+        if chosen:
+            explicit=[x for x in chosen if x.get("source")!="structured-data"]
+            source_dates=explicit or chosen
+            item = next((x for x in source_dates if x["type"]=="closing"),source_dates[0])
+            # Replace prior syndication metadata with the employer's real review date.
+            can_update=(not j.get("deadline") or
+                        (j.get("deadlineEvidence") or {}).get("source")=="structured-data" or
+                        (item["type"]=="priority" and re.search(r"screening|review begins",item.get("evidence",""),re.I)))
+            if can_update:
+                j["deadline"]=item["date"]
+                j["deadlineKind"]=item["type"]
+                j["deadlineEvidence"]=item
+        if "pdf" not in res["content_type"] and re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\\s*(?:Open until filled|until (?:the )?position is filled)",res["text"],re.I):
+            j["deadlineNote"]="Applications remain open until the position is filled; any listed review date is not a final closing date."
         try:
             structured = parse_jsonld(BeautifulSoup(res["text"], "html.parser"), target) if "pdf" not in res["content_type"] else []
             item = next((x for x in structured if x.get("title") and
@@ -1028,6 +1044,8 @@ def apply_scores(jobs, profile, today):
             if item:
                 for field in ("institution", "location", "deadline"):
                     if item.get(field) and not j.get(field):
+                        if field=="deadline" and "open until filled" in page_text.lower():
+                            continue  # validThrough is only the board's expiry
                         j[field] = item[field]
                 if item.get("snippet") and len(item["snippet"]) > len(j.get("snippet") or ""):
                     j["snippet"] = item["snippet"]
@@ -1063,6 +1081,84 @@ def passes_filters(post, include, exclude):
 # ----------------------------------------------------------------------------
 # commands
 # ----------------------------------------------------------------------------
+
+TO_APPLY_OFFICIAL = re.compile(
+    r"\bto apply[,:]?\s+(?:please\s+)?(?:visit|at|via)?\s*"
+    r"(https?://[^\s<>\)\]\"']+)",re.I)
+
+
+def official_identity(job):
+    """Use an explicit position-specific employer URL across different job boards."""
+    urls=[job.get("adUrl") or "",job.get("verifiedApplicationUrl") or ""]
+    body=job.get("detailText") or ""
+    urls += [m.group(1).rstrip(".,;") for m in TO_APPLY_OFFICIAL.finditer(body)]
+    for url in urls:
+        official=specific_wiki_job_url(url)
+        if official and not re.search(r"(?:^|\.)(?:chronicle\.com|insidehighered\.com|"
+                                      r"higheredjobs\.com|indeed\.com)$",
+                                      urllib.parse.urlsplit(url).netloc.lower()):
+            return official
+    return ""
+
+
+def collapse_cross_source_duplicates(jobs):
+    """A university requisition overrides unrelated board posting IDs.
+
+    Exact employer URLs establish identity; approximate titles alone cannot.
+    Preserve one stable record with other source links and historical feed IDs.
+    """
+    seen={}
+    removed=0
+    postings=sorted(list(jobs.values()),key=lambda j:(j.get("firstSeen") or "",j.get("id") or ""))
+    for job in postings:
+        key=official_identity(job)
+        if not key:continue
+        existing=seen.get(key)
+        if existing is None:
+            seen[key]=job
+            continue
+        alternate={"id":job["id"],"sourceId":job.get("sourceId",""),"url":job.get("url",""),
+                   "title":job.get("title",""),"jobNumber":job.get("jobNumber","")}
+        links=list(existing.get("alternateListings") or [])
+        if alternate["url"] and not any(x.get("url")==alternate["url"] for x in links):
+            links.append(alternate)
+        links.extend(x for x in (job.get("alternateListings") or [])
+                     if x.get("url") and not any(y.get("url")==x["url"] for y in links))
+        existing["alternateListings"]=links
+        existing["alternateFeedIds"]=list(dict.fromkeys(
+            (existing.get("alternateFeedIds") or [])+
+            (job.get("alternateFeedIds") or [])+[job["id"]]))
+        if (job.get("lastSeen") or "")>(existing.get("lastSeen") or ""):
+            existing["lastSeen"]=job["lastSeen"]
+        for field in ("department","location","detailText","applicationLinkCandidates",
+                      "applicationCoverage","deadlineNote","jobNumber","matched"):
+            if not existing.get(field) and job.get(field):existing[field]=job[field]
+        if job.get("detailText") and len(job["detailText"])>len(existing.get("detailText") or ""):
+            existing["detailText"]=job["detailText"]
+        if job.get("applicationEvidence"):
+            existing["applicationEvidence"]=merge_evidence(
+                existing.get("applicationEvidence") or {},job["applicationEvidence"])
+            existing["applicationCoverage"]=describe_coverage(existing["applicationEvidence"])
+        existing["verifiedApplicationUrl"]=key
+        existing["score"]=max(existing.get("score") or 0,job.get("score") or 0)
+        if not existing.get("statuses") and job.get("statuses"):
+            existing["statuses"]=job["statuses"]
+        evidence=(existing.get("applicationEvidence") or {}).get("deadlineEvidence") or []
+        # Prefer the official review/screening language over a board's metadata
+        # validThrough; only treat a genuine closing date as a hard deadline.
+        direct=[x for x in evidence if x.get("source")!="structured-data"]
+        priority=next((x for x in direct if x.get("type")=="priority"),None)
+        closing=next((x for x in direct if x.get("type")=="closing"),None)
+        chosen=closing or priority
+        if chosen:
+            existing["deadline"]=chosen["date"]
+            existing["deadlineKind"]=chosen["type"]
+            existing["deadlineEvidence"]=chosen
+        jobs.pop(job["id"],None)
+        removed+=1
+    return removed
+
+
 def run_all(force=False):
     conf = load_json(SOURCES_PATH, {"sources": []})
     feed = load_json(FEED_PATH, {"schemaVersion": 1, "generatedAt": None, "sources": [], "jobs": []})
@@ -1139,6 +1235,9 @@ def run_all(force=False):
     else:
         apply_scores(jobs, profile, today)
 
+    cross=collapse_cross_source_duplicates(jobs)
+    if cross:
+        print(f"[dedup] Consolidated {cross} cross-source advertisements pointing to the same official requisition")
     job_list = list(jobs.values())
     job_list.sort(key=lambda j: (j.get("firstSeen") or "", j.get("title") or ""), reverse=True)
     feed = {"schemaVersion": 1, "generatedAt": today, "profileUpdatedAt": profile["updatedAt"], "sources": statuses, "jobs": job_list[:MAX_FEED_JOBS]}
