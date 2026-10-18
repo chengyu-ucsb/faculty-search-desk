@@ -654,7 +654,8 @@ function jobById(id){ return S.tracker.jobs.find(j => j.id === id); }
 function docById(id){ return S.tracker.documents.find(d => d.id === id); }
 function docCurrent(d){ return d.versions[d.versions.length-1]; }
 function readiness(job){
-  const unknown=job.materials.filter(m=>m.status==='unverified').length;
+  const unknown=job.materials.filter(m=>m.status==='unverified').length +
+    (job.source==='feed' && job.applicationCoverage!=='deadline_and_materials' ? 1 : 0);
   const req=job.materials.filter(m=>!['not_required','finalists_only','unverified'].includes(m.status));
   if(!req.length) return {pct:0,ready:false,total:0,done:0,unverified:unknown};
   const pct=Math.round(req.reduce((a,m)=>a+(MAT_PCT[m.status]??0),0)/req.length);
@@ -941,7 +942,9 @@ function renderJobs(){
   const interviewing = active.filter(isInterviewing);
   const ready = active.filter(j => j.stage === 'preparing' && readiness(j).ready);
   const letters = active.filter(j => lettersAtSubmission(j));
-  const verify = active.filter(j => j.stage==='preparing' && j.materials.some(m=>m.status==='unverified'));
+  const verify = active.filter(j => j.stage==='preparing' &&
+    (j.materials.some(m=>m.status==='unverified') ||
+     (j.source==='feed' && !['deadline_and_materials'].includes(j.applicationCoverage))));
 
   let h = `<div class="stats">
     <div class="stat${due.length?' hot':''}" data-action="filter" data-filter="due"><div class="n">${due.length}</div><div class="l">Due in 14 days</div></div>
@@ -1992,6 +1995,16 @@ function syncFeedEvidence(job, feed){
   for(const k of ['jobNumber','department','area','location']){
     if(!job[k] && feed[k]){job[k]=feed[k];changes++;}
   }
+  // Legacy Discover imports added generic placeholders for every document type.
+  // Remove untouched placeholder rows only when a job-specific official call has
+  // actually been read; absence is still not an assertion of "not required".
+  if(feed.verifiedApplicationUrl && feed.applicationEvidence.hasApplicationSection &&
+     facts.some(x=>x.status==='required')){
+    const before=job.materials.length;
+    job.materials=job.materials.filter(m=>!(m.status==='unverified' && !m.documentId &&
+      m.notes==='No explicit requirement confirmed from the available posting. Check the official application call.'));
+    changes+=before-job.materials.length;
+  }
   job.applicationEvidence=feed.applicationEvidence;
   job.applicationCoverage=feed.applicationCoverage||'summary_only';
   job.applicationLinkCandidates=feed.applicationLinkCandidates||[];
@@ -2136,11 +2149,8 @@ const actions = {
       note:x.evidence, evidence:x
     })) : [];
     for(const m of found) j.materials.push({id:uid(),category:m.category,name:m.name,status:m.status,documentId:null,documentVersion:null,notes:m.note||'',evidence:m.evidence||null});
-    const before=j.materials.length; addStandardMaterials(j);
-    for(const x of j.materials.slice(before)){
-      x.status='unverified';
-      x.notes='No explicit requirement confirmed from the available posting. Check the official application call.';
-    }
+    // The standard checklist is a template, not evidence. Do not add a dozen
+    // speculative unverified requirements to each imported job.
     j.processingStatus=verified.length?'partially_verified':'needs_verification';
     if(g.extras.contact && (g.extras.contact.name || g.extras.contact.email)) j.contacts.push({...g.extras.contact});
     if(g.extras.lettersAtSubmission) j.lettersNote=g.extras.lettersAtSubmission.how;
