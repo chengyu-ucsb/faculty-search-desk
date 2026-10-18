@@ -711,8 +711,20 @@ function fitScore(text){
 }
 function jobFit(job){ return fitScore([job.title, job.department, job.area, job.summary, job.notes, excerptOf(job)].join(' ')); }
 function feedFit(f){
-  if(typeof f.score === 'number') return { score: f.score, matched: f.matched || [], on: f.scoredOn || 'page' };
-  const r = fitScore([f.title, f.institution, f.location, f.snippet].join(' ')); return { score: r.score, matched: r.matched, on: 'title' };
+  // Score against the CURRENT profile, not cached scores from an older collector.
+  const topicTerms=profileTerms();
+  const heading=[f.title,f.institution,f.section].filter(Boolean).join(' ');
+  const detail=[f.snippet,...(f.statuses||[]),f.detailText||''].join(' ').slice(0,12000);
+  const headTerms=topicTerms.filter(t=>t.rx.test(heading));
+  const otherTerms=topicTerms.filter(t=>!headTerms.includes(t)&&t.rx.test(detail));
+  const keep=t=>!ROLE_ONLY_FIT_TERMS.has(t.term.toLowerCase());
+  const titleScore=headTerms.filter(keep).reduce((s,t)=>s+t.w,0);
+  const extras=otherTerms.filter(keep);
+  let score=2*titleScore +
+    Math.min(6,extras.reduce((s,t)=>s+Math.max(0,t.w),0)) +
+    Math.max(-18,extras.reduce((s,t)=>s+Math.min(0,t.w),0));
+  if(!/\b(professor|professorship|faculty|postdoc(?:toral)?|lecturer|instructor|tenure[ -]track|research fellow|research scientist)\b/i.test(f.title||'')) score=Math.min(0,score);
+  return {score:Math.max(-35,score),matched:[...headTerms,...otherTerms].filter(keep).map(t=>t.tier==='avoid'?'-'+t.term:t.term),on:f.detailText?'page':'title'};
 }
 function fitClass(score){ const g = S.profile ? S.profile.goodFit : 4; return score >= g ? 'good' : score >= 1 ? 'accent' : score < 0 ? 'crit' : ''; }
 function fitPill(fit, small){ return `<span class="pill ${fitClass(fit.score)}" title="${esc(fit.matched.join(', ') || 'no profile terms found')}">fit ${fit.score > 0 ? '+' : ''}${fit.score}${fit.on==='title' && !small ? ' <span class="faint">·title only</span>' : ''}</span>`; }
