@@ -83,5 +83,18 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(j["deadline"],"2026-10-21")
         self.assertEqual(j["verifiedApplicationUrl"],j["adUrl"])
 
+    def test_diagnostic_ut_austin_source_rows(self):
+        import json
+        from pathlib import Path
+        data=json.loads((Path(__file__).parents[1]/"data/feed.json").read_text())
+        matches=[x for x in data.get("jobs",[]) if
+                 "austin" in (x.get("institution","")+" "+x.get("title","")).lower()
+                 or "ut austin" in (x.get("snippet","")).lower()]
+        for x in matches[:30]:
+            print("UT_AUDIT",json.dumps({k:x.get(k) for k in
+                   ("id","sourceId","title","institution","jobNumber","url","adUrl","verifiedApplicationUrl",
+                    "deadline","firstSeen","lastSeen","applicationCoverage")},ensure_ascii=False),flush=True)
+        print("UT_AUDIT_COUNT",len(matches),flush=True)
+
 if __name__=='__main__':
     unittest.main()
