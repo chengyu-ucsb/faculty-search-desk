@@ -170,7 +170,7 @@ def fetch(url):
                 return out
             try:
                 reader = PdfReader(io.BytesIO(r.content))
-                out["text"] = "\\n".join(page.extract_text() or "" for page in reader.pages[:35])[:3_000_000]
+                out["text"] = "\n".join(page.extract_text() or "" for page in reader.pages[:35])[:3_000_000]
                 out["content_type"] = "application/pdf"
             except Exception:
                 out["error"] = "PDF text could not be extracted"
@@ -844,10 +844,11 @@ def apply_scores(jobs, profile, today):
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=RESCORE_WINDOW_DAYS)).isoformat()
     candidates = [j for j in jobs.values()
                   if (stale(j) or j.get("scoredOn") != "page" or not j.get("detailText")
-                      or not j.get("applicationEvidence"))
+                      or not j.get("applicationEvidence") or j.get("applicationCoverage") != "deadline_and_materials")
                   and (j.get("firstSeen") or "") >= cutoff
                   and (j.get("adUrl") or j.get("url") or "").startswith("http")
-                  and int(j.get("detailTries", 0)) < MAX_DETAIL_TRIES]
+                  and int(j.get("detailTries", 0)) < MAX_DETAIL_TRIES
+                  and (j.get("adUrl") or "statuses" not in j)]
     # Newly found postings go first, but old incomplete jobs remain eligible for backfill.
     candidates.sort(key=lambda j: j.get("firstSeen") or "", reverse=True)
     host_failures, fetched, deep_budget = {}, 0, 45
@@ -911,6 +912,8 @@ def apply_scores(jobs, profile, today):
                 j["verifiedApplicationUrl"] = deep["final_url"]
                 j["applicationSource"] = "verified_linked_page"
                 page_text = (page_text + "\n" + deep_text)[:DETAIL_TEXT_CAP]
+                if j["applicationCoverage"] == "deadline_and_materials":
+                    break
             if depth < 2 and "pdf" not in deep["content_type"]:
                 queue.extend((x, depth + 1) for x in application_links(deep["text"], deep["final_url"])[:3])
         chosen = (j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
@@ -946,9 +949,7 @@ def apply_scores(jobs, profile, today):
     for j in jobs.values():
         if stale(j):
             j["score"], j["matched"] = rank_posting(j, profile, j.get("detailText", ""))
-            j["scoredOn"], j["scoredAt"], j["scoredFor"] = (
-                "page" if j.get("detailText") else "wiki" if "statuses" in j else "title"),
-                today, profile["updatedAt"]
+            j["scoredOn"], j["scoredAt"], j["scoredFor"] = ("page" if j.get("detailText") else "wiki" if "statuses" in j else "title"), today, profile["updatedAt"]
             j["scoredVersion"] = FIT_VERSION
     return fetched
 
