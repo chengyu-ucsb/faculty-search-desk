@@ -63,7 +63,7 @@ def text_lines(html):
 def date_value(s):
     m=DATE_TEXT.search(s)
     if not m: return ""
-    value=re.sub(r"(?<=\d)(st|nd|rd|th)\b","",m.group()).replace(",","").strip()
+    value=re.sub(r"(?<=\d)(st|nd|rd|th)\b","",m.group()).replace(",","").replace(".","").strip()
     if re.fullmatch(r"20\d{2}-\d{2}-\d{2}",value): return value
     for fmt in ("%B %d %Y","%b %d %Y","%m/%d/%Y","%m-%d-%Y"):
         try: return dt.datetime.strptime(value,fmt).date().isoformat()
