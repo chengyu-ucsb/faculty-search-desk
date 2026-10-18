@@ -50,7 +50,7 @@ NOT_POSTING = re.compile(r"(?:/\b(?:privacy|terms|about|faculty|policies|benefit
                          r"contact|sign-?in|login|search|faq)\b)",re.I)
 PREFERRED_LINK = re.compile(r"\b(?:apply(?: now| here| online)?|full (?:job |position )?description|"
                             r"job (?:details|posting)|see (?:the )?(?:job|posting)|"
-                            r"application portal|official posting|view position|position announcement|"
+                            r"application portal|official posting|view (?:position|details|job|posting)|position announcement|"
                             r"full (?:advertisement|announcement|call)|job (?:advertisement|ad)|"
                             r"position description|download (?:the )?(?:job|posting|advertisement|pdf)|"
                             r"complete (?:job |position )?posting|application information)\b",re.I)
@@ -86,10 +86,11 @@ def evidence_from_lines(lines,url,kind="posting"):
         if not line: continue
         ctx=" ".join(lines[max(0,i-1):min(len(lines),i+2)])[:700]
         if DATE_CONTEXT.search(line):
-            date=date_value(line) or date_value(ctx)
+            direct_date=date_value(line)
+            date=direct_date or date_value(ctx)
             if date:
                 rule="priority" if re.search(r"priority|full consideration|initial review|review.+begin",line,re.I) else "closing"
-                deadlines.append({"date":date,"type":rule,"evidence":line[:380],"url":url,"source":kind})
+                deadlines.append({"date":date,"type":rule,"evidence":(line if direct_date else ctx)[:380],"url":url,"source":kind})
         if APPLY_HEADING.search(line):
             windows.append(i)
     seen=set()
