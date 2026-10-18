@@ -13,6 +13,9 @@ APPLY_HEADING = re.compile(
     r"\b(?:how to apply|application (?:materials|instructions|procedure|requirements)|"
     r"required (?:application )?materials|documents to (?:submit|upload)|"
     r"to apply|please (?:upload|submit)|submit (?:an?|the|your)|"
+    r"(?:candidates|applicants) (?:must|should|will|are asked to) (?:provide|submit|upload|include)|"
+    r"(?:application|application package|materials) (?:should|must|will) (?:include|contain)|"
+    r"what (?:you|applicants) (?:will )?need|position announcement|"
     r"applications? (?:must|should|are|will) (?:be )?submitted)\b", re.I)
 DATE_CONTEXT = re.compile(
     r"\b(?:priority|full consideration|initial review|review of applications|"
@@ -44,10 +47,13 @@ LATER = re.compile(r"\b(?:finalists?|shortlisted|semi-finalists?|later stage|upo
 NEGATIVE = re.compile(r"\b(?:not required|do not submit|please do not include|optional)\b",re.I)
 MONTHS={m:i for i,m in enumerate(("","jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")) if m}
 NOT_POSTING = re.compile(r"(?:/\b(?:privacy|terms|about|faculty|policies|benefits|"
-                         r"contact|sign-?in|login|search|faq)\b|\.pdf(?:$|\?))",re.I)
+                         r"contact|sign-?in|login|search|faq)\b)",re.I)
 PREFERRED_LINK = re.compile(r"\b(?:apply(?: now| here| online)?|full (?:job |position )?description|"
                             r"job (?:details|posting)|see (?:the )?(?:job|posting)|"
-                            r"application portal|official posting|view position)\b",re.I)
+                            r"application portal|official posting|view position|position announcement|"
+                            r"full (?:advertisement|announcement|call)|job (?:advertisement|ad)|"
+                            r"position description|download (?:the )?(?:job|posting|advertisement|pdf)|"
+                            r"complete (?:job |position )?posting|application information)\b",re.I)
 BAD_LINK = re.compile(r"\b(?:share|similar jobs|other jobs|job alert|browse jobs|"
                       r"account|register|log in|sign in|privacy|terms)\b",re.I)
 
@@ -88,9 +94,9 @@ def evidence_from_lines(lines,url,kind="posting"):
             windows.append(i)
     seen=set()
     for idx in windows:
-        for i in range(idx,min(len(lines),idx+12)):
+        for i in range(idx,min(len(lines),idx+25)):
             line=lines[i].strip()
-            if i>idx+5 and APPLY_HEADING.search(line):break
+            if i>idx+8 and APPLY_HEADING.search(line):break
             if len(line)>750:continue
             for cat,rx in MATERIALS.items():
                 if not rx.search(line):continue
@@ -130,6 +136,20 @@ def application_links(html,page_url):
     for x in candidates:
         dedup[x["url"]]=max(dedup.get(x["url"],x),x,key=lambda k:k["score"])
     return sorted(dedup.values(),key=lambda k:-k["score"])[:5]
+
+def merge_evidence(primary, additional):
+    """Combine source-backed facts without discarding facts from the first page."""
+    merged = {"deadlineEvidence": [], "materialEvidence": [],
+              "hasApplicationSection": bool(primary.get("hasApplicationSection") or additional.get("hasApplicationSection"))}
+    for field, key in (("deadlineEvidence", lambda x: (x["date"], x["type"])),
+                       ("materialEvidence", lambda x: (x["category"],))):
+        seen = set()
+        for item in additional.get(field, []) + primary.get(field, []):
+            k = key(item)
+            if k not in seen:
+                merged[field].append(item)
+                seen.add(k)
+    return merged
 
 def describe_coverage(evidence):
     if evidence.get("materialEvidence") and evidence.get("deadlineEvidence"):return "deadline_and_materials"
