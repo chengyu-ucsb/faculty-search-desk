@@ -37,6 +37,21 @@ assert.equal(wikiMerged.id,wikiOne.id,'preserve earliest canonical id');
 assert(wikiMerged.statuses.includes('ZOOM INTERVIEW INVITATIONS SENT OUT'));
 assert(!wikiMerged.title.includes('ZOOM INTERVIEW'));
 assert(grouped.some(x=>x.id===chronicle.id),'different Chronicle requisition should remain distinct');
+
+const consolidated={...wikiOne,
+  alternateFeedIds:[wikiTwo.id,chronicle.id],
+  alternateListings:[{id:chronicle.id,sourceId:chronicle.sourceId,url:chronicle.url}],
+  deadline:'2026-09-15',deadlineKind:'priority'};
+const alreadyTracked={id:'ut-old-chronicle',feedId:chronicle.id,
+  institution:'University of Texas at Austin',title:chronicle.title,url:chronicle.url};
+mock.S.tracker.jobs.push(alreadyTracked);
+const aliasIndex=mock.trackerIndex();
+assert.equal(mock.trackerJobForFeed(consolidated,aliasIndex)?.id,alreadyTracked.id,
+  'a previously imported Chronicle listing must still match the canonical wiki posting');
+mock.S.feed.jobs=[consolidated];
+assert.equal(mock.matchFeedForJob(alreadyTracked)?.id,consolidated.id,
+  're-linked feed ID must survive deduplication');
+
 assert.equal(mock.specificWikiAdKey({...wikiBase,adUrl:'https://faculty.utexas.edu/'}),'',
     'generic department page cannot prove job identity');
 assert.equal(mock.recognizableTitle('Assistant Professor'),false);
