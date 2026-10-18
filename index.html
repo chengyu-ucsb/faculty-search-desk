@@ -1942,7 +1942,7 @@ const actions = {
     const started = m => ['draft','revising','ready','submitted'].includes(m.status) || !!m.documentId;
     if(g.materials.length){
       for(const m of g.materials){ const ex = j.materials.find(x => x.category === m.category); if(ex){ if(!started(ex) && ex.status !== m.status){ ex.status = m.status; ex.notes = m.note || ''; n++; } else if(started(ex) && m.status === 'finalists_only' && ex.status !== 'submitted'){ ex.notes = ex.notes || m.note; } } else { j.materials.push({ id: uid(), category: m.category, name: m.name, status: m.status, documentId: null, documentVersion: null, notes: m.note || '' }); n++; } }
-      for(const x of j.materials) if(!started(x) && x.status !== 'not_required' && x.category !== 'custom' && !g.materials.some(m => m.category === x.category)){ x.status = 'not_required'; x.notes = 'Not mentioned in the call'; n++; }
+      for(const x of j.materials) if(!started(x) && x.status === 'needed' && x.category !== 'custom' && !g.materials.some(m => m.category === x.category)){ x.status = 'unverified'; x.notes = 'Not found in captured text; absence is not evidence of exemption.'; n++; }
     }
     j.lettersNote = g.extras.lettersAtSubmission ? g.extras.lettersAtSubmission.how : '';
     const L = g.extras.lettersAtSubmission, later = g.materials.find(m => m.category === 'reference_letters' && m.status === 'finalists_only');
@@ -2004,9 +2004,16 @@ const actions = {
       department:g.fields.department || f.department || '',
       area:g.fields.area || f.area || '',
       location:f.location || g.fields.location || '',
-      url:f.adUrl || f.url || g.fields.url || '',
+      url:f.verifiedApplicationUrl || f.adUrl || f.url || g.fields.url || '',
+      sourceListingUrl:f.url || '',
+      officialPostingUrl:f.verifiedApplicationUrl || '',
       jobNumber:f.jobNumber || g.fields.jobNumber || jobNumberFromUrl(f.adUrl || f.url) || '',
-      deadline:f.deadline || g.fields.deadline || '',
+      deadline:f.deadline || (f.applicationEvidence?.deadlineEvidence||[])[0]?.date || g.fields.deadline || '',
+      deadlineKind:f.deadlineKind || '',
+      deadlineEvidence:f.deadlineEvidence || (f.applicationEvidence?.deadlineEvidence||[])[0] || null,
+      applicationEvidence:f.applicationEvidence || null,
+      applicationCoverage:f.applicationCoverage || 'summary_only',
+      applicationLinkCandidates:f.applicationLinkCandidates || [],
       deadlineNote:g.fields.deadlineNote || '',
       startDate:g.fields.startDate || '',
       salary:g.extras.salary || f.salary || '',
@@ -2018,23 +2025,24 @@ const actions = {
       originalPostingUrl:f.url || ''
     });
     if(sourceText.trim()) setCallText(j,sourceText);
-    const found=g.materials || [];
-    for(const m of found) j.materials.push({id:uid(),category:m.category,name:m.name,status:m.status,documentId:null,documentVersion:null,notes:m.note || ''});
+    const verified=(f.applicationEvidence?.materialEvidence||[]).filter(x=>x.category);
+    const found=verified.length ? verified.map(x=>({
+      category:x.category,name:label(STANDARD_MATERIALS,x.category) || x.category,
+      status:x.status==='required'?'needed':x.status==='later'?'finalists_only':'unverified',
+      note:x.evidence, evidence:x
+    })) : [];
+    for(const m of found) j.materials.push({id:uid(),category:m.category,name:m.name,status:m.status,documentId:null,documentVersion:null,notes:m.note||'',evidence:m.evidence||null});
     const before=j.materials.length; addStandardMaterials(j);
-    const partial = !f.detailText && !isWikiEntry(f);
     for(const x of j.materials.slice(before)){
-      x.status = partial || !found.length ? 'unverified' : 'not_required';
-      x.notes = partial || !found.length ? 'Requirements unverified: only a partial listing was collected.' : 'Not identified in the captured call; check the official portal.';
+      x.status='unverified';
+      x.notes='No explicit requirement confirmed from the available posting. Check the official application call.';
     }
-    if(partial) for(const x of j.materials.slice(0,before)){
-      if(x.status==='needed'){ x.status='unverified'; x.notes='Mentioned in partial listing; confirm against the official posting.'; }
-    }
-    j.processingStatus=partial?'needs_verification':'parsed';
+    j.processingStatus=verified.length?'partially_verified':'needs_verification';
     if(g.extras.contact && (g.extras.contact.name || g.extras.contact.email)) j.contacts.push({...g.extras.contact});
     if(g.extras.lettersAtSubmission) j.lettersNote=g.extras.lettersAtSubmission.how;
     autoAttachDocuments(j);
     S.tracker.jobs.push(j); touch(`Add job from feed: ${j.institution || j.title}`);
-    const detailNotice=sourceText.length>1000?'Posting details and checklist extracted.':'Only partial posting information was available; review the original advertisement.';
+    const detailNotice=verified.length ? verified.length+' requirements linked to source evidence; verify any remaining items.' : 'No requirements verified from the source. Review the official posting.';
     toast('Added to Jobs. '+detailNotice,'',{label:'Open',fn:()=>selectJob(j.id,'overview')}); render();
   },
   dismissfeed: (el) => { S.tracker.dismissedFeedIds.push(el.dataset.id); touch('Dismiss posting'); render(); },
