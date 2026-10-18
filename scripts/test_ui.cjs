@@ -52,6 +52,28 @@ mock.S.feed.jobs=[consolidated];
 assert.equal(mock.matchFeedForJob(alreadyTracked)?.id,consolidated.id,
   're-linked feed ID must survive deduplication');
 
+// Regression: the actual saved UT Austin position is at Zoom interview done.
+const originalTracked={id:'ut-tracked',feedId:'4db9e22f2195',
+  title:'Assistant Professor in Organizational Communication & Technology',
+  institution:'University of Texas, Austin',stage:'zoom_done',outcome:'active'};
+mock.S.tracker.jobs.push(originalTracked);
+const officialUt={...consolidated,id:'4db9e22f2195',
+  statuses:['Zoom interviews happening the week of Oct 5.','ZOOM INTERVIEW INVITATIONS SENT OUT']};
+assert.equal(mock.trackerJobForFeed(officialUt,mock.trackerIndex())?.id,originalTracked.id,
+  'UT Austin existing application must match current canonical feed ID');
+assert.equal(mock.isAdvancedRecruitment(officialUt),true,
+  'interview updates should not appear as new job opportunities');
+assert.equal(mock.discoveryEligible(officialUt),false,
+  'UT Austin must not appear in the default Discover view');
+assert.equal(mock.discoveryEligible({...officialUt,statuses:[]}),true,
+  'an active job without interview updates should still be discoverable');
+mock.S.showAdvancedSearches=true;
+assert.equal(mock.discoveryEligible(officialUt),true,
+  'an explicit show interviewing searches choice should reveal the historical entry');
+mock.S.showAdvancedSearches=false;
+assert(src.includes("data-action-check=showadvanced"),
+  'Discover must provide an explicit opt-in for searches already interviewing');
+
 assert.equal(mock.specificWikiAdKey({...wikiBase,adUrl:'https://faculty.utexas.edu/'}),'',
     'generic department page cannot prove job identity');
 assert.equal(mock.recognizableTitle('Assistant Professor'),false);
@@ -72,5 +94,5 @@ vm.runInContext(src.slice(fingerprintStart,fingerprintEnd),testContext);
   const expected=require('node:crypto').createHash('sha1').update('blob 3'+String.fromCharCode(0)+'abc').digest('hex');
   const fingerprint=await testContext.gitBlobFingerprint(bytes.buffer);
   assert.equal(fingerprint,expected,'file SHA should match Git blob hash');
-  console.log('UI syntax, privacy, deduplication and upload fingerprint checks passed');
+  console.log('UI syntax, privacy, discovery and upload fingerprint checks passed');
 })().catch(e=>{console.error(e);process.exitCode=1});

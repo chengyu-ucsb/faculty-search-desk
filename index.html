@@ -497,7 +497,7 @@ const S = {
   view: settings.get(LS.view) || 'jobs',
   selectedJobId: null, jobTab: 'overview', jobFilter: 'active', jobSort: settings.get('fsd.jobSort') || 'todo',
   docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', feedAcademicOnly:true, showAddJob: false, editingJob: false,
-  query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set(), showAdded: false, callDraft: null,
+  query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set(), showAdded: false, showAdvancedSearches: false, callDraft: null,
   callTexts: {}, pendingCallTexts: {}
 };
 function emptyTracker(){ return { schemaVersion: 1, updatedAt: nowIso(), jobs: [], documents: [], dismissedFeedIds: [], settings: {} }; }
@@ -859,6 +859,20 @@ function groupRelatedFeed(postings){
       allAdded:group.every(f=>f.added)};
   });
 }
+
+/* Interview updates belong to the history of a search, not the new-job inbox.
+   Preserve the feed record and its sources for tracked positions. */
+function isAdvancedRecruitment(f){
+  const updates=[...(f.statuses||[]),f.title||''];
+  return updates.some(t =>
+    /\b(?:zoom|phone|virtual|campus|on.campus|first.round)\s+interviews?\s+(?:happening|scheduled|conducted|completed|underway|in progress)\b/i.test(t) ||
+    /\b(?:zoom|phone|virtual|campus|on.campus)?\s*interviews?\s+(?:invitations?|invites?|requests?)\s+(?:sent|out|extended|issued)\b/i.test(t) ||
+    /\b(?:offers?\s+(?:made|extended|accepted)|search\s+(?:closed|cancelled)|position\s+filled)\b/i.test(t)
+  );
+}
+function discoveryEligible(f){
+  return S.showAdvancedSearches || !isAdvancedRecruitment(f);
+}
 function feedInbox(){
   const dismissed = new Set(S.tracker.dismissedFeedIds);
   const idx = trackerIndex();
@@ -898,7 +912,7 @@ function render(){
   $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === S.view));
   $('#cntJobs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.jobs.filter(j => !isClosed(j)).length;
   $('#cntDocs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.documents.length;
-  $('#cntFeed').textContent = groupRelatedFeed(feedInbox()).filter(f=>!f.allAdded && (!S.feedAcademicOnly||isAcademicPosting(f))).length;
+  $('#cntFeed').textContent = groupRelatedFeed(feedInbox()).filter(f=>discoveryEligible(f) && !f.allAdded && (!S.feedAcademicOnly||isAcademicPosting(f))).length;
   if(S.readonly && !dirty && !saving) setSaveState('readonly', S.loaded ? 'Read-only' : 'Loading…');
   const main = $('#main');
   let html = '';
@@ -918,7 +932,7 @@ function render(){
 function renderHero(){
   const active=S.tracker.jobs.filter(j=>!isClosed(j));
   const upcoming=active.filter(j=>{const d=daysUntil(j.deadline);return d!==null&&d>=0&&d<=14;}).length;
-  const available=feedInbox().filter(f=>!f.added).length;
+  const available=feedInbox().filter(f=>discoveryEligible(f) && !f.added).length;
   const configs={
     jobs:{eyebrow:'APPLICATION COMMAND CENTER',title:'Make every application count.',caption:'One clear place for opportunities, deadlines, documents, and decisions.',metric:S.readonly && repoConf().privateRepo?'–':String(active.length),metricLabel:S.readonly && repoConf().privateRepo?'Connect to view':'Active applications',cta:'Explore openings',to:'discover'},
     discover:{eyebrow:'FIND THE RIGHT NEXT MOVE',title:'Good opportunities deserve a closer look.',caption:'Discover new faculty openings, inspect the evidence behind their fit, and move promising positions into your pipeline.',metric:String(available),metricLabel:'Discovered openings',cta:'View your pipeline',to:'jobs'},
@@ -934,7 +948,7 @@ function renderSearch(){
   const hit = (...fields) => fields.some(f => String(f||'').toLowerCase().includes(q));
   const jobs = S.tracker.jobs.filter(j => hit(j.institution, j.title, j.department, j.location, j.notes, j.summary, j.area, excerptOf(j), ...j.contacts.map(c => c.name+' '+c.email)));
   const docs = S.tracker.documents.filter(d => hit(d.name, d.notes, label(DOC_CATEGORIES,d.category), ...d.versions.map(v => v.fileName)));
-  const feed = feedInbox().filter(f => hit(f.title, f.institution, f.location, f.snippet));
+  const feed = feedInbox().filter(f => discoveryEligible(f) && !f.added && hit(f.title, f.institution, f.location, f.snippet));
   let h = `<div class="row between" style="margin-bottom:12px"><h2 class="display">Search: “${esc(S.query)}”</h2><button class="btn sm quiet" data-action="clearsearch">Clear</button></div><div class="searchresults">`;
   if(!jobs.length && !docs.length && !feed.length) h += `<div class="empty"><p>Nothing matches yet.</p></div>`;
   for(const j of jobs) h += `<button class="sr" data-action="openjob" data-id="${j.id}"><span class="k">Job</span><span><strong>${esc(j.institution)}</strong> — ${esc(j.title)} <span class="muted small">${esc(label(STAGES,j.stage))}${j.deadline?' · due '+esc(fmtDate(j.deadline)):''}</span></span></button>`;
@@ -1256,7 +1270,8 @@ function renderDiscover(){
   const good = S.profile ? S.profile.goodFit : 4;
   const allInbox = groupRelatedFeed(feedInbox());
   const addedCount = allInbox.filter(f=>f.allAdded).length;
-  let inbox = allInbox.filter(f => (!S.feedAcademicOnly || isAcademicPosting(f)) && (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource || (f.alternateListings||[]).some(x=>x.sourceId===S.feedSource)) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  const advancedCount = allInbox.filter(isAdvancedRecruitment).length;
+  let inbox = allInbox.filter(f => discoveryEligible(f) && (!S.feedAcademicOnly || isAcademicPosting(f)) && (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource || (f.alternateListings||[]).some(x=>x.sourceId===S.feedSource)) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
   if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
   const stamp = f => f.changedAt && f.changedAt > (f.firstSeen||'') ? f.changedAt : (f.firstSeen||'');
   if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || (stamp(b) < stamp(a) ? -1 : 1));
@@ -1266,11 +1281,12 @@ function renderDiscover(){
     <div class="row between" style="margin-bottom:10px"><h2 class="display" style="font-size:22px">New postings</h2><span class="small muted">${S.feed.generatedAt ? 'Feed updated ' + esc(fmtAgo(S.feed.generatedAt)) : 'The collector has not run yet'}</span></div>
     <div class="toolbar"><label class="row small muted" style="gap:5px"><input type="checkbox" data-action-check="facultyonly"${S.feedAcademicOnly?' checked':''}> Faculty / research only</label><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
       ${addedCount ? `<label class="row small muted" style="gap:4px"><input type="checkbox" data-action-check="showadded"${S.showAdded?' checked':''}> show ${addedCount} already in tracker</label>` : ''}
+      ${advancedCount ? `<label class="row small muted" style="gap:4px"><input type="checkbox" data-action-check="showadvanced"${S.showAdvancedSearches?' checked':''}> show ${advancedCount} interviewing / closed searches</label>` : ''}
       <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
       ${prof ? `<select data-action="feedsort"><option value="fit"${S.feedSort==='fit'?' selected':''}>Best fit first</option><option value="new"${S.feedSort==='new'?' selected':''}>Newest / recently updated</option></select>
       <select data-action="feedmin"><option value="all"${S.feedMin==='all'?' selected':''}>Any fit</option><option value="some"${S.feedMin==='some'?' selected':''}>Some fit (1+)</option><option value="good"${S.feedMin==='good'?' selected':''}>Good fit (${good}+)</option></select>` : `<a href="#" class="small" data-action="goto" data-view="settings">Set up a fit profile to rank these</a>`}</div>
     <div class="joblist">`;
-  if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting here is already in your tracker or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
+  if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'No new opportunities match your filters. Already tracked jobs and searches reporting interviews are hidden by default. New postings arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
       <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · ${f.deadlineKind==='priority'?'review begins':'due'} ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.alternateListings?.length ? `<details class="related-listings"><summary>Also listed by ${esc([...new Set(f.alternateListings.map(x=>sourceName(x.sourceId)))].join(', '))}</summary>${f.alternateListings.map(x=>`<div class="row"><span class="listing-source">${esc(sourceName(x.sourceId))}</span><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Original ad</a></div>`).join('')}</details>` : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
       <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" title="Original source listing">${ICON.ext} Listing</a>`:''}${f.verifiedApplicationUrl?`<a class="btn sm" href="${esc(f.verifiedApplicationUrl)}" target="_blank" rel="noopener" title="Verified linked application page">Job call</a>`:(f.applicationLinkCandidates?.length?`<a class="btn sm" href="${esc(f.applicationLinkCandidates[0].url)}" target="_blank" rel="noopener" title="Possible application page: review the employer and requisition before relying on it">Possible application page</a>`:'')}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
@@ -2481,6 +2497,7 @@ document.addEventListener('change', e => {
   }
   if(el.matches('input[data-action-check=facultyonly]')){ S.feedAcademicOnly=el.checked; render(); return; }
   if(el.matches('input[data-action-check=showadded]')){ S.showAdded = el.checked; render(); return; }
+  if(el.matches('input[data-action-check=showadvanced]')){ S.showAdvancedSearches = el.checked; render(); return; }
   if(el.id === 'fileInput'){ uploadFiles(el.files); el.value=''; return; }
   if(el.dataset.doc && el.dataset.docField){ if(bindDocField(el)){ touch('Update document'); if(el.tagName==='SELECT') render(); } return; }
   if(bindField(el)){
