@@ -9,7 +9,8 @@ const start=src.indexOf('function normUrl('),end=src.indexOf('function feedInbox
 assert(start>=0&&end>start);
 const code=src.slice(start,end);
 const mock={
-  S:{tracker:{jobs:[]},feed:{jobs:[]}},URL,Map,Set
+  S:{tracker:{jobs:[]},feed:{jobs:[]}},URL,Map,Set,
+  isWikiEntry:f=>Array.isArray(f.statuses)
 };
 vm.createContext(mock);
 vm.runInContext(code,mock);
@@ -19,6 +20,25 @@ let idx=mock.trackerIndex();
 assert.equal(mock.trackerJobForFeed({id:'other',title:'Assistant Professor',institution:'University of North Dakota',jobNumber:'67890',url:'https://und.edu/job/67890'},idx),null,'different posting numbers must not collapse');
 assert.equal(mock.trackerJobForFeed({id:'another',title:'Assistant Professor',institution:'Another University',jobNumber:'12345',url:'https://another.edu/job/12345'},idx),null,'same number at another university is not enough');
 assert.equal(mock.trackerJobForFeed({id:'same',title:'Assistant Professor',institution:'University of North Dakota',jobNumber:'12345',url:'https://und.edu/job/12345'},idx)?.id,'j1');
+const wikiBase={institution:'University of Texas, Austin (Austin, Texas)',sourceId:'academic-jobs-wiki',
+    adUrl:'https://faculty.utexas.edu/career/188439',statuses:[],title:'Assistant Professor in Organizational Communication & Technology (Deadline: 09/15/2026)'};
+const wikiOne={...wikiBase,id:'4db9e22f2195',firstSeen:'2026-09-07T17:20:46Z'};
+const wikiTwo={...wikiBase,id:'91dffc54aeaf',firstSeen:'2026-10-09T17:28:48Z',
+    title:wikiBase.title+' ZOOM INTERVIEW INVITATIONS SENT OUT'};
+const chronicle={id:'4291024f17f0',institution:'University of Texas at Austin',
+    title:'Assistant Professor, Tenure-Track Faculty Position in Organizational Communication',
+    sourceId:'chronicle-communications',url:'https://jobs.chronicle.com/job/38051792/example',
+    jobNumber:'38051792',deadline:'2026-12-13'};
+const grouped=mock.groupRelatedFeed([wikiOne,wikiTwo,chronicle]);
+assert.equal(grouped.length,2,'same official UT Austin requisition should be one discovery listing');
+const wikiMerged=grouped.find(x=>x.sourceId==='academic-jobs-wiki');
+assert.equal(wikiMerged.groupSize,1,'duplicate wiki headings must not offer Add separately');
+assert.equal(wikiMerged.id,wikiOne.id,'preserve earliest canonical id');
+assert(wikiMerged.statuses.includes('ZOOM INTERVIEW INVITATIONS SENT OUT'));
+assert(!wikiMerged.title.includes('ZOOM INTERVIEW'));
+assert(grouped.some(x=>x.id===chronicle.id),'different Chronicle requisition should remain distinct');
+assert.equal(mock.specificWikiAdKey({...wikiBase,adUrl:'https://faculty.utexas.edu/'}),'',
+    'generic department page cannot prove job identity');
 assert.equal(mock.recognizableTitle('Assistant Professor'),false);
 assert.equal(mock.recognizableTitle('Assistant Professor of Organizational Communication'),true);
 assert(src.includes('class="workspace-sidebar"'), 'new desktop workspace shell present');
