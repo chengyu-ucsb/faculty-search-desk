@@ -3,7 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
-from detail_extract import date_value, text_lines, evidence_from_lines, application_links
+from detail_extract import date_value, text_lines, evidence_from_lines, application_links, merge_evidence
 
 class DetailTests(unittest.TestCase):
     def test_priority_deadline_and_required_items(self):
