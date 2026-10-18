@@ -496,7 +496,7 @@ const S = {
   readonly: true, loaded: false, loadError: null,
   view: settings.get(LS.view) || 'jobs',
   selectedJobId: null, jobTab: 'overview', jobFilter: 'active', jobSort: settings.get('fsd.jobSort') || 'todo',
-  docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', showAddJob: false, editingJob: false,
+  docFilter: 'all', feedFilter: '', feedSource: 'all', feedSort: 'fit', feedMin: 'all', feedAcademicOnly:true, showAddJob: false, editingJob: false,
   query: '', uploads: [], checking: null, pendingSource: null, deletedIds: new Set(), showAdded: false, callDraft: null,
   callTexts: {}, pendingCallTexts: {}
 };
@@ -793,6 +793,7 @@ function feedGroupKey(f){
   // For unknown employers, require a common host as well.
   return employer ? employer+'|'+headline : host+'|'+headline;
 }
+function isAcademicPosting(f){ const t=feedIdentity(f).title; return /\b(professor|professorship|faculty|postdoc(?:toral)?|lecturer|instructor|tenure[ -]track|research fellow|research scientist)\b/i.test(t); }
 function groupRelatedFeed(postings){
   const groups=new Map();
   for(const posting of postings){
@@ -1169,7 +1170,7 @@ function renderDiscover(){
   const good = S.profile ? S.profile.goodFit : 4;
   const allInbox = groupRelatedFeed(feedInbox());
   const addedCount = allInbox.filter(f=>f.allAdded).length;
-  let inbox = allInbox.filter(f => (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  let inbox = allInbox.filter(f => (!S.feedAcademicOnly || isAcademicPosting(f)) && (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
   if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
   const stamp = f => f.changedAt && f.changedAt > (f.firstSeen||'') ? f.changedAt : (f.firstSeen||'');
   if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || (stamp(b) < stamp(a) ? -1 : 1));
@@ -1177,7 +1178,7 @@ function renderDiscover(){
   const srcs = S.sources.sources || [];
   let h = `<div class="two"><div>
     <div class="row between" style="margin-bottom:10px"><h2 class="display" style="font-size:22px">New postings</h2><span class="small muted">${S.feed.generatedAt ? 'Feed updated ' + esc(fmtAgo(S.feed.generatedAt)) : 'The collector has not run yet'}</span></div>
-    <div class="toolbar"><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
+    <div class="toolbar"><label class="row small muted" style="gap:5px"><input type="checkbox" data-action-check="facultyonly"${S.feedAcademicOnly?' checked':''}> Faculty / research only</label><input type="text" placeholder="Filter postings" value="${esc(S.feedFilter)}" data-action-input="feedfilter" style="max-width:260px">
       ${addedCount ? `<label class="row small muted" style="gap:4px"><input type="checkbox" data-action-check="showadded"${S.showAdded?' checked':''}> show ${addedCount} already in tracker</label>` : ''}
       <select data-action="feedsource"><option value="all">All sources</option>${srcs.map(s => `<option value="${s.id}"${S.feedSource===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
       ${prof ? `<select data-action="feedsort"><option value="fit"${S.feedSort==='fit'?' selected':''}>Best fit first</option><option value="new"${S.feedSort==='new'?' selected':''}>Newest / recently updated</option></select>
@@ -2306,6 +2307,7 @@ document.addEventListener('change', e => {
     }
     el.value=''; return;
   }
+  if(el.matches('input[data-action-check=facultyonly]')){ S.feedAcademicOnly=el.checked; render(); return; }
   if(el.matches('input[data-action-check=showadded]')){ S.showAdded = el.checked; render(); return; }
   if(el.id === 'fileInput'){ uploadFiles(el.files); el.value=''; return; }
   if(el.dataset.doc && el.dataset.docField){ if(bindDocField(el)){ touch('Update document'); if(el.tagName==='SELECT') render(); } return; }
