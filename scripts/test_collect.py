@@ -192,21 +192,5 @@ class CollectorTests(unittest.TestCase):
         }
         self.assertEqual(collapse_cross_source_duplicates(jobs),0)
 
-    def test_ut_canonical_feed_identity_audit(self):
-        import json
-        from pathlib import Path
-        feed=json.loads((Path(__file__).parents[1]/"data/feed.json").read_text())
-        hits=[j for j in feed["jobs"] if
-              "188439" in (j.get("adUrl") or "") or
-              "188439" in (j.get("verifiedApplicationUrl") or "") or
-              ("organizational" in (j.get("title") or "").lower() and
-               "texas" in (j.get("institution") or "").lower())]
-        for j in hits:
-            record={k:j.get(k) for k in ("id","title","institution","sourceId","url",
-                    "adUrl","alternateFeedIds","alternateListings","statuses",
-                    "deadline","deadlineKind","lastSeen")}
-            print("UT_FEED_DIAGNOSTIC "+json.dumps(record),flush=True)
-        self.assertGreater(len(hits),0)
-
 if __name__=='__main__':
     unittest.main()
