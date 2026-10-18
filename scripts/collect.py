@@ -726,8 +726,8 @@ def rank_posting(job, profile, page_text=""):
     # Communication job boards include many nonacademic communication-adjacent
     # positions. Do not present an engineering/business vacancy as a faculty match.
     title=(job.get("title") or "").lower()
-    academic=bool(re.search(r"\\b(?:professor|professorship|faculty|postdoc(?:toral)?|lecturer|"
-                            r"instructor|research fellow|tenure.track|research scientist)\\b",title))
+    academic=bool(re.search(r"\b(?:professor|professorship|faculty|postdoc(?:toral)?|lecturer|"
+                            r"instructor|research fellow|tenure.track|research scientist)\b",title))
     if not academic:
         score=min(0, score)
     return score, title_terms + extra
