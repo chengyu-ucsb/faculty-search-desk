@@ -1,0 +1,9 @@
+# Keep workflow actions current, including the Node.js runtime bundled with each action.
+# Dependabot proposes version updates; review the workflow run before merging.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
