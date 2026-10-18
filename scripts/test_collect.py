@@ -142,5 +142,15 @@ class CollectorTests(unittest.TestCase):
         self.assertIn("ZOOM INTERVIEW INVITATIONS SENT OUT",parsed[0]["statuses"])
         self.assertEqual(parsed[0]["adUrl"],"https://faculty.utexas.edu/career/188439")
 
+    def test_temporary_chronicle_ad_overlap_audit(self):
+        import json
+        from pathlib import Path
+        feed=json.loads((Path(__file__).parents[1]/"data/feed.json").read_text())
+        chron=next(x for x in feed["jobs"] if x["id"]=="4291024f17f0")
+        print("CHRON_AUDIT",json.dumps({k:chron.get(k) for k in
+            ("title","institution","deadline","deadlineEvidence","verifiedApplicationUrl",
+             "applicationLinkCandidates","detailText","applicationEvidence")},
+            ensure_ascii=False)[:11000],flush=True)
+
 if __name__=='__main__':
     unittest.main()
