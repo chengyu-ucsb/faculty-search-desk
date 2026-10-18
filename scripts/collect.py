@@ -43,7 +43,7 @@ MAX_DETAIL_TRIES = 2
 MAX_HOST_FAILURES = 2
 DETAIL_TEXT_CAP = 12000
 STORED_DETAIL_CAP = 6500
-FIT_VERSION = 2
+FIT_VERSION = 3
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "faculty-search-desk")
 USER_AGENT = f"FacultySearchDesk/1.0 (+https://github.com/{REPO}; personal academic job tracker)"
@@ -722,7 +722,15 @@ def rank_posting(job, profile, page_text=""):
     extra = [term for term in detail_terms if term not in title_set]
     positive = min(6, sum(max(0, weights.get(t, 0)) for t in extra))
     negative = max(-18, sum(min(0, weights.get(t, 0)) for t in extra))
-    return max(-35, headline_score * 2 + positive + negative), title_terms + extra
+    score=max(-35, headline_score * 2 + positive + negative)
+    # Communication job boards include many nonacademic communication-adjacent
+    # positions. Do not present an engineering/business vacancy as a faculty match.
+    title=(job.get("title") or "").lower()
+    academic=bool(re.search(r"\\b(?:professor|professorship|faculty|postdoc(?:toral)?|lecturer|"
+                            r"instructor|research fellow|tenure.track|research scientist)\\b",title))
+    if not academic:
+        score=min(0, score)
+    return score, title_terms + extra
 
 
 def compact_posting_details(page_text):
