@@ -1146,7 +1146,9 @@ def collapse_cross_source_duplicates(jobs):
         evidence=(existing.get("applicationEvidence") or {}).get("deadlineEvidence") or []
         # Prefer the official review/screening language over a board's metadata
         # validThrough; only treat a genuine closing date as a hard deadline.
-        direct=[x for x in evidence if x.get("source")!="structured-data"]
+        direct=[x for x in evidence if x.get("source")!="structured-data"
+                and not re.search(r"(?:date\\s+)?posted\\s*[:.]|posted\\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
+                                  x.get("evidence",""),re.I)]
         priority=next((x for x in direct if x.get("type")=="priority"),None)
         closing=next((x for x in direct if x.get("type")=="closing"),None)
         chosen=closing or priority
@@ -1154,6 +1156,10 @@ def collapse_cross_source_duplicates(jobs):
             existing["deadline"]=chosen["date"]
             existing["deadlineKind"]=chosen["type"]
             existing["deadlineEvidence"]=chosen
+        elif existing.get("deadline") and "open until filled" in (existing.get("detailText") or "").lower():
+            existing["deadlineKind"]="priority"
+        if existing.get("deadlineKind")=="priority" and "open until filled" in (existing.get("detailText") or "").lower():
+            existing["deadlineNote"]="Applications remain open until filled; the stated date is for initial review, not a hard closing."
         jobs.pop(job["id"],None)
         removed+=1
     return removed
