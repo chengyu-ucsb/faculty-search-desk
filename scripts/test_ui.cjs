@@ -65,6 +65,8 @@ assert.equal(mock.isAdvancedRecruitment(officialUt),true,
   'interview updates should not appear as new job opportunities');
 assert.equal(mock.discoveryEligible(officialUt),false,
   'UT Austin must not appear in the default Discover view');
+assert.equal(mock.discoveryEligible({...officialUt,statuses:[],newStatuses:[]}),false,
+  'tracked UT Austin Zoom interview stage must be enough even if feed status is stale');
 assert.equal(mock.discoveryEligible({...officialUt,statuses:[]}),true,
   'an active job without interview updates should still be discoverable');
 mock.S.showAdvancedSearches=true;
