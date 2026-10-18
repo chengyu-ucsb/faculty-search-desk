@@ -67,8 +67,8 @@ assert.equal(mock.discoveryEligible(officialUt),false,
   'UT Austin must not appear in the default Discover view');
 assert.equal(mock.discoveryEligible({...officialUt,statuses:[],newStatuses:[]}),false,
   'tracked UT Austin Zoom interview stage must be enough even if feed status is stale');
-assert.equal(mock.discoveryEligible({...officialUt,statuses:[]}),true,
-  'an active job without interview updates should still be discoverable');
+assert.equal(mock.discoveryEligible({id:'new-open-role',title:'Assistant Professor of Media Studies',institution:'Another Institution',statuses:[]}),true,
+  'a new job without interview updates should still be discoverable');
 mock.S.showAdvancedSearches=true;
 assert.equal(mock.discoveryEligible(officialUt),true,
   'an explicit show interviewing searches choice should reveal the historical entry');
