@@ -1170,6 +1170,7 @@ def run_all(force=False):
     feed = load_json(FEED_PATH, {"schemaVersion": 1, "generatedAt": None, "sources": [], "jobs": []})
     prev_status = {s.get("id"): s for s in feed.get("sources", [])}
     jobs = {j["id"]: j for j in feed.get("jobs", []) if j.get("id")}
+    known_aliases = {alias for record in jobs.values() for alias in (record.get("alternateFeedIds") or [])}
     statuses = []
     today = now_iso()
 
@@ -1200,7 +1201,10 @@ def run_all(force=False):
             jid = job_id(p["url"])
             rec = jobs.get(jid)
             if rec is None:
-                new += 1
+                # A previously recognized mirror/renamed wiki heading is not new
+                # simply because its original feed ID was folded into another.
+                if jid not in known_aliases:
+                    new += 1
                 rec = {"id": jid, "sourceId": sid, "firstSeen": today}
                 jobs[jid] = rec
             rec.update({"title": p["title"], "institution": p.get("institution", "") or rec.get("institution", ""), "location": p.get("location", "") or rec.get("location", ""), "url": p["url"], "deadline": p.get("deadline", "") or rec.get("deadline", ""), "snippet": p.get("snippet", "") or rec.get("snippet", ""), "lastSeen": today})
