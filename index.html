@@ -954,6 +954,7 @@ function renderJobs(){
   const chips = [['active','Active'],['due','Due soon'],['preparing','Preparing'],['verify','Verify requirements'],['letters','Needs letters'],['ready','Ready',' <i class="sw hollow" style="--sw:var(--good)"></i>'],['submitted','Submitted',' <i class="sw" style="--sw:var(--st-sub)"></i>'],['interviewing','Interviewing',' <i class="sw" style="--sw:var(--st-int)"></i>'],['closed','Closed',' <i class="sw" style="--sw:var(--st-closed)"></i>'],['all','All']];
   h += `<div class="toolbar"><div class="chips">${chips.map(([k,v,sw]) => `<button class="chip${S.jobFilter===k?' active':''}" data-action="filter" data-filter="${k}" title="${sw ? 'Rows in this stage are tinted this colour' : ''}">${sw || ''}${v}</button>`).join('')}</div>
     <div class="row"><select data-action="sort" aria-label="Sort"><option value="todo"${S.jobSort==='todo'?' selected':''}>To do first</option><option value="deadline"${S.jobSort==='deadline'?' selected':''}>By deadline</option><option value="updated"${S.jobSort==='updated'?' selected':''}>Recently updated</option><option value="institution"${S.jobSort==='institution'?' selected':''}>By institution</option></select>
+    <button class="btn sm" data-action="syncfeedall" title="Fill missing deadlines and document requirements from verified job calls without replacing your own edits"${S.readonly?' disabled':''}>Sync verified details</button>
     <button class="btn primary" data-action="showadd"${S.readonly?' disabled':''}>${ICON.plus} Add job</button></div></div>`;
   if(S.showAddJob) h += renderAddJob();
   const list = filteredJobs();
@@ -1954,6 +1955,51 @@ async function uploadCallFile(file, job){
   S.tracker.documents.push(d); return d;
 }
 
+
+/* Synchronize only facts backed by an identified job-call source.
+   Never reset a submitted item, document attachment, manual deadline or note. */
+function syncFeedEvidence(job, feed){
+  if(!feed?.applicationEvidence) return 0;
+  let changes = 0;
+  const facts = feed.applicationEvidence.materialEvidence || [];
+  const seen = new Set();
+  for(const fact of facts){
+    if(!fact.category || seen.has(fact.category)) continue;
+    seen.add(fact.category);
+    if(!['required','later'].includes(fact.status)) continue;
+    const next = fact.status === 'later' ? 'finalists_only' : 'needed';
+    let item = job.materials.find(m => m.category === fact.category);
+    if(!item){
+      item = {id:uid(),category:fact.category,name:label(STANDARD_MATERIALS,fact.category)||fact.category,
+              status:next,documentId:null,documentVersion:null,notes:'',evidence:fact};
+      job.materials.push(item);changes++;
+    } else {
+      if(item.status === 'unverified'){item.status=next;changes++;}
+      if(!item.evidence || item.evidence.evidence !== fact.evidence || item.evidence.url !== fact.url){
+        item.evidence=fact;changes++;
+      }
+    }
+    if(!item.notes || /^(No explicit requirement|Not found in captured text|Confirmed by source)/.test(item.notes))
+      item.notes='Confirmed by source: '+fact.evidence;
+  }
+  const dates = feed.applicationEvidence.deadlineEvidence || [];
+  if(!job.deadline && dates.length){
+    const x=dates.find(x => x.type==='closing') || dates[0];
+    job.deadline=x.date;job.deadlineKind=x.type;job.deadlineEvidence=x;changes++;
+  }
+  if(!job.officialPostingUrl && feed.verifiedApplicationUrl){job.officialPostingUrl=feed.verifiedApplicationUrl;changes++;}
+  if(!job.sourceListingUrl && feed.url){job.sourceListingUrl=feed.url;changes++;}
+  for(const k of ['jobNumber','department','area','location']){
+    if(!job[k] && feed[k]){job[k]=feed[k];changes++;}
+  }
+  job.applicationEvidence=feed.applicationEvidence;
+  job.applicationCoverage=feed.applicationCoverage||'summary_only';
+  job.applicationLinkCandidates=feed.applicationLinkCandidates||[];
+  job.verificationWarnings=feed.verificationWarnings||[];
+  job.applicationFetchStatus=feed.applicationFetchStatus||'';
+  return changes;
+}
+
 const actions = {
   reload: async () => { setSaveState('saving','Loading…'); await loadAll(); render(); },
   goto: (el) => setView(el.dataset.view),
@@ -1964,32 +2010,27 @@ const actions = {
   hideadd: () => { S.showAddJob = false; S.callDraft = null; render(); },
   fillfromtext: () => { captureAddForm(); const text = (S.callDraft.rawText || '').trim(); if(!text){ toast('Paste the posting text first, or choose a file.'); return; } const keep = { fileName: S.callDraft.fileName, fileSize: S.callDraft.fileSize, file: S.callDraft.file }; applyGuess(S.callDraft, parseJobCall(text)); Object.assign(S.callDraft, keep); render(); toast('Read the posting — please check the fields marked “check”.'); },
   applyfeedfindings: (el) => {
-    const j=jobById(el.dataset.id);
-    const f=(S.feed.jobs||[]).find(x=>x.id===j?.feedId);
-    if(!j||!f||!f.applicationEvidence||S.readonly)return;
-    let n=0;
-    const items=(f.applicationEvidence.materialEvidence||[]);
-    for(const fact of items){
-      if(fact.status!=='required'&&fact.status!=='later')continue;
-      const m=j.materials.find(x=>x.category===fact.category);
-      if(!m||m.status!=='unverified')continue;
-      m.status=fact.status==='later'?'finalists_only':'needed';
-      m.evidence=fact;
-      m.notes='Confirmed by source: '+fact.evidence;
-      n++;
+    const j = jobById(el.dataset.id);
+    const f = (S.feed.jobs||[]).find(x => x.id === j?.feedId) || (j && matchFeedForJob(j));
+    if(!j || !f || S.readonly) return;
+    const n = syncFeedEvidence(j, f);
+    if(n){ j.updatedAt = nowIso(); touch('Verify requirements for ' + j.institution); }
+    toast(n ? 'Synced ' + n + ' source-backed details. Unconfirmed items remain unverified.' : 'No additional verified information was available.');
+    render();
+  },
+  syncfeedall: () => {
+    if(S.readonly) return;
+    let jobs = 0, updates = 0;
+    for(const j of S.tracker.jobs){
+      if(j.stage !== 'preparing') continue;
+      const f = (S.feed.jobs||[]).find(x => x.id === j.feedId) || matchFeedForJob(j);
+      if(!f) continue;
+      const n = syncFeedEvidence(j, f);
+      if(n){ j.updatedAt = nowIso(); jobs++; updates += n; }
     }
-    if(!j.deadline && f.applicationEvidence.deadlineEvidence?.length){
-      const item=f.applicationEvidence.deadlineEvidence.find(x=>x.type==='closing')||f.applicationEvidence.deadlineEvidence[0];
-      j.deadline=item.date;
-      j.deadlineKind=item.type;
-      j.deadlineEvidence=item;
-      n++;
-    }
-    if(f.verifiedApplicationUrl && !j.officialPostingUrl){j.officialPostingUrl=f.verifiedApplicationUrl;n++;}
-    j.applicationEvidence=f.applicationEvidence;
-    j.applicationCoverage=f.applicationCoverage||'partial';
-    if(n){j.updatedAt=nowIso();touch('Apply evidence for '+j.institution);}
-    toast(n?'Applied '+n+' source-backed updates. Other items remain unverified.':'No new verified requirements found.');render();
+    if(updates) touch('Sync application evidence for ' + jobs + ' jobs');
+    toast(updates ? 'Updated ' + updates + ' details across ' + jobs + ' preparing jobs. Recheck the remaining unverified items.' : 'No additional verified details are available in Discover yet.');
+    render();
   },
   refill: async (el) => {
     const j = jobById(el.dataset.id); const text = await loadCallText(j) || ''; if(!text.trim()){ toast('No posting text to read — attach the call or paste it first.'); return; }
@@ -2069,12 +2110,14 @@ const actions = {
       sourceListingUrl:f.url || '',
       officialPostingUrl:f.verifiedApplicationUrl || '',
       jobNumber:f.jobNumber || g.fields.jobNumber || jobNumberFromUrl(f.adUrl || f.url) || '',
-      deadline:f.deadline || (f.applicationEvidence?.deadlineEvidence||[])[0]?.date || g.fields.deadline || '',
-      deadlineKind:f.deadlineKind || '',
+      deadline:(f.applicationEvidence?.deadlineEvidence||[]).find(x=>x.type==='closing')?.date || (f.applicationEvidence?.deadlineEvidence||[])[0]?.date || f.deadline || g.fields.deadline || '',
+      deadlineKind:f.deadlineKind || (f.applicationEvidence?.deadlineEvidence||[]).find(x=>x.type==='closing')?.type || (f.applicationEvidence?.deadlineEvidence||[])[0]?.type || '',
       deadlineEvidence:f.deadlineEvidence || (f.applicationEvidence?.deadlineEvidence||[])[0] || null,
       applicationEvidence:f.applicationEvidence || null,
       applicationCoverage:f.applicationCoverage || 'summary_only',
       applicationLinkCandidates:f.applicationLinkCandidates || [],
+      verificationWarnings:f.verificationWarnings || [],
+      applicationFetchStatus:f.applicationFetchStatus || '',
       deadlineNote:g.fields.deadlineNote || '',
       startDate:g.fields.startDate || '',
       salary:g.extras.salary || f.salary || '',
