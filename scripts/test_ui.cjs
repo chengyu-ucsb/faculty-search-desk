@@ -23,6 +23,8 @@ assert.equal(mock.recognizableTitle('Assistant Professor'),false);
 assert.equal(mock.recognizableTitle('Assistant Professor of Organizational Communication'),true);
 assert(src.includes('class="workspace-sidebar"'), 'new desktop workspace shell present');
 assert(src.includes('assets/workspace.css'), 'workspace stylesheet linked');
+assert(src.includes('data-action="syncfeedall"'), 'bulk evidence synchronization available');
+assert(!src.includes('const before=j.materials.length; addStandardMaterials(j);'), 'Discover must not add speculative generic requirements');
 assert(src.includes("Personal files require a private repository"), 'guard against writing personal files to public repo');
 const fingerprintStart=src.indexOf('async function gitBlobFingerprint(');
 const fingerprintEnd=src.indexOf('/* ---------- uploads ---------- */',fingerprintStart);
