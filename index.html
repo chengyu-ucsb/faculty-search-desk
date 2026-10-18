@@ -771,6 +771,46 @@ function matchFeedForJob(job){
     return !!(tk && recognizableTitle(job.title) && titleKey(f.title)===tk && sameInstitution(job.institution,f.institution));
   }) || null;
 }
+function feedIdentity(f){
+  let institution=String(f.institution||'').trim(), title=String(f.title||'').trim();
+  const prefix=title.match(/^([^:]{6,110}):\s+(.{7,})$/);
+  if(prefix && /professor|faculty|communication|media|tenure|lecturer|postdoc|research|journalism/i.test(prefix[2])){
+    if(!institution) institution=prefix[1].trim();
+    if(instKey(institution)===instKey(prefix[1])) title=prefix[2].trim();
+  }
+  return {institution,title};
+}
+/* Group lookalike listings in the Discover UI, without declaring different
+   requisition numbers identical or destroying an alternative source URL. */
+function feedGroupKey(f){
+  if(isWikiEntry(f)) return 'wiki:'+f.id;
+  const p=feedIdentity(f);
+  const employer=instKey(p.institution);
+  const headline=titleKey(p.title);
+  if(!headline || (!employer && headline.length < 34)) return 'unique:'+f.id;
+  const host=sourceHost(f.url);
+  // A specific employer and descriptive title can be compared across boards.
+  // For unknown employers, require a common host as well.
+  return employer ? employer+'|'+headline : host+'|'+headline;
+}
+function groupRelatedFeed(postings){
+  const groups=new Map();
+  for(const posting of postings){
+    const key=feedGroupKey(posting);
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(posting);
+  }
+  return [...groups.values()].map(group=>{
+    // Show an untracked listing first; never hide a separate posting just because
+    // another listing with the same title was already imported.
+    group.sort((a,b)=>Number(a.added)-Number(b.added) ||
+      Number(!!b.detailText)-Number(!!a.detailText) ||
+      String(b.firstSeen||'').localeCompare(String(a.firstSeen||'')));
+    const first=group[0], others=group.slice(1);
+    return {...first,relatedAds:others,groupSize:group.length,
+      allAdded:group.every(f=>f.added)};
+  });
+}
 function feedInbox(){
   const dismissed = new Set(S.tracker.dismissedFeedIds);
   const idx = trackerIndex();
@@ -810,7 +850,7 @@ function render(){
   $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === S.view));
   $('#cntJobs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.jobs.filter(j => !isClosed(j)).length;
   $('#cntDocs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.documents.length;
-  $('#cntFeed').textContent = feedInbox().filter(f => !f.added).length;
+  $('#cntFeed').textContent = groupRelatedFeed(feedInbox()).filter(f=>!f.allAdded).length;
   if(S.readonly && !dirty && !saving) setSaveState('readonly', S.loaded ? 'Read-only' : 'Loading…');
   const main = $('#main');
   let html = '';
@@ -1127,9 +1167,9 @@ function sourceStatus(src){
 function renderDiscover(){
   const prof = hasProfile();
   const good = S.profile ? S.profile.goodFit : 4;
-  const allInbox = feedInbox();
-  const addedCount = allInbox.filter(f => f.added).length;
-  let inbox = allInbox.filter(f => (S.showAdded || !f.added) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  const allInbox = groupRelatedFeed(feedInbox());
+  const addedCount = allInbox.filter(f=>f.allAdded).length;
+  let inbox = allInbox.filter(f => (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
   if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
   const stamp = f => f.changedAt && f.changedAt > (f.firstSeen||'') ? f.changedAt : (f.firstSeen||'');
   if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || (stamp(b) < stamp(a) ? -1 : 1));
@@ -1145,7 +1185,7 @@ function renderDiscover(){
     <div class="joblist">`;
   if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting here is already in your tracker or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
-      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
+      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
       <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener">${ICON.ext}</a>`:''}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
     </div>`).join('');
   h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
