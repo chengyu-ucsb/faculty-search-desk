@@ -22,13 +22,13 @@ The public page uses a fine-grained GitHub token stored in the user's browser to
 
 The token should be restricted to these two repositories. It needs Contents read/write and, for running the public collector from the UI, Actions read/write. Do not commit or share a token.
 
-## Privacy warning: historical public commits
+## Privacy status
 
-The current public `main` branch **no longer contains the personal tracker or document files**. However, earlier public commits contained those files. They may remain accessible in Git history, cached URLs, forks, or clones. Removing them from today's branch is **not** equivalent to erasing the historical exposure.
+The original repository has been renamed to **`faculty-search-desk-old`** and made private. A new, clean public repository named **`faculty-search-desk`** hosts this website, with no personal tracker or documents in its commit history. The separate **`faculty-search-private`** repository holds applications and uploaded files.
 
-To eliminate this repository's public commit-history access while preserving the project URL, archive/rename the old repository and make that archive private, then create a **new clean public repository with the original name**, uploading only the safe public-site files. Inspect copies/forks separately. This operation requires GitHub repository-administration access and is not performed by the website.
+Previous public clones, cached copies, or forks may still contain information that was public before the archive was made private. Making the old repo private cannot revoke those external copies.
 
-See [SETUP.md](SETUP.md) for connecting your browser and finishing the privacy cleanup.
+If your browser token was issued before the public repository was recreated, review its **Only select repositories** settings: select the **new** `faculty-search-desk` and `faculty-search-private`, not `faculty-search-desk-old`. See [SETUP.md](SETUP.md).
 
 ## Development
 
