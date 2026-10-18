@@ -70,9 +70,9 @@ class CollectorTests(unittest.TestCase):
            "institution":"Example University","url":"https://academicjobswiki.org/wiki/2026#Example",
            "adUrl":"https://example.edu/positions/2026-call.pdf",
            "statuses":["Applications open"],"firstSeen":now_iso()}
-        pdf=("Example University Assistant Professor of Organizational Communication\\n"
-             "How to Apply\\n"
-             "Please submit a cover letter and curriculum vitae.\\n"
+        pdf=("Example University Assistant Professor of Organizational Communication\n"
+             "How to Apply\n"
+             "Please submit a cover letter and curriculum vitae.\n"
              "Priority review begins October 21, 2026.")
         def resp(url):
             if url!=j["adUrl"]: raise AssertionError("Fetched wiki instead of the linked call")
