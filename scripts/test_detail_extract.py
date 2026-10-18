@@ -40,5 +40,15 @@ class DetailTests(unittest.TestCase):
         <p>The position involves research and teaching philosophy.</p></main>"""
         e=evidence_from_lines(text_lines(html),"https://example.edu")
         self.assertEqual(e["materialEvidence"],[])
+    def test_board_listing_expiry_is_not_employer_deadline(self):
+        e=evidence_from_lines([
+            "Assistant Professor of Organizational Communication",
+            "Posted: Jul 29, 2026 Apply By: Open until filled",
+            "Screening of applicants will begin September 15, 2026.",
+            "Applications will continue until the position is filled."],
+            "https://jobs.chronicle.com/job/38051792/role")
+        self.assertEqual([(x["date"],x["type"]) for x in e["deadlineEvidence"]],
+                         [("2026-09-15","priority")])
+
 if __name__=="__main__":
     unittest.main()

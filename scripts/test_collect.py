@@ -83,5 +83,114 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(j["deadline"],"2026-10-21")
         self.assertEqual(j["verifiedApplicationUrl"],j["adUrl"])
 
+    def test_ut_austin_wiki_heading_update_is_one_position(self):
+        from collect import collapse_wiki_duplicates
+        headline=("Assistant Professor in Organizational Communication & Technology, "
+                  "Department of Communication, Moody College of Communication "
+                  "(Deadline: 09/15/2026)")
+        base={"sourceId":"academic-jobs-wiki","institution":"University of Texas, Austin (Austin, Texas)",
+              "adUrl":"https://faculty.utexas.edu/career/188439"}
+        old={"id":"4db9e22f2195","title":headline,
+             "url":"https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#old",
+             "firstSeen":"2026-09-07T17:20:46Z","lastSeen":"2026-10-08T17:54:55Z",
+             "statuses":[],**base}
+        update={"id":"91dffc54aeaf","title":headline+" ZOOM INTERVIEW INVITATIONS SENT OUT",
+                "url":"https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#new",
+                "firstSeen":"2026-10-09T17:28:48Z","lastSeen":"2026-10-18T15:11:34Z",
+                "statuses":[],**base}
+        # Chronicle's December posting is potentially distinct and must survive.
+        chronicle={"id":"4291024f17f0","sourceId":"chronicle-communications",
+                   "title":"Assistant Professor, Tenure-Track Faculty Position in Organizational Communication",
+                   "institution":"University of Texas at Austin",
+                   "jobNumber":"38051792","deadline":"2026-12-13",
+                   "url":"https://jobs.chronicle.com/job/38051792/role",
+                   "firstSeen":"2026-10-15T15:38:55Z"}
+        jobs={j["id"]:j for j in (old,update,chronicle)}
+        self.assertEqual(collapse_wiki_duplicates(jobs),1)
+        self.assertEqual(set(jobs),{"4db9e22f2195","4291024f17f0"})
+        survivor=jobs["4db9e22f2195"]
+        self.assertEqual(survivor["deadline"],"2026-09-15")
+        self.assertEqual(survivor["firstSeen"],"2026-09-07T17:20:46Z")
+        self.assertEqual(survivor["lastSeen"],"2026-10-18T15:11:34Z")
+        self.assertTrue(any("ZOOM INTERVIEW" in s for s in survivor["statuses"]))
+        self.assertTrue(any("ZOOM INTERVIEW" in s for s in survivor["newStatuses"]))
+        self.assertNotIn("ZOOM INTERVIEW",survivor["title"])
+        self.assertNotIn("Deadline:",survivor["title"])
+        self.assertEqual(collapse_wiki_duplicates(jobs),0)
+
+    def test_generic_departmental_link_is_not_dedupe_proof(self):
+        from collect import collapse_wiki_duplicates
+        base={"sourceId":"academic-jobs-wiki",
+              "adUrl":"https://faculty.utexas.edu/",
+              "institution":"University of Texas at Austin",
+              "firstSeen":"2026-09-07T12:00:00Z"}
+        jobs={"a":{"id":"a","title":"Assistant Professor in Organizational Communication",**base},
+              "b":{"id":"b","title":"Assistant Professor in Strategic Communication",**base}}
+        self.assertEqual(collapse_wiki_duplicates(jobs),0)
+        self.assertEqual(len(jobs),2)
+
+    def test_wiki_parser_captures_heading_deadline_and_activity(self):
+        from collect import parse_wikitext
+        wiki="""== Tenure Track ==
+=== University of Texas, Austin (Austin, Texas) - Assistant Professor in Organizational Communication & Technology (Deadline: 09/15/2026) ZOOM INTERVIEW INVITATIONS SENT OUT ===
+* [https://faculty.utexas.edu/career/188439 Apply]
+"""
+        parsed=parse_wikitext(wiki,"https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027","Communication and Media Studies 2026-2027")
+        self.assertEqual(len(parsed),1)
+        self.assertEqual(parsed[0]["deadline"],"2026-09-15")
+        self.assertEqual(parsed[0]["title"],"Assistant Professor in Organizational Communication & Technology")
+        self.assertIn("ZOOM INTERVIEW INVITATIONS SENT OUT",parsed[0]["statuses"])
+        self.assertEqual(parsed[0]["adUrl"],"https://faculty.utexas.edu/career/188439")
+
+    def test_chronicle_mirror_folds_into_ut_official_requisition(self):
+        from collect import collapse_cross_source_duplicates, official_identity
+        from detail_extract import evidence_from_lines
+        official="https://faculty.utexas.edu/career/188439"
+        wiki={"id":"4db9e22f2195","title":"Assistant Professor in Organizational Communication & Technology",
+              "sourceId":"academic-jobs-wiki","institution":"University of Texas, Austin (Austin, Texas)",
+              "url":"https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#old",
+              "adUrl":official,"deadline":"2026-09-15","deadlineKind":"priority",
+              "statuses":["ZOOM INTERVIEW INVITATIONS SENT OUT"],"firstSeen":"2026-09-07T17:20:46Z",
+              "alternateFeedIds":["91dffc54aeaf"]}
+        chronicle={"id":"4291024f17f0","sourceId":"chronicle-communications",
+                   "title":"Assistant Professor, Tenure-Track Faculty Position in Organizational Communication",
+                   "institution":"University of Texas at Austin",
+                   "jobNumber":"38051792","deadline":"2026-12-13",
+                   "url":"https://jobs.chronicle.com/job/38051792/role",
+                   "detailText":"Assistant Professor in Organizational Communication & Technology. To apply, visit "+official,
+                   "deadlineNote":"Applications remain open until filled.",
+                   "firstSeen":"2026-10-15T15:38:55Z",
+                   "applicationEvidence":evidence_from_lines([
+                     "Screening of applicants will begin September 15, 2026.",
+                     "Application Instructions",
+                     "Applicants should submit a letter of interest, a curriculum vitae, and a research statement."],
+                     "https://jobs.chronicle.com/job/38051792/role")}
+        self.assertEqual(official_identity(chronicle),official)
+        jobs={j["id"]:j for j in (wiki,chronicle)}
+        self.assertEqual(collapse_cross_source_duplicates(jobs),1)
+        self.assertEqual(list(jobs),["4db9e22f2195"])
+        result=jobs["4db9e22f2195"]
+        self.assertEqual(result["deadline"],"2026-09-15")
+        self.assertEqual(result["deadlineKind"],"priority")
+        self.assertEqual(result["verifiedApplicationUrl"],official)
+        self.assertIn("4291024f17f0",result["alternateFeedIds"])
+        self.assertIn("91dffc54aeaf",result["alternateFeedIds"])
+        self.assertEqual(result["alternateListings"][0]["sourceId"],"chronicle-communications")
+        self.assertEqual({x["category"] for x in result["applicationEvidence"]["materialEvidence"]},
+                         {"cover_letter","cv","research_statement"})
+        self.assertEqual(collapse_cross_source_duplicates(jobs),0)
+
+    def test_distinct_official_ut_requisition_is_not_conflated(self):
+        from collect import collapse_cross_source_duplicates
+        jobs={
+            "a":{"id":"a","sourceId":"academic-jobs-wiki",
+                 "adUrl":"https://faculty.utexas.edu/career/188439",
+                 "firstSeen":"2026-09-01T00:00:00Z"},
+            "b":{"id":"b","sourceId":"academic-jobs-wiki",
+                 "adUrl":"https://faculty.utexas.edu/career/188440",
+                 "firstSeen":"2026-09-02T00:00:00Z"},
+        }
+        self.assertEqual(collapse_cross_source_duplicates(jobs),0)
+
 if __name__=='__main__':
     unittest.main()

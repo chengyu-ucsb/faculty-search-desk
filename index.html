@@ -762,6 +762,7 @@ function trackerIndex(){
 }
 function trackerJobForFeed(f, idx){
   if(idx.byFeed.has(f.id)) return idx.byFeed.get(f.id);
+  for(const alias of (f.alternateFeedIds||[])) if(idx.byFeed.has(alias)) return idx.byFeed.get(alias);
   if(f.url && idx.byUrl.has(normUrl(f.url))) return idx.byUrl.get(normUrl(f.url));
   const fn = feedNumber(f);
   if(fn && idx.byNumber.has(fn)){
@@ -776,6 +777,7 @@ function trackerJobForFeed(f, idx){
 function matchFeedForJob(job){
   const u = job.url ? normUrl(job.url) : '', tk = titleKey(job.title), jn = numKey(job.jobNumber || jobNumberFromUrl(job.url));
   return (S.feed.jobs || []).find(f => {
+    if(job.feedId && (f.id===job.feedId || (f.alternateFeedIds||[]).includes(job.feedId))) return true;
     if(u && f.url && normUrl(f.url) === u) return true;
     const fn = feedNumber(f);
     if(jn && fn){
@@ -796,8 +798,24 @@ function feedIdentity(f){
 }
 /* Group lookalike listings in the Discover UI, without declaring different
    requisition numbers identical or destroying an alternative source URL. */
+function specificWikiAdKey(f){
+  if(!isWikiEntry(f) || !f.adUrl) return '';
+  try{
+    const u=new URL(f.adUrl);
+    const p=u.pathname.toLowerCase().replace(/\/$/,'');
+    if(!/\/(?:career|jobs?|positions?|postings?|requisitions?)\/(?:[a-z0-9_-]*\d{3,}[a-z0-9_-]*|[a-z0-9_-]{12,})$/.test(p))
+      return '';
+    return normUrl(f.adUrl);
+  }catch(e){return '';}
+}
+function cleanWikiFeedTitle(s){
+  return String(s||'')
+    .replace(/\s+((?:(?:ZOOM|PHONE|VIRTUAL|ON.CAMPUS|CAMPUS)\s+)?INTERVIEW(?:S)?\s+(?:INVITATIONS?|INVITES?|REQUESTS?)\s+[A-Z \/-]+)\s*$/, '')
+    .replace(/\s*\(\s*(?:application\s+)?(?:deadline|review begins|priority review)\s*:\s*[^)]+\)/gi,'')
+    .trim();
+}
 function feedGroupKey(f){
-  if(isWikiEntry(f)) return 'wiki:'+f.id;
+  if(isWikiEntry(f)) return 'wiki:'+(specificWikiAdKey(f)||f.id);
   const p=feedIdentity(f);
   const employer=instKey(p.institution);
   const headline=titleKey(p.title);
@@ -816,6 +834,21 @@ function groupRelatedFeed(postings){
     groups.get(key).push(posting);
   }
   return [...groups.values()].map(group=>{
+    // A wiki editor changing a heading is not a second academic vacancy.
+    // Collapse only records sharing an identifiable official requisition URL.
+    if(group.length>1 && group.every(f=>isWikiEntry(f)) &&
+       group.every(f=>specificWikiAdKey(f) && specificWikiAdKey(f)===specificWikiAdKey(group[0]))){
+      const oldest=group.slice().sort((a,b)=>String(a.firstSeen||'').localeCompare(String(b.firstSeen||'')))[0];
+      const primary=group.find(f=>f.added)||oldest;
+      const updates=group.flatMap(f=>[
+        ...(f.statuses||[]),
+        ...((f.title||'').match(/(?:ZOOM|PHONE|CAMPUS) INTERVIEW INVITATIONS SENT OUT/i)||[])
+      ]);
+      return {...primary,title:cleanWikiFeedTitle(primary.title),
+        statuses:[...new Set(updates)],firstSeen:oldest.firstSeen,
+        deadline:group.find(f=>f.deadline)?.deadline||primary.deadline,
+        relatedAds:[],groupSize:1,allAdded:group.some(f=>f.added)};
+    }
     // Show an untracked listing first; never hide a separate posting just because
     // another listing with the same title was already imported.
     group.sort((a,b)=>Number(a.added)-Number(b.added) ||
@@ -977,7 +1010,7 @@ function deadlineCell(job){
   const d = daysUntil(job.deadline);
   const cls = d < 0 ? 'past' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : '';
   const txt = d < 0 ? `${-d} day${d===-1?'':'s'} ago` : d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
-  return `<div class="dl ${cls}">${esc(fmtDate(job.deadline))}<span class="days">${txt}</span></div>`;
+  return `<div class="dl ${cls}">${job.deadlineKind==='priority'?'Review ':''}${esc(fmtDate(job.deadline))}<span class="days">${txt}</span></div>`;
 }
 function stagePill(job){
   const fam = stageFamily(job);
@@ -1054,7 +1087,7 @@ function httpLink(url,label){
   try{const u=new URL(url);if(u.protocol!=='https:'&&u.protocol!=='http:')return esc(label);return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ${ICON.ext}</a>`;}catch(e){return esc(label)}
 }
 function renderApplicationEvidence(job){
-  const linked=(S.feed.jobs||[]).find(f=>f.id===job.feedId);
+  const linked=(S.feed.jobs||[]).find(f=>f.id===job.feedId || (f.alternateFeedIds||[]).includes(job.feedId));
   const matches=(job.sourceEvidence||[]).concat((job.applicationEvidence?.deadlineEvidence||[]));
   const materials=job.materials.filter(m=>m.evidence);
   const other=(job.applicationEvidence?.materialEvidence||[]).filter(e=>!materials.some(m=>m.category===e.category));
@@ -1223,7 +1256,7 @@ function renderDiscover(){
   const good = S.profile ? S.profile.goodFit : 4;
   const allInbox = groupRelatedFeed(feedInbox());
   const addedCount = allInbox.filter(f=>f.allAdded).length;
-  let inbox = allInbox.filter(f => (!S.feedAcademicOnly || isAcademicPosting(f)) && (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
+  let inbox = allInbox.filter(f => (!S.feedAcademicOnly || isAcademicPosting(f)) && (S.showAdded || !f.allAdded) && (S.feedSource==='all' || f.sourceId===S.feedSource || (f.alternateListings||[]).some(x=>x.sourceId===S.feedSource)) && (!S.feedFilter || [f.title,f.institution,f.location,f.snippet].join(' ').toLowerCase().includes(S.feedFilter.toLowerCase())));
   if(prof){ inbox = inbox.map(f => ({ ...f, fit: feedFit(f) })); if(S.feedMin === 'good') inbox = inbox.filter(f => f.fit.score >= good); else if(S.feedMin === 'some') inbox = inbox.filter(f => f.fit.score >= 1); }
   const stamp = f => f.changedAt && f.changedAt > (f.firstSeen||'') ? f.changedAt : (f.firstSeen||'');
   if(prof && S.feedSort === 'fit') inbox.sort((a,b) => (b.fit.score - a.fit.score) || (stamp(b) < stamp(a) ? -1 : 1));
@@ -1239,7 +1272,7 @@ function renderDiscover(){
     <div class="joblist">`;
   if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'Every posting here is already in your tracker or dismissed. New ones arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
-      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · due ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
+      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · ${f.deadlineKind==='priority'?'review begins':'due'} ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.alternateListings?.length ? `<details class="related-listings"><summary>Also listed by ${esc([...new Set(f.alternateListings.map(x=>sourceName(x.sourceId)))].join(', '))}</summary>${f.alternateListings.map(x=>`<div class="row"><span class="listing-source">${esc(sourceName(x.sourceId))}</span><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Original ad</a></div>`).join('')}</details>` : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
       <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" title="Original source listing">${ICON.ext} Listing</a>`:''}${f.verifiedApplicationUrl?`<a class="btn sm" href="${esc(f.verifiedApplicationUrl)}" target="_blank" rel="noopener" title="Verified linked application page">Job call</a>`:(f.applicationLinkCandidates?.length?`<a class="btn sm" href="${esc(f.applicationLinkCandidates[0].url)}" target="_blank" rel="noopener" title="Possible application page: review the employer and requisition before relying on it">Possible application page</a>`:'')}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
     </div>`).join('');
   h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
@@ -2025,7 +2058,7 @@ const actions = {
   fillfromtext: () => { captureAddForm(); const text = (S.callDraft.rawText || '').trim(); if(!text){ toast('Paste the posting text first, or choose a file.'); return; } const keep = { fileName: S.callDraft.fileName, fileSize: S.callDraft.fileSize, file: S.callDraft.file }; applyGuess(S.callDraft, parseJobCall(text)); Object.assign(S.callDraft, keep); render(); toast('Read the posting — please check the fields marked “check”.'); },
   applyfeedfindings: (el) => {
     const j = jobById(el.dataset.id);
-    const f = (S.feed.jobs||[]).find(x => x.id === j?.feedId) || (j && matchFeedForJob(j));
+    const f = (S.feed.jobs||[]).find(x => x.id === j?.feedId || (x.alternateFeedIds||[]).includes(j?.feedId)) || (j && matchFeedForJob(j));
     if(!j || !f || S.readonly) return;
     const n = syncFeedEvidence(j, f);
     if(n){ j.updatedAt = nowIso(); touch('Verify requirements for ' + j.institution); }
@@ -2037,7 +2070,7 @@ const actions = {
     let jobs = 0, updates = 0;
     for(const j of S.tracker.jobs){
       if(j.stage !== 'preparing') continue;
-      const f = (S.feed.jobs||[]).find(x => x.id === j.feedId) || matchFeedForJob(j);
+      const f = (S.feed.jobs||[]).find(x => x.id === j.feedId || (x.alternateFeedIds||[]).includes(j.feedId)) || matchFeedForJob(j);
       if(!f) continue;
       const n = syncFeedEvidence(j, f);
       if(n){ j.updatedAt = nowIso(); jobs++; updates += n; }
