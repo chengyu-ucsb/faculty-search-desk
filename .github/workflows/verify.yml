@@ -1,0 +1,26 @@
+name: Verify search desk
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - improve-design-and-job-import
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r scripts/requirements.txt
+      - name: Assert sensitive files are absent from public checkout
+        run: |
+          test ! -e data/tracker.json
+          test ! -d files
+      - run: python -m py_compile scripts/collect.py
+      - run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - run: node scripts/test_ui.cjs
