@@ -863,7 +863,7 @@ function render(){
   $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === S.view));
   $('#cntJobs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.jobs.filter(j => !isClosed(j)).length;
   $('#cntDocs').textContent = S.readonly && c.privateRepo ? '–' : S.tracker.documents.length;
-  $('#cntFeed').textContent = groupRelatedFeed(feedInbox()).filter(f=>!f.allAdded).length;
+  $('#cntFeed').textContent = groupRelatedFeed(feedInbox()).filter(f=>!f.allAdded && (!S.feedAcademicOnly||isAcademicPosting(f))).length;
   if(S.readonly && !dirty && !saving) setSaveState('readonly', S.loaded ? 'Read-only' : 'Loading…');
   const main = $('#main');
   let html = '';
