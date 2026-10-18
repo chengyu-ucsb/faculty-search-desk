@@ -863,15 +863,28 @@ function groupRelatedFeed(postings){
 /* Interview updates belong to the history of a search, not the new-job inbox.
    Preserve the feed record and its sources for tracked positions. */
 function isAdvancedRecruitment(f){
-  const updates=[...(f.statuses||[]),f.title||''];
+  const updates=[...(f.statuses||[]),...(f.newStatuses||[]),f.title||''];
   return updates.some(t =>
     /\b(?:zoom|phone|virtual|campus|on.campus|first.round)\s+interviews?\s+(?:happening|scheduled|conducted|completed|underway|in progress)\b/i.test(t) ||
     /\b(?:zoom|phone|virtual|campus|on.campus)?\s*interviews?\s+(?:invitations?|invites?|requests?)\s+(?:sent|out|extended|issued)\b/i.test(t) ||
     /\b(?:offers?\s+(?:made|extended|accepted)|search\s+(?:closed|cancelled)|position\s+filled)\b/i.test(t)
   );
 }
+function isAdvancedTrackerStage(job){
+  if(!job) return false;
+  const stage=String(job.stage||'').toLowerCase().replace(/[\s-]+/g,'_');
+  return /(?:interview|zoom|phone|campus|finalist|offer|accepted|declined|withdrawn|rejected)/.test(stage) ||
+    ['zoom_done','zoom_scheduled','screening_done','screening_scheduled'].includes(stage) ||
+    ['offered','accepted','rejected','withdrawn','declined'].includes(String(job.outcome||'').toLowerCase());
+}
 function discoveryEligible(f){
-  return S.showAdvancedSearches || !isAdvancedRecruitment(f);
+  if(S.showAdvancedSearches) return true;
+  if(isAdvancedRecruitment(f)) return false;
+  // Recruitment progress already recorded in Applications takes precedence
+  // over stale or incomplete discovery-feed status updates.
+  const idx=trackerIndex();
+  const matches=[f,...(f.relatedAds||[])];
+  return !matches.some(item => isAdvancedTrackerStage(trackerJobForFeed(item,idx)));
 }
 function feedInbox(){
   const dismissed = new Set(S.tracker.dismissedFeedIds);
