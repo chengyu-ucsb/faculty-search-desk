@@ -796,8 +796,24 @@ function feedIdentity(f){
 }
 /* Group lookalike listings in the Discover UI, without declaring different
    requisition numbers identical or destroying an alternative source URL. */
+function specificWikiAdKey(f){
+  if(!isWikiEntry(f) || !f.adUrl) return '';
+  try{
+    const u=new URL(f.adUrl);
+    const p=u.pathname.toLowerCase().replace(/\\/$/,'');
+    if(!/\\/(?:career|jobs?|positions?|postings?|requisitions?)\\/(?:[a-z0-9_-]*\\d{3,}[a-z0-9_-]*|[a-z0-9_-]{12,})$/.test(p))
+      return '';
+    return normUrl(f.adUrl);
+  }catch(e){return '';}
+}
+function cleanWikiFeedTitle(s){
+  return String(s||'')
+    .replace(/\\s+((?:(?:ZOOM|PHONE|VIRTUAL|ON.CAMPUS|CAMPUS)\\s+)?INTERVIEW(?:S)?\\s+(?:INVITATIONS?|INVITES?|REQUESTS?)\\s+[A-Z \\/-]+)\\s*$/, '')
+    .replace(/\\s*\\(\\s*(?:application\\s+)?(?:deadline|review begins|priority review)\\s*:\\s*[^)]+\\)/gi,'')
+    .trim();
+}
 function feedGroupKey(f){
-  if(isWikiEntry(f)) return 'wiki:'+f.id;
+  if(isWikiEntry(f)) return 'wiki:'+(specificWikiAdKey(f)||f.id);
   const p=feedIdentity(f);
   const employer=instKey(p.institution);
   const headline=titleKey(p.title);
@@ -816,6 +832,21 @@ function groupRelatedFeed(postings){
     groups.get(key).push(posting);
   }
   return [...groups.values()].map(group=>{
+    // A wiki editor changing a heading is not a second academic vacancy.
+    // Collapse only records sharing an identifiable official requisition URL.
+    if(group.length>1 && group.every(f=>isWikiEntry(f)) &&
+       group.every(f=>specificWikiAdKey(f) && specificWikiAdKey(f)===specificWikiAdKey(group[0]))){
+      const oldest=group.slice().sort((a,b)=>String(a.firstSeen||'').localeCompare(String(b.firstSeen||'')))[0];
+      const primary=group.find(f=>f.added)||oldest;
+      const updates=group.flatMap(f=>[
+        ...(f.statuses||[]),
+        ...((f.title||'').match(/(?:ZOOM|PHONE|CAMPUS) INTERVIEW INVITATIONS SENT OUT/i)||[])
+      ]);
+      return {...primary,title:cleanWikiFeedTitle(primary.title),
+        statuses:[...new Set(updates)],firstSeen:oldest.firstSeen,
+        deadline:group.find(f=>f.deadline)?.deadline||primary.deadline,
+        relatedAds:[],groupSize:1,allAdded:group.some(f=>f.added)};
+    }
     // Show an untracked listing first; never hide a separate posting just because
     // another listing with the same title was already imported.
     group.sort((a,b)=>Number(a.added)-Number(b.added) ||
