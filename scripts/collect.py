@@ -941,10 +941,12 @@ def _structured_deadline(html, url, job):
 
 def apply_scores(jobs, profile, today):
     """Fetch full calls, follow verified application links and preserve provenance."""
-    if not profile["terms"]:
+    # Application extraction must run regardless of whether a fit profile exists.
+    # Matching preferences are optional; official job requirements are not.
+    has_profile = bool(profile["terms"])
+    if not has_profile:
         for j in jobs.values():
             for k in ("score", "matched", "scoredOn", "scoredAt", "scoredFor"): j.pop(k, None)
-        return 0
     stale = lambda j: j.get("scoredFor") != profile["updatedAt"] or "score" not in j or j.get("scoredVersion") != FIT_VERSION
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=RESCORE_WINDOW_DAYS)).isoformat()
     candidates = [j for j in jobs.values()
@@ -1057,16 +1059,18 @@ def apply_scores(jobs, profile, today):
         if len(page_text) >= 150:
             j["detailText"] = compact_posting_details(page_text)
             j["detailCollectedAt"] = today
-        j["score"], j["matched"] = rank_posting(j, profile, page_text)
-        j["scoredOn"], j["scoredAt"], j["scoredFor"] = "page", today, profile["updatedAt"]
-        j["scoredVersion"] = FIT_VERSION
+        if has_profile:
+            j["score"], j["matched"] = rank_posting(j, profile, page_text)
+            j["scoredOn"], j["scoredAt"], j["scoredFor"] = "page", today, profile["updatedAt"]
+            j["scoredVersion"] = FIT_VERSION
         if not j.get("snippet") and page_text:
             j["snippet"] = page_text[:300]
-    for j in jobs.values():
-        if stale(j):
-            j["score"], j["matched"] = rank_posting(j, profile, j.get("detailText", ""))
-            j["scoredOn"], j["scoredAt"], j["scoredFor"] = ("page" if j.get("detailText") else "wiki" if "statuses" in j else "title"), today, profile["updatedAt"]
-            j["scoredVersion"] = FIT_VERSION
+    if has_profile:
+        for j in jobs.values():
+            if stale(j):
+                j["score"], j["matched"] = rank_posting(j, profile, j.get("detailText", ""))
+                j["scoredOn"], j["scoredAt"], j["scoredFor"] = ("page" if j.get("detailText") else "wiki" if "statuses" in j else "title"), today, profile["updatedAt"]
+                j["scoredVersion"] = FIT_VERSION
     return fetched
 
 def passes_filters(post, include, exclude):
