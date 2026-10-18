@@ -2002,6 +2002,7 @@ function syncFeedEvidence(job, feed){
      facts.some(x=>x.status==='required')){
     const before=job.materials.length;
     job.materials=job.materials.filter(m=>!(m.status==='unverified' && !m.documentId &&
+      !m.evidence && m.name===label(STANDARD_MATERIALS,m.category) &&
       m.notes==='No explicit requirement confirmed from the available posting. Check the official application call.'));
     changes+=before-job.materials.length;
   }
