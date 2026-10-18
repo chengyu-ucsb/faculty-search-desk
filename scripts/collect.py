@@ -28,6 +28,7 @@ import urllib.robotparser
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from detail_extract import text_lines, application_links, evidence_from_lines, describe_coverage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES_PATH = os.path.join(ROOT, "data", "sources.json")
@@ -800,6 +801,46 @@ def apply_scores(jobs, profile, today):
             host_failures[host] = host_failures.get(host, 0) + 1
             continue
         page_text = extract_main_text(res["text"])
+        # Extract from the complete document, not the shortened matching excerpt.
+        # Every deadline and material includes a quote and URL for review.
+        evidence = evidence_from_lines(text_lines(res["text"]),res["final_url"],"job-board")
+        j["applicationEvidence"] = evidence
+        j["applicationCoverage"] = describe_coverage(evidence)
+        links=application_links(res["text"],res["final_url"])
+        if links:
+            j["applicationLinkCandidates"] = links
+            # An 'Apply' button is a lead, not proof. Visit at most one
+            # reasonable destination, respecting robots.txt and HTTP blocks.
+            for link in links[:2]:
+                dest=link["url"]
+                if not robots_allowed(dest): continue
+                deep=fetch(dest)
+                if deep["error"] or deep["blocked"] or "pdf" in deep["content_type"]: continue
+                full=evidence_from_lines(text_lines(deep["text"]),deep["final_url"],"application-destination")
+                if not full["deadlineEvidence"] and not full["materialEvidence"]:continue
+                # Require a requisition number or specialty terms from the title
+                # to appear at the destination. A generic recruiting portal
+                # could otherwise contaminate a job's application checklist.
+                slug=(j.get("title") or "").split(":",1)[-1]
+                words={w.lower() for w in re.findall(r"[a-z]{5,}",slug,re.I)} - {
+                    "assistant","associate","professor","professorship","university",
+                    "department","college","school","position","faculty","tenure","track"}
+                num=j.get("jobNumber") or job_number(j.get("url",""))
+                match_num=bool(num and str(num) in deep["text"])
+                matched=sum(w in deep["text"].lower() for w in words)
+                if not (match_num or (words and matched>=min(2,len(words)))):
+                    continue
+                j["verifiedApplicationUrl"] = deep["final_url"]
+                j["applicationEvidence"] = full
+                j["applicationCoverage"] = describe_coverage(full)
+                j["applicationSource"] = "verified_linked_page"
+                break
+        chosen=(j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
+        if chosen and not j.get("deadline"):
+            item=next((x for x in chosen if x["type"]=="closing"),chosen[0])
+            j["deadline"]=item["date"]
+            j["deadlineKind"]=item["type"]
+            j["deadlineEvidence"]=item
         # Prefer structured JobPosting metadata when the employer provides it.
         # This recovers institutions and deadlines lost in compact RSS summaries.
         try:
