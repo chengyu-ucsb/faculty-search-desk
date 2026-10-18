@@ -17,6 +17,7 @@ robots.txt is honoured.
 import argparse
 import datetime as dt
 import hashlib
+import io
 import json
 import os
 import re
@@ -28,7 +29,8 @@ import urllib.robotparser
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from detail_extract import text_lines, application_links, evidence_from_lines, describe_coverage
+from pypdf import PdfReader
+from detail_extract import text_lines, application_links, evidence_from_lines, merge_evidence, describe_coverage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES_PATH = os.path.join(ROOT, "data", "sources.json")
@@ -39,12 +41,12 @@ PROFILE_PATH = os.path.join(ROOT, "data", "profile.json")
 # Fit scoring: how many individual posting pages to read per run, and how far
 # back to re-read postings after the profile changes.
 MAX_DETAIL_FETCHES = 60
-RESCORE_WINDOW_DAYS = 30
-MAX_DETAIL_TRIES = 3
+RESCORE_WINDOW_DAYS = 150
+MAX_DETAIL_TRIES = 7
 MAX_HOST_FAILURES = 2
 DETAIL_TEXT_CAP = 12000
 STORED_DETAIL_CAP = 6500
-FIT_VERSION = 3
+FIT_VERSION = 4
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "faculty-search-desk")
 USER_AGENT = f"FacultySearchDesk/1.0 (+https://github.com/{REPO}; personal academic job tracker)"
@@ -162,6 +164,17 @@ def fetch(url):
         out["status"] = r.status_code
         out["final_url"] = r.url
         out["content_type"] = (r.headers.get("Content-Type") or "").lower()
+        if r.status_code == 200 and ("application/pdf" in out["content_type"] or r.content.startswith(b"%PDF")):
+            if len(r.content) > 8_000_000:
+                out["error"] = "PDF exceeds 8 MB extraction limit"
+                return out
+            try:
+                reader = PdfReader(io.BytesIO(r.content))
+                out["text"] = "\\n".join(page.extract_text() or "" for page in reader.pages[:35])[:3_000_000]
+                out["content_type"] = "application/pdf"
+            except Exception:
+                out["error"] = "PDF text could not be extracted"
+            return out
         r.encoding = r.encoding or "utf-8"
         out["text"] = r.text[:3_000_000]
         if r.status_code in (401, 402, 403, 406, 429, 503) or (r.status_code == 200 and len(out["text"]) < 20000 and BOT_WALL.search(out["text"])):
@@ -777,97 +790,154 @@ def posting_text(job, page_text=""):
     return " ".join([job.get("title", ""), job.get("institution", ""), job.get("location", ""), job.get("snippet", ""), " ".join(job.get("statuses") or []), job.get("section", ""), page_text])
 
 
+def _source_lines(response):
+    if "pdf" in response["content_type"]:
+        return [line.strip() for line in response["text"].splitlines() if line.strip()]
+    return text_lines(response["text"])
+
+
+def _source_text(response):
+    if "pdf" in response["content_type"]:
+        return response["text"][:DETAIL_TEXT_CAP]
+    return extract_main_text(response["text"])
+
+
+def _same_posting(job, text):
+    """Verify links before attributing their deadlines or requirements to a job."""
+    t = text.lower()
+    num = job.get("jobNumber") or job_number(job.get("adUrl") or job.get("url", ""))
+    if num and re.search(r"\b" + re.escape(str(num)) + r"\b", text):
+        return True
+    stop = {"assistant", "associate", "full", "visiting", "clinical", "professor",
+            "professorship", "university", "department", "college", "school",
+            "position", "faculty", "tenure", "track", "open", "rank"}
+    words = {w.lower() for w in re.findall(r"[a-z]{5,}", job.get("title", ""), re.I)} - stop
+    if words and sum(w in t for w in words) >= min(2, len(words)):
+        return True
+    # Generic wiki titles may not name a specialty; corroborate the institution.
+    inst = {w.lower() for w in re.findall(r"[a-z]{5,}", job.get("institution", ""), re.I)} - stop - {"state"}
+    return bool(not words and inst and sum(w in t for w in inst) >= min(2, len(inst)))
+
+
+def _structured_deadline(html, url, job):
+    if not html or "pdf" in (html[:12].lower()):
+        return []
+    try:
+        candidates = parse_jsonld(BeautifulSoup(html, "html.parser"), url)
+        matching = [x for x in candidates if x.get("deadline") and
+                    (x.get("title") or "").lower() in (job.get("title") or "").lower()]
+        return [{"date": x["deadline"], "type": "closing", "url": url,
+                 "evidence": "Official JobPosting metadata (validThrough): " + x["deadline"],
+                 "source": "structured-data"} for x in matching
+                if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", x["deadline"])]
+    except (TypeError, ValueError, AttributeError):
+        return []
+
+
 def apply_scores(jobs, profile, today):
-    """Score every posting; read the posting page for recent ones not yet read since the profile changed."""
+    """Fetch full calls, follow verified application links and preserve provenance."""
     if not profile["terms"]:
         for j in jobs.values():
             for k in ("score", "matched", "scoredOn", "scoredAt", "scoredFor"): j.pop(k, None)
         return 0
     stale = lambda j: j.get("scoredFor") != profile["updatedAt"] or "score" not in j or j.get("scoredVersion") != FIT_VERSION
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=RESCORE_WINDOW_DAYS)).isoformat()
-    candidates = [j for j in jobs.values() if (stale(j) or j.get("scoredOn") != "page" or not j.get("detailText") or not j.get("applicationEvidence")) and (j.get("firstSeen") or "") >= cutoff
-                  and j.get("url", "").startswith("http") and int(j.get("detailTries", 0)) < MAX_DETAIL_TRIES and "statuses" not in j]
+    candidates = [j for j in jobs.values()
+                  if (stale(j) or j.get("scoredOn") != "page" or not j.get("detailText")
+                      or not j.get("applicationEvidence"))
+                  and (j.get("firstSeen") or "") >= cutoff
+                  and (j.get("adUrl") or j.get("url") or "").startswith("http")
+                  and int(j.get("detailTries", 0)) < MAX_DETAIL_TRIES]
+    # Newly found postings go first, but old incomplete jobs remain eligible for backfill.
     candidates.sort(key=lambda j: j.get("firstSeen") or "", reverse=True)
-    host_failures, fetched = {}, 0
-    deep_budget = 10
+    host_failures, fetched, deep_budget = {}, 0, 45
     for j in candidates[:MAX_DETAIL_FETCHES]:
-        host = urllib.parse.urlsplit(j["url"]).netloc
-        if host_failures.get(host, 0) >= MAX_HOST_FAILURES or not robots_allowed(j["url"]):
+        target = j.get("adUrl") or j["url"]
+        host = urllib.parse.urlsplit(target).netloc
+        if host_failures.get(host, 0) >= MAX_HOST_FAILURES or not robots_allowed(target):
             continue
-        res = fetch(j["url"])
+        res = fetch(target)
         j["detailTries"] = int(j.get("detailTries", 0)) + 1
         fetched += 1
         time.sleep(PAUSE_BETWEEN_REQUESTS)
         if res["blocked"] or res["error"] or not res["text"]:
             host_failures[host] = host_failures.get(host, 0) + 1
+            j["applicationFetchStatus"] = "blocked" if res["blocked"] else "unavailable"
             continue
-        page_text = extract_main_text(res["text"])
-        # Extract from the complete document, not the shortened matching excerpt.
-        # Every deadline and material includes a quote and URL for review.
-        evidence = evidence_from_lines(text_lines(res["text"]),res["final_url"],"job-board")
+        page_text = _source_text(res)
+        # Wiki body links are only leads. Do not attribute another university's call.
+        if j.get("adUrl") and not _same_posting(j, page_text):
+            j["verificationWarnings"] = ["The linked advertisement could not be matched to this position; verify the URL."]
+            j["applicationFetchStatus"] = "link_mismatch"
+            continue
+        evidence = evidence_from_lines(_source_lines(res), res["final_url"], "linked-call" if j.get("adUrl") else "job-board")
+        if "pdf" not in res["content_type"]:
+            evidence["deadlineEvidence"].extend(_structured_deadline(res["text"], res["final_url"], j))
         j["applicationEvidence"] = evidence
         j["applicationCoverage"] = describe_coverage(evidence)
-        links=application_links(res["text"],res["final_url"])
-        if links:
-            j["applicationLinkCandidates"] = links
-            # An 'Apply' button is a lead, not proof. Visit at most one
-            # reasonable destination, respecting robots.txt and HTTP blocks.
-            for link in (links[:1] if deep_budget > 0 else []):
-                dest=link["url"]
-                if not robots_allowed(dest): continue
-                deep_budget -= 1
-                time.sleep(PAUSE_BETWEEN_REQUESTS)
-                deep=fetch(dest)
-                if deep["error"] or deep["blocked"] or "pdf" in deep["content_type"]: continue
-                full=evidence_from_lines(text_lines(deep["text"]),deep["final_url"],"application-destination")
-                if not full["deadlineEvidence"] and not full["materialEvidence"]:continue
-                # Require a requisition number or specialty terms from the title
-                # to appear at the destination. A generic recruiting portal
-                # could otherwise contaminate a job's application checklist.
-                slug=(j.get("title") or "").split(":",1)[-1]
-                words={w.lower() for w in re.findall(r"[a-z]{5,}",slug,re.I)} - {
-                    "assistant","associate","professor","professorship","university",
-                    "department","college","school","position","faculty","tenure","track"}
-                num=j.get("jobNumber") or job_number(j.get("url",""))
-                match_num=bool(num and str(num) in deep["text"])
-                matched=sum(w in deep["text"].lower() for w in words)
-                if not (match_num or (words and matched>=min(2,len(words)))):
-                    continue
+        j["applicationFetchStatus"] = "read"
+        if j.get("adUrl"):
+            j["verifiedApplicationUrl"] = res["final_url"]
+            j["applicationSource"] = "linked_job_call"
+        links = application_links(res["text"], res["final_url"]) if "pdf" not in res["content_type"] else []
+        j["applicationLinkCandidates"] = links
+        seen = {normalize_url(res["final_url"])}
+        queue = [(x, 1) for x in links]
+        traversed = 0
+        while queue and deep_budget > 0 and traversed < 4:
+            link, depth = queue.pop(0)
+            dest = link["url"]
+            normalized = normalize_url(dest)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            if not robots_allowed(dest):
+                continue
+            deep_budget -= 1
+            traversed += 1
+            time.sleep(PAUSE_BETWEEN_REQUESTS)
+            deep = fetch(dest)
+            if deep["error"] or deep["blocked"] or not deep["text"]:
+                continue
+            deep_text = _source_text(deep)
+            if not _same_posting(j, deep_text):
+                continue
+            more = evidence_from_lines(_source_lines(deep), deep["final_url"], "official-job-call")
+            if "pdf" not in deep["content_type"]:
+                more["deadlineEvidence"].extend(_structured_deadline(deep["text"], deep["final_url"], j))
+            if more["deadlineEvidence"] or more["materialEvidence"]:
+                j["applicationEvidence"] = merge_evidence(j["applicationEvidence"], more)
+                j["applicationCoverage"] = describe_coverage(j["applicationEvidence"])
                 j["verifiedApplicationUrl"] = deep["final_url"]
-                j["applicationEvidence"] = full
-                j["applicationCoverage"] = describe_coverage(full)
                 j["applicationSource"] = "verified_linked_page"
-                break
-        chosen=(j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
+                page_text = (page_text + "\n" + deep_text)[:DETAIL_TEXT_CAP]
+            if depth < 2 and "pdf" not in deep["content_type"]:
+                queue.extend((x, depth + 1) for x in application_links(deep["text"], deep["final_url"])[:3])
+        chosen = (j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
         if chosen and not j.get("deadline"):
-            item=next((x for x in chosen if x["type"]=="closing"),chosen[0])
-            j["deadline"]=item["date"]
-            j["deadlineKind"]=item["type"]
-            j["deadlineEvidence"]=item
-        # Prefer structured JobPosting metadata when the employer provides it.
-        # This recovers institutions and deadlines lost in compact RSS summaries.
+            item = next((x for x in chosen if x["type"] == "closing"), chosen[0])
+            j["deadline"] = item["date"]
+            j["deadlineKind"] = item["type"]
+            j["deadlineEvidence"] = item
         try:
-            structured = parse_jsonld(BeautifulSoup(res["text"], "html.parser"), j["url"])
-            structured = [x for x in structured if x.get("title") and
-                          ("professor" in x["title"].lower() or "faculty" in x["title"].lower() or
-                           x["title"].lower() in (j.get("title") or "").lower())]
-            item = structured[0] if len(structured) == 1 else next(
-                (x for x in structured if (x.get("title") or "").lower() in (j.get("title") or "").lower()), None)
+            structured = parse_jsonld(BeautifulSoup(res["text"], "html.parser"), target) if "pdf" not in res["content_type"] else []
+            item = next((x for x in structured if x.get("title") and
+                         (x["title"].lower() in (j.get("title") or "").lower()
+                          or (j.get("title") or "").lower() in x["title"].lower())), None)
             if item:
                 for field in ("institution", "location", "deadline"):
                     if item.get(field) and not j.get(field):
                         j[field] = item[field]
                 if item.get("snippet") and len(item["snippet"]) > len(j.get("snippet") or ""):
                     j["snippet"] = item["snippet"]
-        except (ValueError, TypeError, AttributeError):
-            pass  # broken structured metadata must never discard the scraped posting
-        num = job_number(j.get("url", ""), page_text)
+        except (TypeError, ValueError, AttributeError):
+            pass
+        num = job_number(target, page_text)
         if num:
             j["jobNumber"] = num
-        if page_text and len(page_text) >= 150:
+        if len(page_text) >= 150:
             j["detailText"] = compact_posting_details(page_text)
             j["detailCollectedAt"] = today
-        # Avoid counting incidental keywords from navigation, boilerplate, and long generic pages.
         j["score"], j["matched"] = rank_posting(j, profile, page_text)
         j["scoredOn"], j["scoredAt"], j["scoredFor"] = "page", today, profile["updatedAt"]
         j["scoredVersion"] = FIT_VERSION
@@ -876,10 +946,11 @@ def apply_scores(jobs, profile, today):
     for j in jobs.values():
         if stale(j):
             j["score"], j["matched"] = rank_posting(j, profile, j.get("detailText", ""))
-            j["scoredOn"], j["scoredAt"], j["scoredFor"] = ("page" if j.get("detailText") else "wiki" if "statuses" in j else "title"), today, profile["updatedAt"]
+            j["scoredOn"], j["scoredAt"], j["scoredFor"] = (
+                "page" if j.get("detailText") else "wiki" if "statuses" in j else "title"),
+                today, profile["updatedAt"]
             j["scoredVersion"] = FIT_VERSION
     return fetched
-
 
 def passes_filters(post, include, exclude):
     hay = " ".join([post.get("title", ""), post.get("institution", ""), post.get("snippet", "")]).lower()
