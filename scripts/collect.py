@@ -40,7 +40,7 @@ PROFILE_PATH = os.path.join(ROOT, "data", "profile.json")
 # back to re-read postings after the profile changes.
 MAX_DETAIL_FETCHES = 60
 RESCORE_WINDOW_DAYS = 30
-MAX_DETAIL_TRIES = 2
+MAX_DETAIL_TRIES = 3
 MAX_HOST_FAILURES = 2
 DETAIL_TEXT_CAP = 12000
 STORED_DETAIL_CAP = 6500
@@ -785,10 +785,11 @@ def apply_scores(jobs, profile, today):
         return 0
     stale = lambda j: j.get("scoredFor") != profile["updatedAt"] or "score" not in j or j.get("scoredVersion") != FIT_VERSION
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=RESCORE_WINDOW_DAYS)).isoformat()
-    candidates = [j for j in jobs.values() if (stale(j) or j.get("scoredOn") != "page" or not j.get("detailText")) and (j.get("firstSeen") or "") >= cutoff
+    candidates = [j for j in jobs.values() if (stale(j) or j.get("scoredOn") != "page" or not j.get("detailText") or not j.get("applicationEvidence")) and (j.get("firstSeen") or "") >= cutoff
                   and j.get("url", "").startswith("http") and int(j.get("detailTries", 0)) < MAX_DETAIL_TRIES and "statuses" not in j]
     candidates.sort(key=lambda j: j.get("firstSeen") or "", reverse=True)
     host_failures, fetched = {}, 0
+    deep_budget = 10
     for j in candidates[:MAX_DETAIL_FETCHES]:
         host = urllib.parse.urlsplit(j["url"]).netloc
         if host_failures.get(host, 0) >= MAX_HOST_FAILURES or not robots_allowed(j["url"]):
@@ -811,9 +812,11 @@ def apply_scores(jobs, profile, today):
             j["applicationLinkCandidates"] = links
             # An 'Apply' button is a lead, not proof. Visit at most one
             # reasonable destination, respecting robots.txt and HTTP blocks.
-            for link in links[:2]:
+            for link in (links[:1] if deep_budget > 0 else []):
                 dest=link["url"]
                 if not robots_allowed(dest): continue
+                deep_budget -= 1
+                time.sleep(PAUSE_BETWEEN_REQUESTS)
                 deep=fetch(dest)
                 if deep["error"] or deep["blocked"] or "pdf" in deep["content_type"]: continue
                 full=evidence_from_lines(text_lines(deep["text"]),deep["final_url"],"application-destination")
