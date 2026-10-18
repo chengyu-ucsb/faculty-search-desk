@@ -654,11 +654,12 @@ function jobById(id){ return S.tracker.jobs.find(j => j.id === id); }
 function docById(id){ return S.tracker.documents.find(d => d.id === id); }
 function docCurrent(d){ return d.versions[d.versions.length-1]; }
 function readiness(job){
-  const req = job.materials.filter(m => !['not_required','finalists_only'].includes(m.status));
-  if(!req.length) return { pct: 0, ready: false, total: 0, done: 0 };
-  const pct = Math.round(req.reduce((a,m) => a + (MAT_PCT[m.status] ?? 0), 0) / req.length);
-  const done = req.filter(m => m.status === 'ready' || m.status === 'submitted').length;
-  return { pct, ready: done === req.length, total: req.length, done, unverified:req.filter(m=>m.status==='unverified').length };
+  const unknown=job.materials.filter(m=>m.status==='unverified').length;
+  const req=job.materials.filter(m=>!['not_required','finalists_only','unverified'].includes(m.status));
+  if(!req.length) return {pct:0,ready:false,total:0,done:0,unverified:unknown};
+  const pct=Math.round(req.reduce((a,m)=>a+(MAT_PCT[m.status]??0),0)/req.length);
+  const done=req.filter(m=>m.status==='ready'||m.status==='submitted').length;
+  return {pct,ready:done===req.length && unknown===0,total:req.length,done,unverified:unknown};
 }
 function isClosed(job){ return job.outcome !== 'active'; }
 function isInterviewing(job){ return ['zoom_scheduled','zoom_done','campus_scheduled','campus_done','offer'].includes(job.stage); }
@@ -1108,11 +1109,11 @@ function renderMaterialsTab(job){
   };
   const missing = STANDARD_MATERIALS.filter(([k]) => !job.materials.some(m => m.category === k));
   let h = `<div class="row between" style="margin-bottom:6px"><div class="section-title" style="margin:0">Checklist</div><div class="row">
-      ${!S.readonly && S.tracker.documents.length && job.materials.some(m => !m.documentId && m.category !== 'cover_letter' && m.status !== 'not_required') ? `<button class="btn sm" data-action="autoattach" data-id="${job.id}" title="Attach the newest document of each category (cover letters excluded)">${ICON.file} Attach my documents</button>`:''}
+      ${!S.readonly && S.tracker.documents.length && job.materials.some(m => !m.documentId && m.category !== 'cover_letter' && !['not_required','unverified'].includes(m.status)) ? `<button class="btn sm" data-action="autoattach" data-id="${job.id}" title="Attach the newest document of each category (cover letters excluded)">${ICON.file} Attach my documents</button>`:''}
       ${missing.length && !S.readonly ? `<button class="btn sm" data-action="addstandard" data-id="${job.id}">${ICON.plus} Add standard items (${missing.length})</button>`:''}
     </div></div>`;
   if(!job.materials.length) h += `<p class="muted small" style="margin:8px 0 12px">No materials listed yet. Add the standard checklist, then mark what this search actually asks for.</p>`;
-  h += job.materials.map(m => {
+  const renderMaterial=m => {
     const d = m.documentId ? docById(m.documentId) : null;
     const pinned = d && m.documentVersion ? d.versions.find(v => v.v === m.documentVersion) : null;
     const cur = d ? docCurrent(d) : null;
@@ -1125,7 +1126,12 @@ function renderMaterialsTab(job){
       </div>
       <div><button class="btn sm quiet" data-action="rmmat" data-id="${job.id}" data-mat="${m.id}" title="Remove"${S.readonly?' disabled':''}>${ICON.x}</button></div>
     </div>`;
-  }).join('');
+  };
+  const confirmed=job.materials.filter(m=>m.status!=='unverified');
+  const unknown=job.materials.filter(m=>m.status==='unverified');
+  h += confirmed.length ? `<div class="section-title" style="margin:16px 0 8px">Confirmed and tracked items (${confirmed.length})</div>` : '';
+  h += confirmed.map(renderMaterial).join('');
+  if(unknown.length) h += `<details class="callbox" style="margin-top:14px"><summary style="font-weight:750;cursor:pointer">Other document types not yet confirmed (${unknown.length})</summary><p class="small muted" style="margin-top:8px">These were on the generic checklist. They are not automatically required. Check the application portal before deciding whether to include them.</p>${unknown.map(renderMaterial).join('')}</details>`;
   h += `<form class="row" style="margin-top:12px" data-action-submit="addmat" data-id="${job.id}"><input type="text" name="name" placeholder="Custom item (e.g., diversity statement, 2 syllabi)" style="max-width:360px" ${S.readonly?' disabled':''}><button class="btn sm" type="submit"${S.readonly?' disabled':''}>${ICON.plus} Add item</button></form>
   <p class="small faint" style="margin-top:12px">Unverified items need confirmation from the official posting and prevent a false “Ready” result. Ready to submit = every item that isn't “Not required” or “Finalists only” is Done or Submitted. Marking an item Submitted pins the file version that was attached at that moment.</p>`;
   return h;
