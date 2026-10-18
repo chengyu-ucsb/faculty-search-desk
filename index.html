@@ -325,7 +325,7 @@ footer{max-width:1180px;margin:30px auto 20px;padding:0 20px;font-size:12px;colo
 </aside>
 <div class="workspace-shell">
   <header class="workspace-topbar">
-    <div class="breadcrumbs"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3V10.5Z"/><path d="M9 21v-7h6v7"/></svg> <span>Workspace</span><span class="sep">/</span><b id="sectionLabel">Applications</b></div>
+    <div class="breadcrumbs"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3V10.5Z"/><path d="M9 21v-7h6v7"/></svg> <button type="button" class="breadcrumb-home" data-action="goto" data-view="jobs" title="Go to Applications">Workspace</button><span class="sep">/</span><b id="sectionLabel">Applications</b></div>
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="searchBox" type="text" placeholder="Search applications, documents, or openings…" autocomplete="off" aria-label="Search workspace">
@@ -359,10 +359,10 @@ const STAGES = [
 ];
 const OUTCOMES = [['active','Active'],['rejected','Rejected'],['withdrawn','Withdrawn'],['accepted','Accepted'],['declined','Declined offer']];
 const MAT_STATUS = [
-  ['needed','Needed'], ['draft','Draft'], ['revising','Revising'], ['ready','Done / ready'],
+  ['unverified','Unverified · check posting'], ['needed','Needed'], ['draft','Draft'], ['revising','Revising'], ['ready','Done / ready'],
   ['submitted','Uploaded / submitted'], ['not_required','Not required'], ['finalists_only','Finalists only']
 ];
-const MAT_PCT = {needed:0, draft:30, revising:60, ready:100, submitted:100};
+const MAT_PCT = {unverified:0, needed:0, draft:30, revising:60, ready:100, submitted:100};
 const STANDARD_MATERIALS = [
   ['cover_letter','Cover letter'], ['cv','Curriculum vitae'], ['research_statement','Research statement'],
   ['teaching_statement','Teaching statement'], ['teaching_evals','Teaching evaluations'], ['syllabus','Syllabus'],
@@ -658,7 +658,7 @@ function readiness(job){
   if(!req.length) return { pct: 0, ready: false, total: 0, done: 0 };
   const pct = Math.round(req.reduce((a,m) => a + (MAT_PCT[m.status] ?? 0), 0) / req.length);
   const done = req.filter(m => m.status === 'ready' || m.status === 'submitted').length;
-  return { pct, ready: done === req.length, total: req.length, done };
+  return { pct, ready: done === req.length, total: req.length, done, unverified:req.filter(m=>m.status==='unverified').length };
 }
 function isClosed(job){ return job.outcome !== 'active'; }
 function isInterviewing(job){ return ['zoom_scheduled','zoom_done','campus_scheduled','campus_done','offer'].includes(job.stage); }
@@ -1043,7 +1043,7 @@ function renderMaterialsTab(job){
     </div>`;
   }).join('');
   h += `<form class="row" style="margin-top:12px" data-action-submit="addmat" data-id="${job.id}"><input type="text" name="name" placeholder="Custom item (e.g., diversity statement, 2 syllabi)" style="max-width:360px" ${S.readonly?' disabled':''}><button class="btn sm" type="submit"${S.readonly?' disabled':''}>${ICON.plus} Add item</button></form>
-  <p class="small faint" style="margin-top:12px">Ready to submit = every item that isn't “Not required” or “Finalists only” is Done or Submitted. Marking an item Submitted pins the file version that was attached at that moment.</p>`;
+  <p class="small faint" style="margin-top:12px">Unverified items need confirmation from the official posting and prevent a false “Ready” result. Ready to submit = every item that isn't “Not required” or “Finalists only” is Done or Submitted. Marking an item Submitted pins the file version that was attached at that moment.</p>`;
   return h;
 }
 function renderInterviewsTab(job){
@@ -1964,7 +1964,15 @@ const actions = {
     const found=g.materials || [];
     for(const m of found) j.materials.push({id:uid(),category:m.category,name:m.name,status:m.status,documentId:null,documentVersion:null,notes:m.note || ''});
     const before=j.materials.length; addStandardMaterials(j);
-    for(const x of j.materials.slice(before)){ x.status=found.length?'not_required':'needed'; x.notes=found.length?'Not mentioned in the call':'Unverified — consult the original posting before preparing this document'; }
+    const partial = !f.detailText && !isWikiEntry(f);
+    for(const x of j.materials.slice(before)){
+      x.status = partial || !found.length ? 'unverified' : 'not_required';
+      x.notes = partial || !found.length ? 'Requirements unverified: only a partial listing was collected.' : 'Not identified in the captured call; check the official portal.';
+    }
+    if(partial) for(const x of j.materials.slice(0,before)){
+      if(x.status==='needed'){ x.status='unverified'; x.notes='Mentioned in partial listing; confirm against the official posting.'; }
+    }
+    j.processingStatus=partial?'needs_verification':'parsed';
     if(g.extras.contact && (g.extras.contact.name || g.extras.contact.email)) j.contacts.push({...g.extras.contact});
     if(g.extras.lettersAtSubmission) j.lettersNote=g.extras.lettersAtSubmission.how;
     autoAttachDocuments(j);
@@ -2285,6 +2293,15 @@ document.addEventListener('drop', e => { const z = e.target.closest('#dropzone')
 document.addEventListener('keydown', e => { if(e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); $('#searchBox').focus(); } if(e.key === 'Escape' && S.query){ S.query=''; $('#searchBox').value=''; render(); } });
 
 (async function init(){
+  // The ChatGPT link wrapper can append utm_source=chatgpt.com. It is not part of the app URL.
+  // Remove just that decoration, keeping any genuine application query/hash.
+  if(location.search && typeof history?.replaceState==='function'){
+    const clean=new URL(location.href);
+    if(clean.searchParams.get('utm_source')==='chatgpt.com'){
+      clean.searchParams.delete('utm_source');
+      history.replaceState(history.state,'',clean.pathname+clean.search+clean.hash);
+    }
+  }
   await loadAll();
   render();
   if(!S.readonly){ setSaveState('saved', 'Connected'); const n = migrateLegacyTexts(); if(n) touch(`Move ${n} job-call text${n===1?'':'s'} out of tracker.json`); }
