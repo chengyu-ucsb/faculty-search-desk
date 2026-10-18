@@ -19,7 +19,8 @@ APPLY_HEADING = re.compile(
     r"applications? (?:must|should|are|will) (?:be )?submitted)\b", re.I)
 DATE_CONTEXT = re.compile(
     r"\b(?:priority|full consideration|initial review|review of applications|"
-    r"review(?:ing)? (?:will )?begin|application deadline|apply by|"
+    r"review(?:ing)? (?:will )?begin|screening (?:of )?(?:applicants|applications?) (?:will )?begin|"
+    r"screening (?:begins|starts)|application deadline|apply by|"
     r"applications? (?:must|should|are to) be (?:received|submitted)|"
     r"closing date|deadline)\b", re.I)
 DATE_TEXT = re.compile(
@@ -85,12 +86,26 @@ def evidence_from_lines(lines,url,kind="posting"):
         line=re.sub(r"\s+"," ",raw).strip()
         if not line: continue
         ctx=" ".join(lines[max(0,i-1):min(len(lines),i+2)])[:700]
-        if DATE_CONTEXT.search(line):
-            direct_date=date_value(line)
-            date=direct_date or date_value(ctx)
+        for match in DATE_CONTEXT.finditer(line):
+            # A listing may say "Posted: Jul 29; Apply By: Open until filled".
+            # The posting date is not the application deadline.
+            segment=line[match.start():]
+            next_context=DATE_CONTEXT.search(segment,max(1,match.end()-match.start()))
+            if next_context:segment=segment[:next_context.start()]
+            segment=segment[:260]
+            if re.search(r"open until filled|until (?:the )?position is filled|rolling applications?",segment[:100],re.I):
+                continue
+            date=date_value(segment)
+            if not date and i+1<len(lines):
+                next_line=lines[i+1].strip()
+                if len(next_line)<48 and DATE_TEXT.search(next_line):
+                    date=date_value(next_line)
+                    if date:segment=(segment+" "+next_line).strip()
             if date:
-                rule="priority" if re.search(r"priority|full consideration|initial review|review.+begin",line,re.I) else "closing"
-                deadlines.append({"date":date,"type":rule,"evidence":(line if direct_date else ctx)[:380],"url":url,"source":kind})
+                rule="priority" if re.search(
+                    r"priority|full consideration|initial review|review.+begin|screening|consideration begins",
+                    segment,re.I) else "closing"
+                deadlines.append({"date":date,"type":rule,"evidence":segment[:380],"url":url,"source":kind})
         if APPLY_HEADING.search(line):
             windows.append(i)
     seen=set()
