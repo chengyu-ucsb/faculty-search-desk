@@ -142,15 +142,55 @@ class CollectorTests(unittest.TestCase):
         self.assertIn("ZOOM INTERVIEW INVITATIONS SENT OUT",parsed[0]["statuses"])
         self.assertEqual(parsed[0]["adUrl"],"https://faculty.utexas.edu/career/188439")
 
-    def test_temporary_chronicle_ad_overlap_audit(self):
-        import json
-        from pathlib import Path
-        feed=json.loads((Path(__file__).parents[1]/"data/feed.json").read_text())
-        chron=next(x for x in feed["jobs"] if x["id"]=="4291024f17f0")
-        print("CHRON_AUDIT",json.dumps({k:chron.get(k) for k in
-            ("title","institution","deadline","deadlineEvidence","verifiedApplicationUrl",
-             "applicationLinkCandidates","detailText","applicationEvidence")},
-            ensure_ascii=False)[:11000],flush=True)
+    def test_chronicle_mirror_folds_into_ut_official_requisition(self):
+        from collect import collapse_cross_source_duplicates, official_identity
+        from detail_extract import evidence_from_lines
+        official="https://faculty.utexas.edu/career/188439"
+        wiki={"id":"4db9e22f2195","title":"Assistant Professor in Organizational Communication & Technology",
+              "sourceId":"academic-jobs-wiki","institution":"University of Texas, Austin (Austin, Texas)",
+              "url":"https://academicjobs.fandom.com/wiki/Communication_and_Media_Studies_2026-2027#old",
+              "adUrl":official,"deadline":"2026-09-15","deadlineKind":"priority",
+              "statuses":["ZOOM INTERVIEW INVITATIONS SENT OUT"],"firstSeen":"2026-09-07T17:20:46Z",
+              "alternateFeedIds":["91dffc54aeaf"]}
+        chronicle={"id":"4291024f17f0","sourceId":"chronicle-communications",
+                   "title":"Assistant Professor, Tenure-Track Faculty Position in Organizational Communication",
+                   "institution":"University of Texas at Austin",
+                   "jobNumber":"38051792","deadline":"2026-12-13",
+                   "url":"https://jobs.chronicle.com/job/38051792/role",
+                   "detailText":"Assistant Professor in Organizational Communication & Technology. To apply, visit "+official,
+                   "deadlineNote":"Applications remain open until filled.",
+                   "firstSeen":"2026-10-15T15:38:55Z",
+                   "applicationEvidence":evidence_from_lines([
+                     "Screening of applicants will begin September 15, 2026.",
+                     "Application Instructions",
+                     "Applicants should submit a letter of interest, a curriculum vitae, and a research statement."],
+                     "https://jobs.chronicle.com/job/38051792/role")}
+        self.assertEqual(official_identity(chronicle),official)
+        jobs={j["id"]:j for j in (wiki,chronicle)}
+        self.assertEqual(collapse_cross_source_duplicates(jobs),1)
+        self.assertEqual(list(jobs),["4db9e22f2195"])
+        result=jobs["4db9e22f2195"]
+        self.assertEqual(result["deadline"],"2026-09-15")
+        self.assertEqual(result["deadlineKind"],"priority")
+        self.assertEqual(result["verifiedApplicationUrl"],official)
+        self.assertIn("4291024f17f0",result["alternateFeedIds"])
+        self.assertIn("91dffc54aeaf",result["alternateFeedIds"])
+        self.assertEqual(result["alternateListings"][0]["sourceId"],"chronicle-communications")
+        self.assertEqual({x["category"] for x in result["applicationEvidence"]["materialEvidence"]},
+                         {"cover_letter","cv","research_statement"})
+        self.assertEqual(collapse_cross_source_duplicates(jobs),0)
+
+    def test_distinct_official_ut_requisition_is_not_conflated(self):
+        from collect import collapse_cross_source_duplicates
+        jobs={
+            "a":{"id":"a","sourceId":"academic-jobs-wiki",
+                 "adUrl":"https://faculty.utexas.edu/career/188439",
+                 "firstSeen":"2026-09-01T00:00:00Z"},
+            "b":{"id":"b","sourceId":"academic-jobs-wiki",
+                 "adUrl":"https://faculty.utexas.edu/career/188440",
+                 "firstSeen":"2026-09-02T00:00:00Z"},
+        }
+        self.assertEqual(collapse_cross_source_duplicates(jobs),0)
 
 if __name__=='__main__':
     unittest.main()
