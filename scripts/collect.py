@@ -398,6 +398,101 @@ def wiki_date(text, cycle_year):
     return ""
 
 
+
+def wiki_title_metadata(title, cycle_year):
+    """Separate hiring-cycle dates and recruiting updates from job identity.
+
+    Wiki editors sometimes append "ZOOM INTERVIEW INVITATIONS SENT OUT" to the
+    heading, which must not become a new posting.
+    """
+    cleaned = (title or "").strip()
+    notices = []
+    date = ""
+    # Only isolate recognizable process announcements, not academic specialties.
+    suffix = re.search(
+        r"\s+((?:(?:ZOOM|PHONE|VIRTUAL|ON.CAMPUS|CAMPUS)\s+)?"
+        r"INTERVIEW(?:S)?\s+(?:INVITATIONS?|INVITES?|REQUESTS?)\s+[A-Z \-/]+"
+        r"|OFFERS?\s+(?:MADE|EXTENDED|ACCEPTED)"
+        r"|SEARCH\s+(?:CLOSED|CANCELLED)|POSITION\s+FILLED)\s*$",
+        cleaned)
+    if suffix:
+        notices.append(suffix.group(1).strip())
+        cleaned = cleaned[:suffix.start()].strip()
+    date_marker = re.search(
+        r"\s*\(\s*(?:application\s+)?(?:deadline|review begins|priority review)\s*:\s*"
+        r"([^)]+)\)", cleaned, re.I)
+    if date_marker:
+        date = wiki_date(date_marker.group(1),cycle_year)
+        cleaned=(cleaned[:date_marker.start()]+cleaned[date_marker.end():]).strip()
+    return cleaned, date, notices
+
+
+def specific_wiki_job_url(url):
+    """Require a position-specific official link; never deduplicate generic HR pages."""
+    if not url:
+        return ""
+    p=urllib.parse.urlsplit(url)
+    path=p.path.lower().rstrip("/")
+    valid=bool(re.search(r"/(?:career|jobs?|positions?|postings?|requisitions?|vacancies)/"
+                         r"(?:[a-z0-9_-]*\d{3,}[a-z0-9_-]*|[a-z0-9_-]{12,})$",path))
+    params=dict(urllib.parse.parse_qsl(p.query))
+    valid=valid or any(k.lower() in ("jobid","job_id","requisition","postingid","reqid")
+                       and re.search(r"\d{4,}",v) for k,v in params.items())
+    return normalize_url(url) if valid else ""
+
+
+def collapse_wiki_duplicates(jobs):
+    """Consolidate renamed wiki headings without changing the oldest feed ID.
+
+    Preserve firstSeen and the tracked old ID, keep lastSeen/current wiki link,
+    combine notes, and avoid merging different official requisitions or boards.
+    """
+    by_ad={}
+    removed=0
+    candidates=sorted(
+        [j for j in jobs.values() if j.get("sourceId")=="academic-jobs-wiki"],
+        key=lambda j:(j.get("firstSeen") or "",j.get("id") or ""))
+    for j in candidates:
+        base_year=2026
+        m=re.search(r"20\d{2}-20\d{2}",j.get("url",""))
+        if m:base_year=int(m.group()[:4])
+        title, date, notices=wiki_title_metadata(j.get("title",""),base_year)
+        j["title"]=title
+        if date and not j.get("deadline"):j["deadline"]=date
+        current_notes=j.get("statuses") or []
+        for note in notices:
+            if note not in current_notes:current_notes.append(note)
+        j["statuses"]=current_notes
+        ad=specific_wiki_job_url(j.get("adUrl",""))
+        if not ad:continue
+        # One official requisition plus one source family is sufficient proof.
+        existing=by_ad.get(ad)
+        if not existing:
+            by_ad[ad]=j
+            continue
+        # Conflicting explicit job numbers mean this is not safely one position.
+        a=existing.get("jobNumber");b=j.get("jobNumber")
+        if a and b and a!=b:continue
+        # Preserve the older ID so imported Jobs entries do not lose their link.
+        newer=j if (j.get("lastSeen") or "") >= (existing.get("lastSeen") or "") else existing
+        older=existing if newer is j else j
+        for k in ("lastSeen","url","adUrl"):
+            if newer.get(k):existing[k]=newer[k]
+        for k in ("deadline","deadlineKind","deadlineEvidence","detailText",
+                  "applicationEvidence","applicationCoverage","verifiedApplicationUrl","jobNumber"):
+            if not existing.get(k) and j.get(k):existing[k]=j[k]
+        combined=list(dict.fromkeys((existing.get("statuses") or [])+(j.get("statuses") or [])))
+        existing["statuses"]=combined
+        if combined != (older.get("statuses") or []):
+            existing["changedAt"]=max(existing.get("changedAt") or "",j.get("changedAt") or "",
+                                      j.get("firstSeen") or "")
+            existing["newStatuses"]=list(dict.fromkeys((existing.get("newStatuses") or [])+
+                                                    notices))[-6:]
+        jobs.pop(j["id"],None)
+        removed+=1
+    return removed
+
+
 def parse_wikitext(wikitext, page_url, page_title):
     """Each institution heading becomes a posting; its bullet lines become status updates."""
     cy = re.search(r"(20\d\d)", page_title)
@@ -422,7 +517,9 @@ def parse_wikitext(wikitext, page_url, page_title):
                 m2 = re.match(r"^(.*?)\s*\(([A-Z]{2}|[A-Za-z .]+)\)\s*$", inst)
                 if m2:
                     inst, location = m2.group(1).strip(), m2.group(2).strip()
-            deadline = ""
+            position, heading_deadline, heading_updates = wiki_title_metadata(position or heading,cycle_year)
+            statuses = list(dict.fromkeys(statuses + heading_updates))
+            deadline = heading_deadline
             for line in statuses + [prose]:
                 if re.search(r"deadline|due|review (?:of applications )?begins|apply by|closes", line, re.I):
                     deadline = wiki_date(line, cycle_year)
@@ -1028,6 +1125,9 @@ def run_all(force=False):
     cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=FEED_RETENTION_DAYS)).isoformat()
     job_list = [j for j in jobs.values() if (j.get("lastSeen") or j.get("firstSeen") or "") >= cutoff]
     jobs = {j["id"]: j for j in job_list}
+    collapsed = collapse_wiki_duplicates(jobs)
+    if collapsed:
+        print(f"[dedup] Consolidated {collapsed} renamed wiki entries using their specific official job-call URLs")
 
     profile = load_profile()
     if profile["terms"]:
