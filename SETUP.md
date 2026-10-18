@@ -12,18 +12,13 @@ The public website is at https://chengyu-ucsb.github.io/faculty-search-desk/. Th
 
 The token stays in this browser's local storage, so use a browser/device you control. If the token was previously scoped only to the public repository, update its access or create a replacement token. Never paste the token into a GitHub issue, public commit, or chat.
 
-## Finish cleaning historical public records
+## Migration complete
 
-The current public branch no longer has `data/tracker.json` or any uploaded files. **Older commits still expose them.** The cleanest preservation approach is:
+The original `faculty-search-desk` repository was renamed to `faculty-search-desk-old` and made **private**. The replacement `faculty-search-desk` repository has clean public history and contains the redesigned website, source code, and public job feed only. `faculty-search-private` contains the migrated tracker and documents.
 
-1. Confirm the private repository contains the applications and every document. Save a separate backup if desired.
-2. Download or locally clone the **current, cleaned public site** (not historical sensitive content).
-3. In GitHub repository settings, rename the existing `faculty-search-desk` repository to a distinct archival name and change its visibility to **Private**. This will interrupt the old Pages deployment.
-4. Create a **new public repository** named `faculty-search-desk` under the same account. Upload only safe website code, `assets/`, `scripts/`, `.github/`, and public discovery data. Do not upload `data/tracker.json` or `files/`.
-5. Enable GitHub Pages on the new repository: **Settings → Pages → Deploy from a branch → main / (root)**.
-6. Verify the website at the same project URL and reauthorize your fine-grained token for the newly created public repository if GitHub requires it.
+**Do not rename or replace the new public repository again.** If your browser reports a permission error, the fine-grained token may still be authorized for the **old repository ID**. Visit your token's settings and select the new `faculty-search-desk` plus `faculty-search-private`. You may need to create a replacement token if GitHub does not allow changing its repository selection.
 
-Making the original repository private removes ordinary public access to its history but cannot recall copies already obtained elsewhere. Check public forks and cached references where feasible.
+The old archive is restricted from ordinary public access, but preexisting forks or copies cannot be recalled.
 
 ## If access fails
 
