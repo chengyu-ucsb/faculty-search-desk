@@ -65,6 +65,22 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(j["verifiedApplicationUrl"],"https://example.edu/jobs/123")
         self.assertEqual({x["category"] for x in j["applicationEvidence"]["materialEvidence"]},{"cover_letter","cv"})
 
+    def test_extracts_requirements_without_fit_profile(self):
+        job={"id":"plain","title":"Assistant Professor of Communication",
+             "institution":"Example University","url":"https://example.edu/jobs/77",
+             "firstSeen":now_iso()}
+        call='<main><h1>Assistant Professor of Communication</h1><h2>How to Apply</h2><p>Submit a cover letter and curriculum vitae.</p><p>Review of applications begins October 22, 2026.</p></main>'
+        response={"text":call,"content_type":"text/html","final_url":job["url"],
+                  "blocked":False,"error":None}
+        profile={"terms":[],"updatedAt":"2026-10-18"}
+        with patch("collect.robots_allowed",return_value=True), patch("collect.fetch",return_value=response), patch("collect.time.sleep"):
+            count=apply_scores({"plain":job},profile,now_iso())
+        self.assertEqual(count,1)
+        self.assertEqual(job["deadline"],"2026-10-22")
+        self.assertEqual(job["deadlineKind"],"priority")
+        self.assertEqual({item["category"] for item in job["applicationEvidence"]["materialEvidence"]},{"cover_letter","cv"})
+        self.assertNotIn("score",job)
+
     def test_wiki_entry_reads_linked_pdf_call_not_wiki_page(self):
         j={"id":"wiki123","title":"Assistant Professor of Organizational Communication",
            "institution":"Example University","url":"https://academicjobswiki.org/wiki/2026#Example",
