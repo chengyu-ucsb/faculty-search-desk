@@ -72,5 +72,5 @@ vm.runInContext(src.slice(fingerprintStart,fingerprintEnd),testContext);
   const expected=require('node:crypto').createHash('sha1').update('blob 3'+String.fromCharCode(0)+'abc').digest('hex');
   const fingerprint=await testContext.gitBlobFingerprint(bytes.buffer);
   assert.equal(fingerprint,expected,'file SHA should match Git blob hash');
-  console.log('UI syntax, privacy, deduplication and upload fingerprint checks passed');
+  console.log('UI syntax, privacy, discovery and upload fingerprint checks passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
