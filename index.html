@@ -909,6 +909,7 @@ function filteredJobs(){
     if(f === 'interviewing') return isInterviewing(j);
     if(f === 'due') { const d = daysUntil(j.deadline); return d !== null && d >= 0 && d <= 14; }
     if(f === 'ready') return j.stage === 'preparing' && readiness(j).ready;
+    if(f === 'verify') return j.stage==='preparing' && j.materials.some(m=>m.status==='unverified');
     if(f === 'letters') return !!lettersAtSubmission(j);
     return true;
   });
@@ -927,14 +928,17 @@ function renderJobs(){
   const interviewing = active.filter(isInterviewing);
   const ready = active.filter(j => j.stage === 'preparing' && readiness(j).ready);
   const letters = active.filter(j => lettersAtSubmission(j));
+  const verify = active.filter(j => j.stage==='preparing' && j.materials.some(m=>m.status==='unverified'));
+
   let h = `<div class="stats">
     <div class="stat${due.length?' hot':''}" data-action="filter" data-filter="due"><div class="n">${due.length}</div><div class="l">Due in 14 days</div></div>
     <div class="stat" data-action="filter" data-filter="active"><div class="n">${active.length}</div><div class="l">Active applications</div></div>
     <div class="stat" data-action="filter" data-filter="interviewing"><div class="n">${interviewing.length}</div><div class="l">Interviewing</div></div>
     <div class="stat" data-action="filter" data-filter="ready"><div class="n">${ready.length}</div><div class="l">Ready to submit</div></div>
     <div class="stat${letters.length?' warn':''}" data-action="filter" data-filter="letters"><div class="n">${letters.length}</div><div class="l">Letters to request</div></div>
+    <div class="stat${verify.length?' warn':''}" data-action="filter" data-filter="verify"><div class="n">${verify.length}</div><div class="l">Verify requirements</div></div>
   </div>`;
-  const chips = [['active','Active'],['due','Due soon'],['preparing','Preparing'],['letters','Needs letters'],['ready','Ready',' <i class="sw hollow" style="--sw:var(--good)"></i>'],['submitted','Submitted',' <i class="sw" style="--sw:var(--st-sub)"></i>'],['interviewing','Interviewing',' <i class="sw" style="--sw:var(--st-int)"></i>'],['closed','Closed',' <i class="sw" style="--sw:var(--st-closed)"></i>'],['all','All']];
+  const chips = [['active','Active'],['due','Due soon'],['preparing','Preparing'],['verify','Verify requirements'],['letters','Needs letters'],['ready','Ready',' <i class="sw hollow" style="--sw:var(--good)"></i>'],['submitted','Submitted',' <i class="sw" style="--sw:var(--st-sub)"></i>'],['interviewing','Interviewing',' <i class="sw" style="--sw:var(--st-int)"></i>'],['closed','Closed',' <i class="sw" style="--sw:var(--st-closed)"></i>'],['all','All']];
   h += `<div class="toolbar"><div class="chips">${chips.map(([k,v,sw]) => `<button class="chip${S.jobFilter===k?' active':''}" data-action="filter" data-filter="${k}" title="${sw ? 'Rows in this stage are tinted this colour' : ''}">${sw || ''}${v}</button>`).join('')}</div>
     <div class="row"><select data-action="sort" aria-label="Sort"><option value="todo"${S.jobSort==='todo'?' selected':''}>To do first</option><option value="deadline"${S.jobSort==='deadline'?' selected':''}>By deadline</option><option value="updated"${S.jobSort==='updated'?' selected':''}>Recently updated</option><option value="institution"${S.jobSort==='institution'?' selected':''}>By institution</option></select>
     <button class="btn primary" data-action="showadd"${S.readonly?' disabled':''}>${ICON.plus} Add job</button></div></div>`;
@@ -967,7 +971,7 @@ function renderJobRow(job){
   const r = readiness(job);
   const readyTxt = isClosed(job) ? (job.submittedAt ? 'Submitted ' + fmtDate(job.submittedAt) : '') : job.stage === 'preparing' ? (r.total ? `${r.done}/${r.total} materials ready` : 'No checklist yet') : (job.stage === 'submitted' || job.stage === 'under_review' ? (job.submittedAt ? 'Submitted ' + fmtDate(job.submittedAt) : 'Submitted') : '');
   return `<button class="jobrow stage-${stageFamily(job)}${S.selectedJobId===job.id?' selected':''}" data-action="openjob" data-id="${job.id}">
-    <div><div class="inst">${esc(job.institution)}${job.example?'<span class="example-tag">example</span>':''}</div><div class="ttl">${esc(job.title)}</div><div class="sub">${esc([job.department, job.location, job.jobNumber ? '#' + job.jobNumber : ''].filter(Boolean).join(' · '))}</div></div>
+    <div><div class="inst">${esc(job.institution)}${job.example?'<span class="example-tag">example</span>':''}</div><div class="ttl">${esc(job.title)}</div><div class="sub">${esc([job.department, job.location, job.jobNumber ? '#' + job.jobNumber : ''].filter(Boolean).join(' · '))}</div>${r.unverified ? `<span class="pill warn" style="display:inline-block;margin-top:8px">Verify ${r.unverified} requirements</span>`:''}</div>
     ${deadlineCell(job)}
     <div class="stack" style="gap:4px;align-items:flex-start">${stagePill(job)}${lettersAtSubmission(job) ? `<span class="pill warn" title="Letters of recommendation are required with the application — ask your writers early">✉ Letters with application</span>` : ''}${hasProfile() ? fitPill(jobFit(job), true) : ''}</div>
     <div class="ready">${job.stage==='preparing' && r.total ? `<div class="meter${r.ready?' done':''}"><i style="width:${r.pct}%"></i></div>` : ''}<span>${esc(readyTxt)}</span></div>
