@@ -1,7 +1,8 @@
 """Offline regression tests for faculty job discovery and fit scoring."""
 import unittest
+from unittest.mock import patch
 from bs4 import BeautifulSoup
-from collect import load_profile, rank_posting, split_title, parse_jsonld, normalize_url, compact_posting_details
+from collect import load_profile, rank_posting, split_title, parse_jsonld, normalize_url, compact_posting_details, apply_scores, now_iso
 
 class CollectorTests(unittest.TestCase):
     def test_prefixed_institution(self):
@@ -47,6 +48,40 @@ class CollectorTests(unittest.TestCase):
     def test_url_tracking_removed(self):
         self.assertEqual(normalize_url('https://example.edu/jobs/123?utm_source=mail'),
                          'https://example.edu/jobs/123')
+
+
+    def test_follow_official_job_detail_for_requirements(self):
+        j={"id":"123","title":"Assistant Professor of Organizational Communication",
+           "institution":"Example University","url":"https://example.edu/news/communication-role",
+           "firstSeen":now_iso(),"detailTries":0}
+        first='<main><h1>Assistant Professor of Organizational Communication</h1><p>Opportunity at Example University.</p><a href="/jobs/123">Full job description</a></main>'
+        full='<main><h1>Assistant Professor of Organizational Communication</h1><h2>How to Apply</h2><p>Submit a cover letter and CV.</p><p>Review of applications begins November 20, 2026.</p></main>'
+        def resp(url):
+            return {"text":full if url.endswith("/jobs/123") else first,
+                    "content_type":"text/html","final_url":url,"blocked":False,"error":None}
+        with patch("collect.robots_allowed",return_value=True), patch("collect.fetch",side_effect=resp), patch("collect.time.sleep"):
+            apply_scores({"123":j},load_profile(),now_iso())
+        self.assertEqual(j["deadline"],"2026-11-20")
+        self.assertEqual(j["verifiedApplicationUrl"],"https://example.edu/jobs/123")
+        self.assertEqual({x["category"] for x in j["applicationEvidence"]["materialEvidence"]},{"cover_letter","cv"})
+
+    def test_wiki_entry_reads_linked_pdf_call_not_wiki_page(self):
+        j={"id":"wiki123","title":"Assistant Professor of Organizational Communication",
+           "institution":"Example University","url":"https://academicjobswiki.org/wiki/2026#Example",
+           "adUrl":"https://example.edu/positions/2026-call.pdf",
+           "statuses":["Applications open"],"firstSeen":now_iso()}
+        pdf=("Example University Assistant Professor of Organizational Communication\\n"
+             "How to Apply\\n"
+             "Please submit a cover letter and curriculum vitae.\\n"
+             "Priority review begins October 21, 2026.")
+        def resp(url):
+            if url!=j["adUrl"]: raise AssertionError("Fetched wiki instead of the linked call")
+            return {"text":pdf,"content_type":"application/pdf","final_url":url,"blocked":False,"error":None}
+        with patch("collect.robots_allowed",return_value=True), patch("collect.fetch",side_effect=resp), patch("collect.time.sleep"):
+            apply_scores({"wiki123":j},load_profile(),now_iso())
+        self.assertEqual(j["applicationCoverage"],"deadline_and_materials")
+        self.assertEqual(j["deadline"],"2026-10-21")
+        self.assertEqual(j["verifiedApplicationUrl"],j["adUrl"])
 
 if __name__=='__main__':
     unittest.main()
