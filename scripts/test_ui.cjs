@@ -98,3 +98,83 @@ vm.runInContext(src.slice(fingerprintStart,fingerprintEnd),testContext);
   assert.equal(fingerprint,expected,'file SHA should match Git blob hash');
   console.log('UI syntax, privacy, discovery and upload fingerprint checks passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// Dates are evidence-bearing events, not interchangeable calendar strings.
+const dateContext={Date,Map,Set,JSON,String,Array,URL,
+  esc:x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),
+  fmtDate:x=>x,daysUntil:x=>x?Math.round((new Date(x+'T12:00:00Z')-new Date('2026-10-24T12:00:00Z'))/86400000):null,
+  uid:()=> 'synthetic',label:()=>'',STANDARD_MATERIALS:[]};
+vm.createContext(dateContext);
+vm.runInContext(src.slice(src.indexOf('function deadlineType('),src.indexOf('function stagePill(')),dateContext);
+vm.runInContext(src.slice(src.indexOf('const MONTHS ='),src.indexOf('const KERNED_WORDS')),dateContext);
+vm.runInContext(src.slice(src.indexOf('function tidy('),src.indexOf('function labeled(')),dateContext);
+vm.runInContext(src.slice(src.indexOf('function extractCallDeadlineEvidence('),src.indexOf('function parseJobCall(')),dateContext);
+vm.runInContext(src.slice(src.indexOf('function syncFeedEvidence('),src.indexOf('const actions =')),dateContext);
+const closing={date:'2026-10-31',type:'closing',evidence:'Application deadline: October 31, 2026',source:'official-job-call',url:'https://example.edu/job'};
+const priority={date:'2026-10-06',type:'priority',evidence:'Priority: October 6, 2026',source:'official-job-call'};
+let dates=dateContext.deadlineInfo({deadline:'2026-10-24',applicationEvidence:{deadlineEvidence:[priority,closing]}});
+assert.equal(dates.selected.date,'2026-10-31');
+assert.equal(dates.selected.type,'closing');
+assert.equal(dates.conflict,true,'saved date/source discrepancy must be visible');
+const savedMarkup=dateContext.deadlineCell({deadline:'2026-10-24',sourceEvidence:[closing]});
+assert(savedMarkup.includes('2026-10-31')&&savedMarkup.includes('Saved date: 2026-10-24')&&savedMarkup.includes('Check date conflict'));
+assert.equal(dateContext.jobActionDate({deadline:'2026-10-24',sourceEvidence:[closing]}),'2026-10-31','date sort/count must follow published event, not stale saved value');
+assert.equal(dateContext.jobActionDate({deadline:'2026-10-24'}),'','legacy unknown dates must not trigger deadline urgency');
+assert(dateContext.deadlineCell({deadline:'2026-10-24'}).includes('Saved date (unverified)'));
+const conflict={deadline:'2026-10-25',verificationWarnings:['Source date conflicts with saved deadline.']};
+assert.equal(dateContext.jobActionDate(conflict),'');
+assert(dateContext.deadlineCell(conflict).includes('Check date conflict'));
+for(const [kind,label] of [['priority','Priority consideration'],['full_consideration','Full consideration'],['review','Review starts']]){
+ const row=dateContext.deadlineCell({deadline:'2026-10-26',sourceEvidence:[{date:'2026-10-26',type:kind}]});
+ assert(row.includes(label));assert(!row.includes('Application deadline'));
+}
+assert.equal(dateContext.deadlineInfo({sourceEvidence:[closing,{...closing,date:'2026-11-01'}]}).selected,null,'two equally authoritative closing dates require review');
+assert.equal(dateContext.deadlineInfo({sourceEvidence:[{...closing,date:'2026-10-20',source:'job-board'},closing]}).selected.date,'2026-10-31','official call outranks board');
+assert.equal(dateContext.deadlineCandidates({deadlineEvidence:{date:'2026-11-20',type:'closing',source:'structured-data'}}).length,0,'ad expiry is not a closing deadline');
+assert.equal(dateContext.deadlineCandidates({sourceEvidence:[{date:'2026-02-30',type:'closing'}]}).length,0);
+const texts=[
+ ['Priority given to applications received by October 6th, 2026. Application deadline: October 31, 2026.',['priority','closing']],
+ ['Review of applications will begin immediately. For full consideration, please apply by October 26, 2026.',['full_consideration']],
+ ['Review of applications begins November 2, 2026. Position is open until filled.',['review']],
+ ['Applications must be received by November 1, 2026 at 6:00 pm Central Time.',['closing']],
+ ['Posted October 1, 2026. Ad expires October 24, 2026. Position starts July 1, 2027.',[]],
+ ['Application deadline: October 31.',[]],
+ ['Application deadline\nOctober 31, 2026',['closing']],
+ ['Date to be filled: July 1, 2027',[]]
+];
+for(const [text,kinds] of texts){
+ const extracted=dateContext.extractCallDeadlineEvidence(text,2026);
+ assert.deepEqual(Array.from(extracted,x=>x.type),kinds,text);
+}
+const jobToSync={deadline:'2026-10-24',targetDate:'2026-10-22',stage:'submitted',materials:[],verificationWarnings:['Keep existing review warning']};
+const beforeSync=JSON.stringify(jobToSync);
+const feedToSync={applicationEvidence:{deadlineEvidence:[priority,closing],materialEvidence:[]},verificationWarnings:[]};
+assert(dateContext.syncFeedEvidence(jobToSync,feedToSync)>0);
+assert.equal(jobToSync.deadline,'2026-10-24','sync must not overwrite saved date');
+assert.equal(jobToSync.targetDate,'2026-10-22');assert.equal(jobToSync.stage,'submitted');
+assert.equal(jobToSync.publishedDeadline,'2026-10-31');assert.equal(jobToSync.publishedDeadlineKind,'closing');
+assert(jobToSync.verificationWarnings.includes('Keep existing review warning'));
+assert.equal(dateContext.syncFeedEvidence(jobToSync,feedToSync),0,'repeated sync should be idempotent');
+assert(src.includes('deadline:importedDate?.date')&&src.includes('deadlineKind:importedDate?.type')&&src.includes('deadlineEvidence:importedDate'),'import must select a single coherent evidence record');
+console.log('Deadline type, conflict, extraction and saved-date preservation checks passed');
+
+assert.equal(dateContext.deadlineInfo({sourceEvidence:[{...closing,timeText:'18:00'},{...closing,timeText:'23:59'}]}).selected,null,'conflicting source cutoff times require review');
+assert.equal(dateContext.deadlineInfo({sourceEvidence:[{...closing,date:'2026-10-20',source:'job-board'},closing]}).conflict,true,'lower-authority conflicting dates remain visible');
+assert.equal(dateContext.deadlineInfo({sourceEvidence:[{...closing,source:'',sourceType:'official_portal'},{...closing,date:'2026-10-20',source:'job-board'}]}).selected.date,'2026-10-31');
+
+assert.equal(dateContext.extractCallDeadlineEvidence('Applications must be received by October 26, 2026 for full consideration.',2026)[0].type,'full_consideration');
+assert.equal(dateContext.extractCallDeadlineEvidence('Applications must be received by October 26, 2026 for priority consideration.',2026)[0].type,'priority');
+
+vm.runInContext(src.slice(src.indexOf('function applyParsedDeadline('),src.indexOf('function extractCallDeadlineEvidence(')),dateContext);
+const parsedFields={deadline:closing.date,deadlineKind:closing.type,deadlineEvidence:closing,deadlineResolution:{status:'resolved',selected:closing,candidates:[closing]}};
+const blankRefill={stage:'submitted',targetDate:'2026-10-22'};
+assert(dateContext.applyParsedDeadline(blankRefill,parsedFields)>0);
+assert.equal(blankRefill.deadline,closing.date);assert.equal(blankRefill.deadlineKind,closing.type);
+assert.equal(blankRefill.deadlineEvidence.evidence,closing.evidence);
+assert.equal(dateContext.jobActionDate(blankRefill),closing.date);
+const savedRefill={deadline:'2026-10-24',targetDate:'2026-10-22',stage:'submitted'};
+dateContext.applyParsedDeadline(savedRefill,parsedFields);
+assert.equal(savedRefill.deadline,'2026-10-24');assert.equal(savedRefill.targetDate,'2026-10-22');assert.equal(savedRefill.stage,'submitted');
+assert.equal(savedRefill.publishedDeadline,closing.date);assert.equal(dateContext.deadlineInfo(savedRefill).conflict,true);
+assert.equal(dateContext.applyParsedDeadline(savedRefill,parsedFields),0);
+assert(src.includes('let n = applyParsedDeadline(j,g.fields);'),'re-read call must retain date evidence');

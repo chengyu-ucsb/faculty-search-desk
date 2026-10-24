@@ -30,7 +30,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
-from detail_extract import text_lines, application_links, evidence_from_lines, merge_evidence, describe_coverage
+from detail_extract import text_lines, application_links, evidence_from_lines, merge_evidence, describe_coverage, resolve_deadlines, date_value
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES_PATH = os.path.join(ROOT, "data", "sources.json")
@@ -275,7 +275,8 @@ def parse_jsonld(soup, page_url):
                     "institution": clean_text(org.get("name", "")) if isinstance(org, dict) else "",
                     "location": location,
                     "url": urllib.parse.urljoin(page_url, it.get("url") or page_url),
-                    "deadline": (it.get("validThrough") or "")[:10],
+                    "deadline": "",
+                    "listingExpires": (it.get("validThrough") or "")[:10],
                     "snippet": clean_text(BeautifulSoup(it.get("description", "") or "", "html.parser").get_text(" "), 400),
                 })
     return posts
@@ -640,9 +641,12 @@ def parse_json_jobs(data, page_url):
         snippet = _first(it, "shortDescription", "short_description", "summary", "description", "excerpt")
         snippet = clean_text(BeautifulSoup(str(snippet), "html.parser").get_text(" "), 400) if snippet else ""
         posted = str(_first(it, "posted_date", "date_posted", "posted", "date", "created_at", "published"))[:10]
-        deadline = str(_first(it, "deadline", "application_deadline", "closing_date", "expires", "expiration_date", "valid_through"))[:10]
+        deadline = str(_first(it, "deadline", "application_deadline", "closing_date"))[:10]
         posts.append({"title": title, "institution": clean_text(str(_first(it, "company", "employer", "organization", "institution", "company_name", "hiringOrganization"))),
                       "location": clean_text(str(loc)), "url": url, "deadline": deadline if re.match(r"^\d{4}-\d{2}-\d{2}$", deadline) else "",
+                      "listingExpires": str(_first(it, "expires", "expiration_date", "valid_through"))[:10],
+                      "deadlineKind": "closing" if date_value(deadline) else "",
+                      "deadlineEvidence": {"date": deadline, "type": "closing", "source": "job-board", "url": url, "evidence": "API application deadline: " + deadline} if date_value(deadline) else {},
                       "snippet": snippet, "published": posted if re.match(r"^\d{4}-\d{2}-\d{2}$", posted) else ""})
     nxt = None
     if isinstance(data, dict):
@@ -922,21 +926,70 @@ def _same_posting(job, text):
 def _structured_deadline(html, url, job):
     if not html or "pdf" in (html[:12].lower()):
         return []
-    # Job-board validThrough describes expiration of the syndicated advertisement,
-    # not necessarily the university's application closing date.
-    visible=BeautifulSoup(html,"html.parser").get_text(" ",strip=True)
-    if re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\s*(?:Open until filled|until (?:the )?position is filled)",visible,re.I):
-        return []
-    try:
-        candidates = parse_jsonld(BeautifulSoup(html, "html.parser"), url)
-        matching = [x for x in candidates if x.get("deadline") and
-                    (x.get("title") or "").lower() in (job.get("title") or "").lower()]
-        return [{"date": x["deadline"], "type": "closing", "url": url,
-                 "evidence": "Official JobPosting metadata (validThrough): " + x["deadline"],
-                 "source": "structured-data"} for x in matching
-                if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", x["deadline"])]
-    except (TypeError, ValueError, AttributeError):
-        return []
+    # validThrough is the advertisement expiry in Schema.org, not proof of
+    # an application deadline. Preserve it separately in parse_jsonld instead.
+    return []
+
+
+def apply_deadline_resolution(job):
+    """Keep canonical date/type/evidence atomic; quarantine unverified dates."""
+    evidence=(job.get("applicationEvidence") or {}).get("deadlineEvidence") or []
+    resolution=resolve_deadlines(evidence)
+    job["deadlineResolution"]=resolution
+    selected=resolution["selected"]
+    old=job.get("deadline", "")
+    if selected:
+        if old and old!=selected["date"]:
+            job.setdefault("previousUnverifiedDeadline",old)
+        job["deadline"]=selected["date"]
+        job["deadlineKind"]=selected["type"]
+        job["deadlineEvidence"]=selected
+    elif old:
+        job.setdefault("previousUnverifiedDeadline",old)
+        job["deadline"]=""
+        job["deadlineKind"]=""
+        job.pop("deadlineEvidence",None)
+    if resolution["status"]=="conflict":
+        job["deadlineNote"]="Sources give conflicting dates for the same event; verify the official posting."
+    elif selected and selected["type"]!="closing":
+        labels={"review":"review start", "priority":"priority consideration", "full_consideration":"full consideration"}
+        job["deadlineNote"]="This is a " + labels[selected["type"]] + " date, not a verified final closing date."
+    elif resolution["status"]=="unverified":
+        job["deadlineNote"]="No source-backed application date is verified. Advertisement expiry is not an application deadline."
+    else:
+        job.pop("deadlineNote",None)
+    return resolution
+
+
+def revalidate_cached_deadlines(jobs):
+    """Repair old collector dates without pretending the source was re-fetched.
+
+    Private application data is never handled here. Old bare dates are retained
+    as unverified history, not silently represented as published deadlines.
+    """
+    changed=0
+    for job in jobs.values():
+        before=(job.get("deadline"),job.get("deadlineKind"))
+        original=(job.get("applicationEvidence") or {}).get("deadlineEvidence") or []
+        parsed=[]
+        for item in original:
+            if item.get("source")=="structured-data":
+                job.setdefault("listingExpires",item.get("date", ""))
+                continue
+            facts=evidence_from_lines([item.get("evidence", "")],item.get("url", ""),item.get("source", "posting"))
+            parsed.extend(facts["deadlineEvidence"])
+        # Cached detail text has its own source URL, not the destination of an
+        # unvisited apply link. It is useful for repairing prior truncated parses.
+        if job.get("detailText"):
+            parsed.extend(evidence_from_lines(job["detailText"].splitlines(),
+                job.get("adUrl") or job.get("url", ""),
+                "linked-call" if job.get("adUrl") else "job-board")["deadlineEvidence"])
+        parsed=merge_evidence({}, {"deadlineEvidence":parsed})["deadlineEvidence"]
+        job.setdefault("applicationEvidence",{})["deadlineEvidence"]=parsed
+        apply_deadline_resolution(job)
+        job["deadlineExtractionVersion"]=2
+        if before!=(job.get("deadline"),job.get("deadlineKind")): changed+=1
+    return changed
 
 
 def apply_scores(jobs, profile, today):
@@ -1023,19 +1076,7 @@ def apply_scores(jobs, profile, today):
                     break
             if depth < 2 and "pdf" not in deep["content_type"]:
                 queue.extend((x, depth + 1) for x in application_links(deep["text"], deep["final_url"])[:3])
-        chosen = (j.get("applicationEvidence") or {}).get("deadlineEvidence") or []
-        if chosen:
-            explicit=[x for x in chosen if x.get("source")!="structured-data"]
-            source_dates=explicit or chosen
-            item = next((x for x in source_dates if x["type"]=="closing"),source_dates[0])
-            # Replace prior syndication metadata with the employer's real review date.
-            can_update=(not j.get("deadline") or
-                        (j.get("deadlineEvidence") or {}).get("source")=="structured-data" or
-                        (item["type"]=="priority" and re.search(r"screening|review begins",item.get("evidence",""),re.I)))
-            if can_update:
-                j["deadline"]=item["date"]
-                j["deadlineKind"]=item["type"]
-                j["deadlineEvidence"]=item
+        apply_deadline_resolution(j)
         if "pdf" not in res["content_type"] and re.search(r"(?:Apply By:|applications? (?:accepted|reviewed))\s*(?:Open until filled|until (?:the )?position is filled)",res["text"],re.I):
             j["deadlineNote"]="Applications remain open until the position is filled; any listed review date is not a final closing date."
         try:
@@ -1044,7 +1085,7 @@ def apply_scores(jobs, profile, today):
                          (x["title"].lower() in (j.get("title") or "").lower()
                           or (j.get("title") or "").lower() in x["title"].lower())), None)
             if item:
-                for field in ("institution", "location", "deadline"):
+                for field in ("institution", "location", "listingExpires"):
                     if item.get(field) and not j.get(field):
                         if field=="deadline" and "open until filled" in page_text.lower():
                             continue  # validThrough is only the board's expiry
@@ -1147,23 +1188,7 @@ def collapse_cross_source_duplicates(jobs):
         existing["score"]=max(existing.get("score") or 0,job.get("score") or 0)
         if not existing.get("statuses") and job.get("statuses"):
             existing["statuses"]=job["statuses"]
-        evidence=(existing.get("applicationEvidence") or {}).get("deadlineEvidence") or []
-        # Prefer the official review/screening language over a board's metadata
-        # validThrough; only treat a genuine closing date as a hard deadline.
-        direct=[x for x in evidence if x.get("source")!="structured-data"
-                and not re.search(r"(?:date\s+)?posted\s*[:.]|posted\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)",
-                                  x.get("evidence",""),re.I)]
-        priority=next((x for x in direct if x.get("type")=="priority"),None)
-        closing=next((x for x in direct if x.get("type")=="closing"),None)
-        chosen=closing or priority
-        if chosen:
-            existing["deadline"]=chosen["date"]
-            existing["deadlineKind"]=chosen["type"]
-            existing["deadlineEvidence"]=chosen
-        elif existing.get("deadline") and "open until filled" in (existing.get("detailText") or "").lower():
-            existing["deadlineKind"]="priority"
-        if existing.get("deadlineKind")=="priority" and "open until filled" in (existing.get("detailText") or "").lower():
-            existing["deadlineNote"]="Applications remain open until filled; the stated date is for initial review, not a hard closing."
+        apply_deadline_resolution(existing)
         jobs.pop(job["id"],None)
         removed+=1
     return removed
@@ -1174,6 +1199,7 @@ def run_all(force=False):
     feed = load_json(FEED_PATH, {"schemaVersion": 1, "generatedAt": None, "sources": [], "jobs": []})
     prev_status = {s.get("id"): s for s in feed.get("sources", [])}
     jobs = {j["id"]: j for j in feed.get("jobs", []) if j.get("id")}
+    revalidate_cached_deadlines(jobs)
     known_aliases = {alias for record in jobs.values() for alias in (record.get("alternateFeedIds") or [])}
     statuses = []
     today = now_iso()
@@ -1211,7 +1237,17 @@ def run_all(force=False):
                     new += 1
                 rec = {"id": jid, "sourceId": sid, "firstSeen": today}
                 jobs[jid] = rec
-            rec.update({"title": p["title"], "institution": p.get("institution", "") or rec.get("institution", ""), "location": p.get("location", "") or rec.get("location", ""), "url": p["url"], "deadline": p.get("deadline", "") or rec.get("deadline", ""), "snippet": p.get("snippet", "") or rec.get("snippet", ""), "lastSeen": today})
+            rec.update({"title": p["title"], "institution": p.get("institution", "") or rec.get("institution", ""), "location": p.get("location", "") or rec.get("location", ""), "url": p["url"], "snippet": p.get("snippet", "") or rec.get("snippet", ""), "lastSeen": today})
+            if p.get("listingExpires"):
+                rec["listingExpires"]=p["listingExpires"]
+            # A parsed date must travel with its meaning and evidence. Never
+            # overwrite a source-backed event with a bare syndicated date.
+            if p.get("deadlineEvidence"):
+                rec["applicationEvidence"]=merge_evidence(rec.get("applicationEvidence") or {},
+                    {"deadlineEvidence":[p["deadlineEvidence"]]})
+                apply_deadline_resolution(rec)
+            elif p.get("deadline"):
+                rec["unverifiedListingDate"]=p["deadline"]
             if not rec.get("jobNumber"):
                 num = job_number(p["url"], (p.get("title", "") + " " + p.get("snippet", "")))
                 if num:

@@ -18,11 +18,15 @@ APPLY_HEADING = re.compile(
     r"what (?:you|applicants) (?:will )?need|position announcement|"
     r"applications? (?:must|should|are|will) (?:be )?submitted)\b", re.I)
 DATE_CONTEXT = re.compile(
-    r"\b(?:priority|full consideration|initial review|review of applications|"
-    r"review(?:ing)? (?:will )?begin|screening (?:of )?(?:applicants|applications?) (?:will )?begin|"
+    r"\b(?:priority(?: review| consideration)?|full consideration|initial review|"
+    r"review of applications(?: will)? (?:begin|start)s?|"
+    r"review(?:ing)? (?:will )?(?:begin|start)s?|review (?:start|date)|"
+    r"screening (?:of )?(?:applicants|applications?) (?:will )?begin|"
     r"screening (?:begins|starts)|application deadline|apply by|"
     r"applications? (?:must|should|are to) be (?:received|submitted)|"
-    r"closing date|deadline)\b", re.I)
+    r"(?:materials|applications?) (?:must be |are )?(?:due|received by)|"
+    r"(?:materials|applications?) (?:must|should) be submitted|"
+    r"applications? (?:will )?close|closing date|close date|closes? on|deadline)\b", re.I)
 DATE_TEXT = re.compile(
     r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
     r"Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|"
@@ -71,7 +75,9 @@ def date_value(s):
     m=DATE_TEXT.search(s)
     if not m: return ""
     value=re.sub(r"(?<=\d)(st|nd|rd|th)\b","",m.group()).replace(",","").replace(".","").strip()
-    if re.fullmatch(r"20\d{2}-\d{2}-\d{2}",value): return value
+    if re.fullmatch(r"20\d{2}-\d{2}-\d{2}",value):
+        try: return dt.date.fromisoformat(value).isoformat()
+        except ValueError: return ""
     for fmt in ("%B %d %Y","%b %d %Y","%m/%d/%Y","%m-%d-%Y"):
         try: return dt.datetime.strptime(value,fmt).date().isoformat()
         except ValueError: pass
@@ -85,27 +91,54 @@ def evidence_from_lines(lines,url,kind="posting"):
     for i,raw in enumerate(lines):
         line=re.sub(r"\s+"," ",raw).strip()
         if not line: continue
-        ctx=" ".join(lines[max(0,i-1):min(len(lines),i+2)])[:700]
-        for match in DATE_CONTEXT.finditer(line):
-            # A listing may say "Posted: Jul 29; Apply By: Open until filled".
-            # The posting date is not the application deadline.
-            segment=line[match.start():]
-            next_context=DATE_CONTEXT.search(segment,max(1,match.end()-match.start()))
-            if next_context:segment=segment[:next_context.start()]
-            segment=segment[:260]
-            if re.search(r"open until filled|until (?:the )?position is filled|rolling applications?",segment[:100],re.I):
-                continue
-            date=date_value(segment)
-            if not date and i+1<len(lines):
-                next_line=lines[i+1].strip()
-                if len(next_line)<48 and DATE_TEXT.search(next_line):
-                    date=date_value(next_line)
-                    if date:segment=(segment+" "+next_line).strip()
-            if date:
-                rule="priority" if re.search(
-                    r"priority|full consideration|initial review|review.+begin|screening|consideration begins",
-                    segment,re.I) else "closing"
-                deadlines.append({"date":date,"type":rule,"evidence":segment[:380],"url":url,"source":kind})
+        # A heading and its date may be separate nodes; never borrow an
+        # arbitrary following paragraph or infer the year from today's date.
+        if DATE_CONTEXT.search(line) and not DATE_TEXT.search(line) and i+1<len(lines):
+            following=lines[i+1].strip()
+            if len(following)<90 and DATE_TEXT.match(following):
+                line += " " + following
+        # Associate each date with its own clause. A single paragraph often
+        # contains posted/start dates, a priority date and a hard cutoff.
+        for clause in re.split(r";|(?<=[.!?])\s+(?=[A-Z])",line):
+            contexts=list(DATE_CONTEXT.finditer(clause))
+            dates=list(DATE_TEXT.finditer(clause))
+            for date_match in dates:
+                if not contexts: continue
+                # The closest label can be before OR after its date, e.g.
+                # 'received by October 26, 2026 for full consideration'.
+                nearby=[c for c in contexts if abs(c.start()-date_match.start())<180]
+                if not nearby: continue
+                preceding=[c for c in nearby if c.start()<date_match.start()]
+                context=preceding[-1] if preceding else nearby[0]
+                # Do not attach a later deadline label across another date.
+                if context.start()>date_match.start() and any(
+                        date_match.end()<d.start()<context.start() for d in dates): continue
+                start=context.start() if context.start()<date_match.start() else date_match.start()
+                segment=clause.strip()  # keep qualifiers and cutoff times in the source quote
+                # A leading unrelated date should not inherit a later label.
+                prefix=clause[:date_match.start()]
+                unrelated = r"\b(?:posted|published|posting date|start date|appointment|employment begins?|position begins?|listing expir(?:y|es|ation)|valid through)\b"
+                # A deadline label must not spill across an intervening event
+                # label, even when both dates occur in the same sentence.
+                between=clause[context.end():date_match.start()] if preceding else prefix
+                if re.search(unrelated,between,re.I): continue
+                date=date_value(date_match.group())
+                if not date: continue
+                previous_end=max([d.end() for d in dates if d.end()<=date_match.start()] or [0])
+                local=clause[previous_end:date_match.end()]
+                if re.match(r"\s*(?:for\s+)?full consideration",clause[date_match.end():],re.I):
+                    local += " full consideration"
+                if re.search(r"full consideration",local,re.I): rule="full_consideration"
+                elif re.search(r"priority",local,re.I): rule="priority"
+                elif re.search(r"review|screening",context.group(),re.I): rule="review"
+                else: rule="closing"
+                item={"date":date,"type":rule,"evidence":segment[:380],"url":url,"source":kind}
+                tail=clause[start:date_match.start()] + " " + clause[date_match.end():min(len(clause),date_match.end()+90)]
+                tm=re.search(r"\b(?:at\s+|by\s+)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?|\d{1,2}\s*[ap]\.?m\.?)",tail,re.I)
+                zone=re.search(r"\b(?:EDT|EST|CDT|CST|MDT|MST|PDT|PST|UTC|Eastern(?: Standard| Daylight)?(?: Time)?|Central(?: Standard| Daylight)?(?: Time)?|Mountain(?: Standard| Daylight)?(?: Time)?|Pacific(?: Standard| Daylight)?(?: Time)?)\b",tail,re.I)
+                if tm:item["timeText"]=tm.group(1).strip()
+                if zone:item["timezoneText"]=zone.group().strip()
+                deadlines.append(item)
         if APPLY_HEADING.search(line):
             windows.append(i)
     seen=set()
@@ -127,9 +160,9 @@ def evidence_from_lines(lines,url,kind="posting"):
     # De-duplicate deadline mentions, preferring the more precise official evidence.
     uniq=[];keys=set()
     for x in deadlines:
-        k=(x["date"],x["type"])
+        k=(x["date"],x["type"],x.get("timeText"),x.get("timezoneText"))
         if k not in keys:uniq.append(x);keys.add(k)
-    return {"deadlineEvidence":uniq[:5],"materialEvidence":material,"hasApplicationSection":bool(windows)}
+    return {"deadlineEvidence":uniq[:20],"materialEvidence":material,"hasApplicationSection":bool(windows)}
 
 def application_links(html,page_url):
     """Find actual 'Apply' links near a job, not every link in the page footer."""
@@ -157,7 +190,7 @@ def merge_evidence(primary, additional):
     """Combine source-backed facts without discarding facts from the first page."""
     merged = {"deadlineEvidence": [], "materialEvidence": [],
               "hasApplicationSection": bool(primary.get("hasApplicationSection") or additional.get("hasApplicationSection"))}
-    for field, key in (("deadlineEvidence", lambda x: (x["date"], x["type"])),
+    for field, key in (("deadlineEvidence", lambda x: (x["date"], x["type"], x.get("url"), x.get("source"), x.get("timeText"), x.get("timezoneText"))),
                        ("materialEvidence", lambda x: (x["category"],))):
         seen = set()
         for item in additional.get(field, []) + primary.get(field, []):
@@ -172,3 +205,33 @@ def describe_coverage(evidence):
     if evidence.get("materialEvidence"):return "materials_only"
     if evidence.get("deadlineEvidence"):return "deadline_only"
     return "application_section_no_requirements" if evidence.get("hasApplicationSection") else "summary_only"
+
+
+def resolve_deadlines(evidence):
+    """Choose a source-backed event, or explicitly decline conflicting dates.
+
+    Priority/review events are not conflicts with a closing date. Metadata
+    expiration alone is not proof of an application cutoff. Source rank only
+    resolves the same event type, never converts a review into a hard deadline.
+    """
+    candidates=[dict(x) for x in evidence if date_value(x.get("date", ""))
+                and x.get("type") in {"closing","priority","full_consideration","review"}
+                and x.get("source")!="structured-data"]
+    rank={"official-job-call":3,"linked-call":2,"job-board":1}
+    for kind in ("closing","full_consideration","priority","review"):
+        group=[x for x in candidates if x["type"]==kind]
+        if not group: continue
+        strongest=max(rank.get(x.get("source"),0) for x in group)
+        top=[x for x in group if rank.get(x.get("source"),0)==strongest]
+        dates={x["date"] for x in top}
+        times={x["timeText"].lower().replace(" ","") for x in top if x.get("timeText")}
+        zones={x["timezoneText"].lower() for x in top if x.get("timezoneText")}
+        if len(dates)>1 or len(times)>1 or len(zones)>1:
+            return {"status":"conflict","selected":None,"candidates":candidates,
+                    "conflicts":top}
+        chosen=top[0]
+        # Preserve disagreement even when a clearly higher-ranked source wins.
+        conflicts=[x for x in group if x["date"]!=chosen["date"]]
+        return {"status":"resolved" if not conflicts else "resolved_with_conflict",
+                "selected":chosen,"candidates":candidates,"conflicts":conflicts}
+    return {"status":"unverified","selected":None,"candidates":[],"conflicts":[]}

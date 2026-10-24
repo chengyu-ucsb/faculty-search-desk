@@ -42,7 +42,8 @@ class CollectorTests(unittest.TestCase):
         html='''<script type="application/ld+json">{"@type":"JobPosting","title":"Assistant Professor of Communication","hiringOrganization":{"name":"Example University"},"jobLocation":{"address":{"addressLocality":"Dayton","addressRegion":"Ohio"}},"validThrough":"2026-11-20","description":"Organizational communication research."}</script>'''
         r=parse_jsonld(BeautifulSoup(html,'html.parser'),'https://jobs.example.edu/position/12345')
         self.assertEqual(r[0]['institution'],'Example University')
-        self.assertEqual(r[0]['deadline'],'2026-11-20')
+        self.assertEqual(r[0]['deadline'],'')
+        self.assertEqual(r[0]['listingExpires'],'2026-11-20')
         self.assertIn('Dayton',r[0]['location'])
 
     def test_url_tracking_removed(self):
@@ -77,7 +78,7 @@ class CollectorTests(unittest.TestCase):
             count=apply_scores({"plain":job},profile,now_iso())
         self.assertEqual(count,1)
         self.assertEqual(job["deadline"],"2026-10-22")
-        self.assertEqual(job["deadlineKind"],"priority")
+        self.assertEqual(job["deadlineKind"],"review")
         self.assertEqual({item["category"] for item in job["applicationEvidence"]["materialEvidence"]},{"cover_letter","cv"})
         self.assertNotIn("score",job)
 
@@ -187,7 +188,7 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(list(jobs),["4db9e22f2195"])
         result=jobs["4db9e22f2195"]
         self.assertEqual(result["deadline"],"2026-09-15")
-        self.assertEqual(result["deadlineKind"],"priority")
+        self.assertEqual(result["deadlineKind"],"review")
         self.assertEqual(result["verifiedApplicationUrl"],official)
         self.assertIn("4291024f17f0",result["alternateFeedIds"])
         self.assertIn("91dffc54aeaf",result["alternateFeedIds"])
@@ -207,6 +208,41 @@ class CollectorTests(unittest.TestCase):
                  "firstSeen":"2026-09-02T00:00:00Z"},
         }
         self.assertEqual(collapse_cross_source_duplicates(jobs),0)
+
+class DeadlinePipelineTests(unittest.TestCase):
+    def test_expiry_does_not_leak_from_jsonld(self):
+        from collect import _structured_deadline
+        html='<script type="application/ld+json">{"@type":"JobPosting","title":"Professor","validThrough":"2026-10-24"}</script>'
+        job=parse_jsonld(BeautifulSoup(html,"html.parser"),"https://board.example/job")[0]
+        self.assertEqual(job["listingExpires"],"2026-10-24")
+        self.assertEqual(job["deadline"],"")
+        self.assertEqual(_structured_deadline(html,"https://board.example/job",job),[])
+
+    def test_cached_source_corrects_expiry_but_keeps_history(self):
+        from collect import revalidate_cached_deadlines
+        jobs={"x":{"deadline":"2026-10-30","url":"https://board.example/job", "detailText":
+              "Expected start date August 16, 2027. Applications must be received by 6:00 pm (Central Time) on November 1, 2026."}}
+        revalidate_cached_deadlines(jobs)
+        self.assertEqual(jobs["x"]["deadline"],"2026-11-01")
+        self.assertEqual(jobs["x"]["deadlineKind"],"closing")
+        self.assertEqual(jobs["x"]["previousUnverifiedDeadline"],"2026-10-30")
+
+    def test_unverifiable_cached_date_quarantined(self):
+        from collect import revalidate_cached_deadlines
+        job={"deadline":"2026-10-24","url":"https://board.example/job", "detailText":"A faculty opportunity."}
+        revalidate_cached_deadlines({"x":job})
+        self.assertEqual(job["deadline"],"")
+        self.assertEqual(job["previousUnverifiedDeadline"],"2026-10-24")
+        self.assertEqual(job["deadlineResolution"]["status"],"unverified")
+
+    def test_cached_repairs_idempotent(self):
+        import copy
+        from collect import revalidate_cached_deadlines
+        jobs={"x":{"deadline":"2026-10-24","url":"https://board.example/job", "detailText":"Priority consideration October 6, 2026."}}
+        revalidate_cached_deadlines(jobs)
+        before=copy.deepcopy(jobs)
+        self.assertEqual(revalidate_cached_deadlines(jobs),0)
+        self.assertEqual(jobs,before)
 
 if __name__=='__main__':
     unittest.main()

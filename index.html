@@ -846,7 +846,7 @@ function groupRelatedFeed(postings){
       ]);
       return {...primary,title:cleanWikiFeedTitle(primary.title),
         statuses:[...new Set(updates)],firstSeen:oldest.firstSeen,
-        deadline:group.find(f=>f.deadline)?.deadline||primary.deadline,
+        deadline:primary.deadline, // Never borrow a date without its type/source evidence.
         relatedAds:[],groupSize:1,allAdded:group.some(f=>f.added)};
     }
     // Show an untracked listing first; never hide a separate posting just because
@@ -944,7 +944,7 @@ function render(){
 /* Contextual dashboard hero: the narrative and metric change by section. */
 function renderHero(){
   const active=S.tracker.jobs.filter(j=>!isClosed(j));
-  const upcoming=active.filter(j=>{const d=daysUntil(j.deadline);return d!==null&&d>=0&&d<=14;}).length;
+  const upcoming=active.filter(j=>{const d=daysUntil(jobActionDate(j));return d!==null&&d>=0&&d<=14;}).length;
   const available=feedInbox().filter(f=>discoveryEligible(f) && !f.added).length;
   const configs={
     jobs:{eyebrow:'APPLICATION COMMAND CENTER',title:'Make every application count.',caption:'One clear place for opportunities, deadlines, documents, and decisions.',metric:S.readonly && repoConf().privateRepo?'–':String(active.length),metricLabel:S.readonly && repoConf().privateRepo?'Connect to view':'Active applications',cta:'Explore openings',to:'discover'},
@@ -952,7 +952,7 @@ function renderHero(){
     materials:{eyebrow:'YOUR APPLICATION TOOLKIT',title:'The right document. The right version.',caption:'A deliberate home for CVs, research statements, teaching portfolios, and tailored application materials.',metric:S.readonly && repoConf().privateRepo?'–':String(S.tracker.documents.length),metricLabel:S.readonly && repoConf().privateRepo?'Connect to view':'Stored documents',cta:'View applications',to:'jobs'}
   };
   const x=configs[S.view];if(!x)return '';
-  return `<div class="page-intro"><div class="hero-content"><div class="eyebrow">${x.eyebrow}</div><h2>${x.title}</h2><p>${x.caption}</p><div class="hero-actions"><button class="btn hero-primary" data-action="goto" data-view="${x.to}">${x.cta} &rarr;</button>${S.view==='jobs'&&upcoming?'<span class="small" style="color:#e2eadc;font-weight:750">'+upcoming+' deadlines within 14 days</span>':''}</div></div><div class="hero-metric" aria-label="${x.metricLabel}: ${x.metric}"><span>${x.metric}</span><i></i><small>${x.metricLabel}</small></div></div>`;
+  return `<div class="page-intro"><div class="hero-content"><div class="eyebrow">${x.eyebrow}</div><h2>${x.title}</h2><p>${x.caption}</p><div class="hero-actions"><button class="btn hero-primary" data-action="goto" data-view="${x.to}">${x.cta} &rarr;</button>${S.view==='jobs'&&upcoming?'<span class="small" style="color:#e2eadc;font-weight:750">'+upcoming+' source dates within 14 days</span>':''}</div></div><div class="hero-metric" aria-label="${x.metricLabel}: ${x.metric}"><span>${x.metric}</span><i></i><small>${x.metricLabel}</small></div></div>`;
 }
 
 /* ---------- search ---------- */
@@ -964,7 +964,7 @@ function renderSearch(){
   const feed = feedInbox().filter(f => discoveryEligible(f) && !f.added && hit(f.title, f.institution, f.location, f.snippet));
   let h = `<div class="row between" style="margin-bottom:12px"><h2 class="display">Search: “${esc(S.query)}”</h2><button class="btn sm quiet" data-action="clearsearch">Clear</button></div><div class="searchresults">`;
   if(!jobs.length && !docs.length && !feed.length) h += `<div class="empty"><p>Nothing matches yet.</p></div>`;
-  for(const j of jobs) h += `<button class="sr" data-action="openjob" data-id="${j.id}"><span class="k">Job</span><span><strong>${esc(j.institution)}</strong> — ${esc(j.title)} <span class="muted small">${esc(label(STAGES,j.stage))}${j.deadline?' · due '+esc(fmtDate(j.deadline)):''}</span></span></button>`;
+  for(const j of jobs) h += `<button class="sr" data-action="openjob" data-id="${j.id}"><span class="k">Job</span><span><strong>${esc(j.institution)}</strong> — ${esc(j.title)} <span class="muted small">${esc(label(STAGES,j.stage))}${deadlineInfo(j).selected?' · '+esc(deadlineLabel(deadlineInfo(j).selected.type))+' '+esc(fmtDate(deadlineInfo(j).selected.date)):''}${deadlineInfo(j).conflict?' · check date conflict':''}</span></span></button>`;
   for(const d of docs) h += `<button class="sr" data-action="opendocs" data-id="${d.id}"><span class="k">Document</span><span><strong>${esc(d.name)}</strong> <span class="muted small">${esc(label(DOC_CATEGORIES,d.category))} · ${d.versions.length} version${d.versions.length===1?'':'s'}</span></span></button>`;
   for(const f of feed.slice(0,40)) h += `<button class="sr" data-action="openfeed" data-id="${f.id}"><span class="k">Posting</span><span><strong>${esc(f.title)}</strong> <span class="muted small">${esc(f.institution||'')} · ${esc(sourceName(f.sourceId))}</span></span></button>`;
   return h + '</div>';
@@ -981,16 +981,16 @@ function filteredJobs(){
     if(f === 'preparing') return j.stage === 'preparing';
     if(f === 'submitted') return j.stage === 'submitted' || j.stage === 'under_review';
     if(f === 'interviewing') return isInterviewing(j);
-    if(f === 'due') { const d = daysUntil(j.deadline); return d !== null && d >= 0 && d <= 14; }
+    if(f === 'due') { const d = daysUntil(jobActionDate(j)); return d !== null && d >= 0 && d <= 14; }
     if(f === 'ready') return j.stage === 'preparing' && readiness(j).ready;
-    if(f === 'verify') return j.stage==='preparing' && j.materials.some(m=>m.status==='unverified');
+    if(f === 'verify') return j.stage==='preparing' && (deadlineInfo(j).conflict || j.materials.some(m=>m.status==='unverified'));
     if(f === 'letters') return !!lettersAtSubmission(j);
     return true;
   });
   const s = S.jobSort;
   list.sort((a,b) => {
-    if(s === 'todo'){ const ra = todoRank(a), rb = todoRank(b); if(ra !== rb) return ra - rb; const da = a.deadline || '9999', db = b.deadline || '9999'; return da < db ? -1 : da > db ? 1 : 0; }
-    if(s === 'deadline'){ const da = a.deadline || '9999', db = b.deadline || '9999'; return da < db ? -1 : da > db ? 1 : 0; }
+    if(s === 'todo'){ const ra = todoRank(a), rb = todoRank(b); if(ra !== rb) return ra - rb; const da = jobActionDate(a) || '9999', db = jobActionDate(b) || '9999'; return da < db ? -1 : da > db ? 1 : 0; }
+    if(s === 'deadline'){ const da = jobActionDate(a) || '9999', db = jobActionDate(b) || '9999'; return da < db ? -1 : da > db ? 1 : 0; }
     if(s === 'updated') return (b.updatedAt||'') < (a.updatedAt||'') ? -1 : 1;
     return (a.institution||'').localeCompare(b.institution||'');
   });
@@ -998,25 +998,25 @@ function filteredJobs(){
 }
 function renderJobs(){
   const active = S.tracker.jobs.filter(j => !isClosed(j));
-  const due = active.filter(j => { const d = daysUntil(j.deadline); return d !== null && d >= 0 && d <= 14; });
+  const due = active.filter(j => { const d = daysUntil(jobActionDate(j)); return d !== null && d >= 0 && d <= 14; });
   const interviewing = active.filter(isInterviewing);
   const ready = active.filter(j => j.stage === 'preparing' && readiness(j).ready);
   const letters = active.filter(j => lettersAtSubmission(j));
   const verify = active.filter(j => j.stage==='preparing' &&
-    (j.materials.some(m=>m.status==='unverified') ||
+    (deadlineInfo(j).conflict || j.materials.some(m=>m.status==='unverified') ||
      (j.source==='feed' && !['deadline_and_materials'].includes(j.applicationCoverage))));
 
   let h = `<div class="stats">
-    <div class="stat${due.length?' hot':''}" data-action="filter" data-filter="due"><div class="n">${due.length}</div><div class="l">Due in 14 days</div></div>
+    <div class="stat${due.length?' hot':''}" data-action="filter" data-filter="due"><div class="n">${due.length}</div><div class="l">Dates in 14 days</div></div>
     <div class="stat" data-action="filter" data-filter="active"><div class="n">${active.length}</div><div class="l">Active applications</div></div>
     <div class="stat" data-action="filter" data-filter="interviewing"><div class="n">${interviewing.length}</div><div class="l">Interviewing</div></div>
     <div class="stat" data-action="filter" data-filter="ready"><div class="n">${ready.length}</div><div class="l">Ready to submit</div></div>
     <div class="stat${letters.length?' warn':''}" data-action="filter" data-filter="letters"><div class="n">${letters.length}</div><div class="l">Letters to request</div></div>
     <div class="stat${verify.length?' warn':''}" data-action="filter" data-filter="verify"><div class="n">${verify.length}</div><div class="l">Verify requirements</div></div>
   </div>`;
-  const chips = [['active','Active'],['due','Due soon'],['preparing','Preparing'],['verify','Verify requirements'],['letters','Needs letters'],['ready','Ready',' <i class="sw hollow" style="--sw:var(--good)"></i>'],['submitted','Submitted',' <i class="sw" style="--sw:var(--st-sub)"></i>'],['interviewing','Interviewing',' <i class="sw" style="--sw:var(--st-int)"></i>'],['closed','Closed',' <i class="sw" style="--sw:var(--st-closed)"></i>'],['all','All']];
+  const chips = [['active','Active'],['due','Upcoming dates'],['preparing','Preparing'],['verify','Verify requirements'],['letters','Needs letters'],['ready','Ready',' <i class="sw hollow" style="--sw:var(--good)"></i>'],['submitted','Submitted',' <i class="sw" style="--sw:var(--st-sub)"></i>'],['interviewing','Interviewing',' <i class="sw" style="--sw:var(--st-int)"></i>'],['closed','Closed',' <i class="sw" style="--sw:var(--st-closed)"></i>'],['all','All']];
   h += `<div class="toolbar"><div class="chips">${chips.map(([k,v,sw]) => `<button class="chip${S.jobFilter===k?' active':''}" data-action="filter" data-filter="${k}" title="${sw ? 'Rows in this stage are tinted this colour' : ''}">${sw || ''}${v}</button>`).join('')}</div>
-    <div class="row"><select data-action="sort" aria-label="Sort"><option value="todo"${S.jobSort==='todo'?' selected':''}>To do first</option><option value="deadline"${S.jobSort==='deadline'?' selected':''}>By deadline</option><option value="updated"${S.jobSort==='updated'?' selected':''}>Recently updated</option><option value="institution"${S.jobSort==='institution'?' selected':''}>By institution</option></select>
+    <div class="row"><select data-action="sort" aria-label="Sort"><option value="todo"${S.jobSort==='todo'?' selected':''}>To do first</option><option value="deadline"${S.jobSort==='deadline'?' selected':''}>By source date</option><option value="updated"${S.jobSort==='updated'?' selected':''}>Recently updated</option><option value="institution"${S.jobSort==='institution'?' selected':''}>By institution</option></select>
     <button class="btn sm" data-action="syncfeedall" title="Fill missing deadlines and document requirements from verified job calls without replacing your own edits"${S.readonly?' disabled':''}>Sync verified details</button>
     <button class="btn primary" data-action="showadd"${S.readonly?' disabled':''}>${ICON.plus} Add job</button></div></div>`;
   if(S.showAddJob) h += renderAddJob();
@@ -1032,12 +1032,75 @@ function renderJobs(){
   if(job && !list.some(j => j.id === job.id)) h += renderJobDetail(job);
   return h;
 }
+/* Keep published dates separate from a user's saved/planning date. Never infer
+   a closing deadline from a board expiry or an unresolved legacy date. */
+function deadlineType(value){
+  const t=String(value||'').toLowerCase().replace(/[ -]+/g,'_');
+  if(/^(closing|deadline|application_deadline|closing_date|hard_deadline)$/.test(t)) return 'closing';
+  if(/^(full_consideration|best_consideration)$/.test(t)) return 'full_consideration';
+  if(/^(priority|priority_deadline|priority_review)$/.test(t)) return 'priority';
+  if(/^(review|review_start|review_date|review_begins|review_starts)$/.test(t)) return 'review';
+  return '';
+}
+function deadlineLabel(type){
+  return ({closing:'Application deadline',priority:'Priority consideration',full_consideration:'Full consideration',review:'Review starts',published:'Published date',saved:'Saved date (unverified)'})[type] || 'Date (verify)';
+}
+function validDateOnly(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value||'')) return false;
+  const d=new Date(value+'T12:00:00Z');
+  return !isNaN(d) && d.toISOString().slice(0,10)===value;
+}
+function deadlineCandidates(job){
+  const raw=[...(job.sourceEvidence||[]),...(job.applicationEvidence?.deadlineEvidence||[]),
+    ...(job.deadlineResolution?.candidates||[]),...(job.deadlineEvidence?[job.deadlineEvidence]:[])];
+  if(job.publishedDeadline && !raw.some(x=>x.date===job.publishedDeadline))
+    raw.push({date:job.publishedDeadline,type:job.publishedDeadlineKind||'published'});
+  if(job.deadline && deadlineType(job.deadlineKind) && !raw.some(x=>x.date===job.deadline))
+    raw.push({date:job.deadline,type:job.deadlineKind,evidence:job.deadlineNote||''});
+  const seen=new Map();
+  for(const e of raw){
+    if(!validDateOnly(e.date) || /structured[-_]data|ad[-_]expiry|listing[-_]expiry/i.test(e.source||'')) continue;
+    const type=deadlineType(e.type) || (e.type==='published'?'published':'');
+    if(!type) continue; // excludes ad expiry, posting dates and start dates
+    const key=[type,e.date,e.source||e.sourceType||'',e.timeText||e.time||'',e.timezoneText||e.timezone||''].join('|');
+    if(!seen.has(key)) seen.set(key,{...e,type});
+  }
+  return [...seen.values()];
+}
+function resolveDeadlineCandidates(candidates){
+  const rank={closing:0,full_consideration:1,priority:2,review:3,published:4};
+  const ordered=[...candidates].sort((a,b)=>(rank[a.type]??9)-(rank[b.type]??9)||a.date.localeCompare(b.date));
+  if(!ordered.length) return {selected:null,conflict:false,candidates:[]};
+  let top=ordered.filter(x=>x.type===ordered[0].type);
+  const authority=e=>/official[-_](?:job[-_]call|portal)/.test(e.source||e.sourceType||'')?0:/linked[-_]call/.test(e.source||'')?1:/job[-_]board/.test(e.source||'')?2:3;
+  const strongest=Math.min(...top.map(authority));
+  top=top.filter(x=>authority(x)===strongest);
+  const disagrees=items=>new Set(items.map(x=>x.date)).size>1 || ['timeText','timezoneText'].some(k=>new Set(items.map(x=>String(x[k]||x[k==='timeText'?'time':'timezone']||'').toLowerCase()).filter(Boolean)).size>1);
+  const unresolved=disagrees(top);
+  const conflict=disagrees(ordered.filter(x=>x.type===ordered[0].type));
+  return {selected:unresolved?null:top[0],conflict,candidates:ordered};
+}
+function deadlineInfo(job){
+  const r=resolveDeadlineCandidates(deadlineCandidates(job));
+  const warning=(job.verificationWarnings||[]).some(x=>/date|deadline/i.test(x)&&/conflict|differ|verify/i.test(x));
+  const mismatch=!!(r.selected && job.deadline && r.selected.date!==job.deadline);
+  const conflict=r.conflict||warning||mismatch||/conflict/.test(job.deadlineResolution?.status||'');
+  const selected=r.selected || (!conflict&&validDateOnly(job.deadline)?{date:job.deadline,type:'saved'}:null);
+  return {...r,selected,conflict,saved:validDateOnly(job.deadline)?job.deadline:''};
+}
+function jobActionDate(job){
+  const d=deadlineInfo(job);
+  return d.selected && d.selected.type!=='saved' && d.selected.type!=='published' ? d.selected.date : '';
+}
 function deadlineCell(job){
-  if(!job.deadline) return `<div class="dl muted">${job.deadlineNote ? esc(job.deadlineNote) : 'No deadline'}</div>`;
-  const d = daysUntil(job.deadline);
-  const cls = d < 0 ? 'past' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : '';
-  const txt = d < 0 ? `${-d} day${d===-1?'':'s'} ago` : d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
-  return `<div class="dl ${cls}">${job.deadlineKind==='priority'?'Review ':''}${esc(fmtDate(job.deadline))}<span class="days">${txt}</span></div>`;
+  const info=deadlineInfo(job), e=info.selected;
+  const saved=info.saved && (!e||info.saved!==e.date) ? `<span class="days">Saved date: ${esc(fmtDate(info.saved))} (not verified)</span>` : '';
+  const warning=info.conflict?'<span class="pill warn">Check date conflict</span>':'';
+  if(!e) return `<div class="dl muted">${warning}${info.candidates.map(x=>`<span class="days">${esc(deadlineLabel(x.type))}: ${esc(fmtDate(x.date))} ${esc([x.timeText||x.time,x.timezoneText||x.timezone].filter(Boolean).join(' '))}</span>`).join('')}${saved}${!info.candidates.length&&!saved?esc(job.deadlineNote||'No verified date'):''}</div>`;
+  const d=daysUntil(e.date), verified=!['saved','published'].includes(e.type);
+  const cls=verified?(d<0?'past':d<=3?'urgent':d<=14?'soon':''):'';
+  const txt=verified?(d<0?`${-d} day${d===-1?'':'s'} ago`:d===0?'today':d===1?'tomorrow':`in ${d} days`):'Check the original posting';
+  return `<div class="dl ${cls}"><span class="days">${esc(deadlineLabel(e.type))}</span>${esc(fmtDate(e.date))}<span class="days">${esc([e.timeText||e.time,e.timezoneText||e.timezone].filter(Boolean).join(' '))}${e.timeText||e.timezoneText||e.time||e.timezone?' · ':''}${txt}</span>${warning}${saved}</div>`;
 }
 function stagePill(job){
   const fam = stageFamily(job);
@@ -1080,7 +1143,7 @@ function renderAddJob(){
       <label class="field"><span>Position title *${ck('title')}</span><input type="text" name="title" required placeholder="Assistant Professor of Communication" value="${v('title')}"></label>
       <label class="field"><span>Department${ck('department')}</span><input type="text" name="department" value="${v('department')}"></label>
       <label class="field"><span>Location${ck('location')}</span><input type="text" name="location" placeholder="City, State" value="${v('location')}"></label>
-      <label class="field"><span>Deadline${ck('deadline')}</span><input type="date" name="deadline" value="${v('deadline')}"></label>
+      <label class="field"><span>Saved date${ck('deadline')}</span><input type="date" name="deadline" value="${v('deadline')}"></label>
       <label class="field"><span>Deadline note</span><input type="text" name="deadlineNote" placeholder="Review begins Oct 15; open until filled" value="${v('deadlineNote')}"></label>
       <label class="field"><span>Posting URL</span><input type="url" name="url" placeholder="https://" value="${v('url')}"></label>
       <label class="field"><span>Job / posting number${ck('jobNumber')}</span><input type="text" name="jobNumber" placeholder="e.g. 498438" value="${v('jobNumber')}"></label>
@@ -1115,14 +1178,15 @@ function httpLink(url,label){
 }
 function renderApplicationEvidence(job){
   const linked=(S.feed.jobs||[]).find(f=>f.id===job.feedId || (f.alternateFeedIds||[]).includes(job.feedId));
-  const matches=(job.sourceEvidence||[]).concat((job.applicationEvidence?.deadlineEvidence||[]));
+  const matches=deadlineCandidates(job);
   const materials=job.materials.filter(m=>m.evidence);
   const other=(job.applicationEvidence?.materialEvidence||[]).filter(e=>!materials.some(m=>m.category===e.category));
   const links=[
     job.officialPostingUrl||job.verifiedApplicationUrl||linked?.verifiedApplicationUrl,
     job.sourceListingUrl||job.originalPostingUrl
   ].filter(Boolean);
-  const warnings=job.verificationWarnings||[];
+  const warnings=[...(job.verificationWarnings||[])];
+  if(deadlineInfo(job).conflict && !warnings.some(x=>/date|deadline/i.test(x))) warnings.push('Saved and published dates differ, or sources conflict. Check the original application portal; your saved date has not been replaced.');
   const unverified=job.materials.filter(m=>m.status==='unverified').length;
   if(!matches.length&&!materials.length&&!other.length&&!warnings.length&&!links.length&&!unverified) return '';
   return `<div class="card" style="margin-top:18px">
@@ -1130,7 +1194,7 @@ function renderApplicationEvidence(job){
       <p class="small muted" style="margin:9px 0">We record the source of a requirement. A missing item in a partial listing is not evidence that a document is unnecessary.</p>
       ${links.length?`<div class="row" style="gap:14px;flex-wrap:wrap;margin-bottom:10px">${Array.from(new Set(links)).map((url,i)=>httpLink(url,i===0?'University / application page':'Original listing')).join('')}</div>`:''}
       ${warnings.map(w=>`<div class="banner"><strong>Review:</strong> ${esc(w)}</div>`).join('')}
-      ${matches.map(e=>`<div class="callbox" style="margin-top:9px"><strong>${esc(e.type||'Review date')}${e.date?' · '+esc(fmtDate(e.date)):''}</strong><p class="small" style="margin-top:4px">${esc(e.evidence||'')}</p><div class="small">${e.url?httpLink(e.url,'Read source'):''}</div></div>`).join('')}
+      ${matches.map(e=>`<div class="callbox" style="margin-top:9px"><strong>${esc(deadlineLabel(e.type))}${e.date?' · '+esc(fmtDate(e.date)):''}</strong><p class="small" style="margin-top:4px">${esc(e.evidence||'')}</p><div class="small">${e.url?httpLink(e.url,'Read source'):''}</div></div>`).join('')}
       ${materials.slice(0,12).map(m=>`<div class="callbox" style="margin-top:8px"><strong>${esc(m.name)} · ${esc(label(MAT_STATUS,m.status))}</strong><p class="small muted" style="margin-top:4px">${esc(m.evidence.excerpt||m.evidence.evidence||'')}</p>${m.evidence.url?httpLink(m.evidence.url,'Read requirement'):''}</div>`).join('')}
       ${other.map(e=>`<div class="callbox" style="margin-top:8px"><strong>${esc(label(STANDARD_MATERIALS,e.category)||e.category)}</strong><p class="small muted">${esc(e.evidence)}</p>${e.url?httpLink(e.url,'Read source'):''}</div>`).join('')}
       ${linked?.applicationEvidence && !S.readonly && job.stage==='preparing'?`<button class="btn primary sm" style="margin-top:12px" data-action="applyfeedfindings" data-id="${job.id}">Update unverified requirements from current source</button>`:''}
@@ -1144,14 +1208,16 @@ function renderOverview(job){
     <label class="field"><span>Area / specialization</span>${jf(job,'area')}</label>
     <label class="field"><span>Location</span>${jf(job,'location')}</label>
     <label class="field"><span>Position start</span>${jf(job,'startDate','text','placeholder="Fall 2027"')}</label>
-    <label class="field"><span>Deadline</span>${jf(job,'deadline','date')}</label>
-    <label class="field span2"><span>Deadline / review note</span>${jf(job,'deadlineNote','text','placeholder="Review begins …; open until filled"')}</label>
+    <label class="field"><span>Saved date</span>${jf(job,'deadline','date')}</label>
+    <label class="field"><span>Personal target (optional)</span>${jf(job,'targetDate','date')}</label>
+    <label class="field span2"><span>Saved date / review note</span>${jf(job,'deadlineNote','text','placeholder="Review begins …; open until filled"')}</label>
     <label class="field"><span>Posting URL</span>${jf(job,'url','url')}</label>
     <label class="field"><span>Job / posting number <span class="faint" style="text-transform:none;letter-spacing:0">(tells two postings from one department apart)</span></span>${jf(job,'jobNumber','text','placeholder="e.g. 498438"')}</label>
     <label class="field"><span>Salary</span>${jf(job,'salary')}</label>
     <label class="field"><span>Stage</span><select data-job="${job.id}" data-job-field="stage"${S.readonly?' disabled':''}>${opts(STAGES, job.stage)}</select></label>
     <label class="field"><span>Outcome</span><select data-job="${job.id}" data-job-field="outcome"${S.readonly?' disabled':''}>${opts(OUTCOMES, job.outcome)}</select></label>
   </div>
+  <div class="callbox" style="margin-top:12px">${deadlineCell(job)}<p class="small muted">Published source dates are shown separately from saved dates and personal targets. A review or full-consideration date is not a closing deadline.</p></div>
   ${renderApplicationEvidence(job)}
   ${job.feedId ? `<div class="callbox" style="margin-top:14px"><strong>Imported from Discover</strong><p class="small muted" style="margin-top:5px">${job.feedScoredOn === 'page' ? 'Posting text was collected and parsed.' : 'Only partial listing information was available. Verify all requirements against the original advertisement.'}${job.feedPublished?' · Posted '+esc(fmtDate(job.feedPublished)):''}</p></div>` : ''}
   ${(() => { const w = wikiEntriesFor(job); if(!w.length) return ''; return `<div class="section-title" style="margin-top:18px">On the Academic Jobs Wiki</div><div class="stack" style="gap:8px">${w.map(f => `<div class="callbox"><div class="row between"><div><strong>${esc(f.title)}</strong> ${sectionPill(f)}</div><a class="small" href="${esc(f.url)}" target="_blank" rel="noopener">open on the wiki ${ICON.ext}</a></div>${wikiStatusList(f, 8)}</div>`).join('')}</div>`; })()}
@@ -1301,7 +1367,7 @@ function renderDiscover(){
     <div class="joblist">`;
   if(!inbox.length) h += `<div class="empty"><h3>${S.feed.generatedAt ? 'Inbox zero' : 'Nothing collected yet'}</h3><p>${S.feed.generatedAt ? 'No new opportunities match your filters. Already tracked jobs and searches reporting interviews are hidden by default. New postings arrive after each daily run.' : 'Once the repository is on GitHub with Actions enabled, the collector checks your sources every morning. You can also run it now from the panel on the right.'}</p></div>`;
   else h += inbox.slice(0,200).map(f => `<div class="feeditem${f.added?' added':''}" id="feed-${f.id}">
-      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${f.deadline?` · ${f.deadlineKind==='priority'?'review begins':'due'} ${esc(fmtDate(f.deadline))}`:''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.alternateListings?.length ? `<details class="related-listings"><summary>Also listed by ${esc([...new Set(f.alternateListings.map(x=>sourceName(x.sourceId)))].join(', '))}</summary>${f.alternateListings.map(x=>`<div class="row"><span class="listing-source">${esc(sourceName(x.sourceId))}</span><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Original ad</a></div>`).join('')}</details>` : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
+      <div><div class="row" style="gap:8px"><div class="t">${esc(f.institution && isWikiEntry(f) ? f.institution + ' — ' : '')}${esc(f.title)}</div>${isWikiEntry(f) ? sectionPill(f) : ''}${f.fit ? fitPill(f.fit) : ''}${f.detailText ? '<span class="pill good">Posting text saved</span>' : '<span class="pill warn">Partial listing</span>'}</div><div class="s">${esc([isWikiEntry(f) ? '' : f.institution, f.location, (() => { const n = f.jobNumber || jobNumberFromUrl(f.url); return n ? '#' + n : ''; })()].filter(Boolean).join(' · '))}${deadlineInfo(f).selected?` · ${esc(deadlineLabel(deadlineInfo(f).selected.type))} ${esc(fmtDate(deadlineInfo(f).selected.date))}`:''}${deadlineInfo(f).conflict?' · check date conflict':''} · <span title="${esc(sourceName(f.sourceId))}">${esc(sourceName(f.sourceId))}</span> · first seen ${esc(fmtDate(f.firstSeen))}${f.adUrl ? ` · <a href="${esc(f.adUrl)}" target="_blank" rel="noopener">ad</a>` : ''}${isWikiEntry(f) && !f.added ? (() => { const fi = instKey(f.institution); const j = fi && S.tracker.jobs.find(j => { const ji = instKey(j.institution); return ji && (ji === fi || ji.includes(fi) || fi.includes(ji)); }); return j ? ` · <a href="#" data-action="openjob" data-id="${j.id}" title="${esc(j.title)}">your ${esc(j.institution)} job</a>` : ''; })() : ''}</div>${f.snippet && !isWikiEntry(f) ?`<div class="s">${esc(f.snippet.slice(0,180))}${f.snippet.length>180?'…':''}</div>`:''}${isWikiEntry(f) ? wikiStatusList(f, 3) : ''}${f.alternateListings?.length ? `<details class="related-listings"><summary>Also listed by ${esc([...new Set(f.alternateListings.map(x=>sourceName(x.sourceId)))].join(', '))}</summary>${f.alternateListings.map(x=>`<div class="row"><span class="listing-source">${esc(sourceName(x.sourceId))}</span><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Original ad</a></div>`).join('')}</details>` : ''}${f.relatedAds?.length ? `<details class="related-listings"><summary>${f.groupSize} similar advertisements · review separately</summary><p class="small muted">Similar titles may represent different requisitions. Each listing remains accessible.</p>${f.relatedAds.map(other=>`<div class="row"><span class="listing-source">${esc(sourceName(other.sourceId))}${other.jobNumber?' · #'+esc(other.jobNumber):''}${other.added?' · In tracker':''}</span><span class="row">${other.url?`<a class="btn sm" target="_blank" rel="noopener" href="${esc(other.url)}">View ad</a>`:''}${other.added?`<a href="#" class="btn sm" data-action="openjob" data-id="${other.jobId}">Open</a>`:`<button class="btn sm" data-action="addfeed" data-id="${other.id}"${S.readonly?' disabled':''}>Add separately</button>`}</span></div>`).join('')}</details>` : ''}${f.detailText ? `<details class="small" style="margin-top:10px"><summary style="cursor:pointer;color:var(--accent-text);font-weight:650">Preview collected posting details</summary><div style="white-space:pre-wrap;max-height:250px;overflow:auto;padding:9px 0;color:var(--muted)">${esc(f.detailText.slice(0,4500))}</div></details>` : ''}${f.fit && f.fit.matched.length ? `<div class="terms">${f.fit.matched.slice(0,8).map(t => `<span class="term${t.startsWith('-')?' neg':''}">${esc(t.replace(/^-/,''))}</span>`).join('')}${f.fit.matched.length>8?`<span class="term">+${f.fit.matched.length-8}</span>`:''}</div>`:''}</div>
       <div class="row">${f.url?`<a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" title="Original source listing">${ICON.ext} Listing</a>`:''}${f.verifiedApplicationUrl?`<a class="btn sm" href="${esc(f.verifiedApplicationUrl)}" target="_blank" rel="noopener" title="Verified linked application page">Job call</a>`:(f.applicationLinkCandidates?.length?`<a class="btn sm" href="${esc(f.applicationLinkCandidates[0].url)}" target="_blank" rel="noopener" title="Possible application page: review the employer and requisition before relying on it">Possible application page</a>`:'')}${f.added?`<a href="#" class="pill good" data-action="openjob" data-id="${f.jobId}">In tracker</a>`:`<button class="btn sm primary" data-action="addfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Add</button><button class="btn sm quiet" data-action="dismissfeed" data-id="${f.id}"${S.readonly?' disabled':''}>Dismiss</button>`}</div>
     </div>`).join('');
   h += `</div>${inbox.length>200?`<p class="small muted" style="margin-top:8px">Showing 200 of ${inbox.length}. Use the filter to narrow.</p>`:''}</div>`;
@@ -1758,6 +1824,60 @@ function findJobNumber(t, lines, url){
   return '';
 }
 
+function applyParsedDeadline(job, fields){
+  let changes=0;
+  if(!job.deadline && fields.deadline){
+    for(const key of ['deadline','deadlineKind','deadlineEvidence']) if(fields[key]) job[key]=fields[key];
+    changes++;
+  }
+  const parsed=fields.deadlineResolution;
+  if(parsed?.candidates?.length){
+    const candidates=deadlineCandidates({sourceEvidence:[...deadlineCandidates(job),...parsed.candidates]});
+    const r=resolveDeadlineCandidates(candidates);
+    const resolution={status:r.conflict?(r.selected?'resolved_with_conflict':'conflict'):r.selected?'resolved':'unverified',selected:r.selected,candidates:r.candidates};
+    if(JSON.stringify(job.deadlineResolution)!==JSON.stringify(resolution)){job.deadlineResolution=resolution;changes++;}
+    if(r.selected && (job.publishedDeadline!==r.selected.date || job.publishedDeadlineKind!==r.selected.type)){
+      job.publishedDeadline=r.selected.date;job.publishedDeadlineKind=r.selected.type;changes++;
+    }
+  }
+  return changes;
+}
+
+function extractCallDeadlineEvidence(text, cycleYear){
+  const evidence=[];
+  // Keep date labels and their following line together, but not unrelated headings.
+  const joined=text.replace(/((?:application )?deadline|closing date|priority deadline|priority date|review date|review begins?|initial review date|first consideration date)\s*[:–—-]?\s*\n/gi,'$1: ');
+  for(const sentence of sentencesOf(joined)){
+    let remaining=sentence, offset=0, previousEnd=0;
+    for(let i=0;i<12;i++){
+      const d=dateFrom(remaining,cycleYear); if(!d) break;
+      const position=offset+d.index, end=position+d.text.length;
+      const before=sentence.slice(previousEnd,position);
+      // Extract the closest qualifying instruction before this date. Board
+      // metadata ("expires" / "posted") and appointment dates are not deadlines.
+      const events=[...before.matchAll(/\b(full consideration|best consideration|priority(?: consideration| review| deadline| date)?|first consideration|review(?:s)?(?: of (?:applications?|materials|files|candidates))?(?: will)? (?:begin|start|commence)s?|review date|initial review date|application deadline|deadline|closing date|closes?(?: on)?|close date|applications? due|received (?:by|on or before)|submitted by|no later than|apply(?: \w+){0,4} by|must be (?:received|submitted|completed)|applications? (?:will be )?(?:accepted|considered) (?:until|through))\b/gi)];
+      const last=events[events.length-1];
+      if(last && /\b\d{4}\b/.test(d.text) && validDateOnly(d.iso)){
+        const between=before.slice(last.index+last[0].length);
+        // A later posting/expiry/start label invalidates an earlier instruction.
+        const intervening=/\b(?:expires?|expiration|posted|posting date|start date|appointment begins?|position begins?|date to be filled)\b/i.test(between);
+        if(!intervening && between.length<200){
+          let type=/full consideration|best consideration/i.test(last[0])?'full_consideration':/priority|first consideration/i.test(last[0])?'priority':/review/i.test(last[0])?'review':'closing';
+          // "For full consideration, apply by ..." is not a hard close.
+          if(type==='closing' && /(?:full|best) consideration/i.test(before) && !/application deadline|closing date|closes/i.test(last[0])) type='full_consideration';
+          else if(type==='closing' && /priority/i.test(before) && !/application deadline|closing date|closes/i.test(last[0])) type='priority';
+          const after=sentence.slice(end).split(/[;.!?]/)[0];
+          if(type==='closing' && /^\s*(?:(?:at|by)\s+[^,;]{1,40},?\s*)?(?:,?\s*)(?:for|to receive|to ensure|to be assured(?: of)?)\s+(?:full|best) consideration\b/i.test(after)) type='full_consideration';
+          else if(type==='closing' && /^\s*,?\s*(?:for|to receive|to ensure)\s+priority(?: consideration| review)?\b/i.test(after)) type='priority';
+          evidence.push({date:d.iso,type,evidence:sentence,url:'',source:'pasted-call'});
+        }
+      }
+      previousEnd=end;offset=end;remaining=sentence.slice(end);
+    }
+  }
+  return evidence;
+}
+
 function parseJobCall(raw){
   const t = normalizeCallText(raw);
   const lines = t.split('\n').map(tidy).filter(Boolean);
@@ -1893,33 +2013,18 @@ function parseJobCall(raw){
   }
   if(loc) F.location = loc.replace(/[.,]$/, '');
 
-  /* ---- deadline ---- */
-  const DL_CTX = /\b(?:deadline|due|review(?:s)? of (?:applications?|materials|files|candidates)|review (?:will )?(?:begin|start|commence)|reviewed|received by|received on or before|submitted by|no later than|apply (?:\w+ ){0,4}by|closing date|closes?|close date|priority (?:consideration |deadline |date |review )?|full consideration|until (?:the position is )?filled|open until|consideration will be given|guaranteed (?:full )?consideration|must be (?:received|submitted|completed)|best consideration|screening (?:of applicants )?(?:will )?begins?|applications? (?:will be )?(?:accepted|considered) (?:until|through))\b/i;
-  const dlLabel = labeled(t, 'application deadline|deadline|closing date|close date|review date|priority deadline|priority date|applications? due|date to be filled|review begins?|open until|closes on|apply by|initial review date|first consideration date');
-  let dl = null, dlNote = '';
-  if(dlLabel){ const d = dateFrom(dlLabel, cycleYear); if(d){ dl = d; const lm = t.match(/^(application deadline|deadline|closing date|close date|review date|priority deadline|priority date|applications? due|date to be filled|review begins?|open until|closes on|apply by|initial review date|first consideration date)\s*[:\-–—]/im); dlNote = (lm ? lm[1].replace(/^\w/, c => c.toUpperCase()) + ': ' : '') + dlLabel; out.confidence.deadline = 'high'; } }
-  if(!dl){
-    const cands = [];
-    for(const s of sents){
-      if(!DL_CTX.test(s)) continue;
-      const d = dateFrom(s, cycleYear); if(!d) continue;
-      let w = 0;
-      if(/\bdeadline\b/i.test(s)) w += 4;
-      if(/\bapply\b[^.]{0,40}\bby\b/i.test(s)) w += 2;
-      if(/\bscreening\b/i.test(s)) w += 2;
-      if(/\b(?:review|full consideration|priority|guaranteed|best consideration|first consideration)\b/i.test(s)) w += 3;
-      if(/\b(?:closes?|closing|no later than|received by|due|must be (?:received|submitted))\b/i.test(s)) w += 3;
-      if(/\b(?:start|begin(?:ning)?|effective|appoint|commence)/i.test(s) && !/review/i.test(s)) w -= 5;
-      if(/\b(?:posted|posting date|date posted|published|open date|opened)\b/i.test(s)) w -= 6;
-      if(/\b(?:interview|campus visit|decision|notif)/i.test(s)) w -= 4;
-      cands.push({ d, s, w });
-    }
-    if(cands.length){ cands.sort((a, b) => b.w - a.w || a.d.iso.localeCompare(b.d.iso)); dl = cands[0].d; dlNote = cands[0].s; out.confidence.deadline = cands[0].w >= 3 ? 'high' : 'medium'; }
+  /* ---- deadline: explicit, typed source evidence only ---- */
+  const deadlineEvidence=extractCallDeadlineEvidence(t, cycleYear);
+  const resolution=resolveDeadlineCandidates(deadlineEvidence);
+  if(resolution.selected){
+    F.deadline=resolution.selected.date;
+    F.deadlineKind=resolution.selected.type;
+    F.deadlineEvidence=resolution.selected;
+    out.confidence.deadline='high';
   }
-  if(dl) F.deadline = dl.iso;
-  if(!dl && !dlNote){ const rv = sents.find(s => /\b(?:review of applications?|screening|applications? will be reviewed)\b[^.]{0,60}\b(?:begin|start|commence)/i.test(s)); if(rv) dlNote = rv; }
-  const ouf = /\b(?:open until filled|until (?:the )?(?:position|search) is (?:filled|closed)|until filled|remain open until filled)\b/i.test(t);
-  if(dlNote || ouf) F.deadlineNote = tidy([dlNote.slice(0, 160), ouf && !/until (?:the )?(?:(?:position|search) is )?(?:filled|closed)/i.test(dlNote) ? 'open until filled' : ''].filter(Boolean).join('; '));
+  F.deadlineResolution={status:resolution.conflict?(resolution.selected?'resolved_with_conflict':'conflict'):resolution.selected?'resolved':'unverified',selected:resolution.selected,candidates:resolution.candidates};
+  const ouf=/\b(?:open until filled|until (?:the )?(?:position|search) is (?:filled|closed)|until filled|remain open until filled)\b/i.test(t);
+  F.deadlineNote=tidy([resolution.conflict?'Conflicting source dates; verify before choosing a date':'',...deadlineEvidence.map(e=>deadlineLabel(e.type)+': '+e.date),ouf?'Open until filled':''].filter(Boolean).join('; '));
 
   /* ---- start ---- */
   const start = t.match(/\b(?:start(?:ing)? date|anticipated start|expected start|(?:appointment|position|employment|contract) (?:will |would |is expected to |is anticipated to )?(?:begin|start|commence)s?|to begin|beginning(?: in| on)?|effective|starting|commencing|from)\b[^.;\n]{0,50}?\b((?:fall|spring|summer|autumn|winter)\s+(?:semester\s+|term\s+|quarter\s+)?(?:of\s+)?\d{4}|(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+(?:\d{1,2},?\s+)?\d{4}|\d{1,2} (?:january|february|march|april|may|june|july|august|september|october|november|december) \d{4}|\d{1,2}\/\d{1,2}\/\d{4}|academic year \d{4}[-–]\d{2,4})/i);
@@ -2047,11 +2152,17 @@ function syncFeedEvidence(job, feed){
     if(!item.notes || /^(No explicit requirement|Not found in captured text|Confirmed by source)/.test(item.notes))
       item.notes='Confirmed by source: '+fact.evidence;
   }
-  const dates = feed.applicationEvidence.deadlineEvidence || [];
-  if(!job.deadline && dates.length){
-    const x=dates.find(x => x.type==='closing') || dates[0];
-    job.deadline=x.date;job.deadlineKind=x.type;job.deadlineEvidence=x;changes++;
+  const dateResolution=resolveDeadlineCandidates(deadlineCandidates(feed));
+  const selectedDate=dateResolution.selected;
+  if(!job.deadline && selectedDate){
+    job.deadline=selectedDate.date;job.deadlineKind=selectedDate.type;job.deadlineEvidence=selectedDate;changes++;
   }
+  // Record new source facts even when preserving an existing saved date.
+  if(selectedDate && (job.publishedDeadline!==selectedDate.date || job.publishedDeadlineKind!==selectedDate.type)){
+    job.publishedDeadline=selectedDate.date;job.publishedDeadlineKind=selectedDate.type;changes++;
+  }
+  const resolution=feed.deadlineResolution || {status:dateResolution.conflict?(selectedDate?'resolved_with_conflict':'conflict'):selectedDate?'resolved':'unverified',selected:selectedDate,candidates:dateResolution.candidates};
+  if(JSON.stringify(job.deadlineResolution)!==JSON.stringify(resolution)){job.deadlineResolution=resolution;changes++;}
   if(!job.officialPostingUrl && feed.verifiedApplicationUrl){job.officialPostingUrl=feed.verifiedApplicationUrl;changes++;}
   if(!job.sourceListingUrl && feed.url){job.sourceListingUrl=feed.url;changes++;}
   for(const k of ['jobNumber','department','area','location']){
@@ -2068,10 +2179,13 @@ function syncFeedEvidence(job, feed){
       m.notes==='No explicit requirement confirmed from the available posting. Check the official application call.'));
     changes+=before-job.materials.length;
   }
+  if(JSON.stringify(job.applicationEvidence)!==JSON.stringify(feed.applicationEvidence)) changes++;
   job.applicationEvidence=feed.applicationEvidence;
   job.applicationCoverage=feed.applicationCoverage||'summary_only';
   job.applicationLinkCandidates=feed.applicationLinkCandidates||[];
-  job.verificationWarnings=feed.verificationWarnings||[];
+  const warnings=[...new Set([...(job.verificationWarnings||[]),...(feed.verificationWarnings||[])])];
+  if(JSON.stringify(job.verificationWarnings)!==JSON.stringify(warnings)) changes++;
+  job.verificationWarnings=warnings;
   job.applicationFetchStatus=feed.applicationFetchStatus||'';
   return changes;
 }
@@ -2110,8 +2224,8 @@ const actions = {
   },
   refill: async (el) => {
     const j = jobById(el.dataset.id); const text = await loadCallText(j) || ''; if(!text.trim()){ toast('No posting text to read — attach the call or paste it first.'); return; }
-    const g = parseJobCall(text); let n = 0;
-    for(const k of ['title','institution','department','area','location','deadline','deadlineNote','startDate','url','jobNumber']) if(g.fields[k] && !j[k]){ j[k] = g.fields[k]; n++; }
+    const g = parseJobCall(text); let n = applyParsedDeadline(j,g.fields);
+    for(const k of ['title','institution','department','area','location','deadlineNote','startDate','url','jobNumber']) if(g.fields[k] && !j[k]){ j[k] = g.fields[k]; n++; }
     if(g.summary && (!j.summary || /^(?:LETTERS WITH APPLICATION|Materials:|This file does not read)/.test(j.summary))){ if(j.summary !== g.summary) n++; j.summary = g.summary; }
     if(g.extras.salary && !j.salary){ j.salary = g.extras.salary; n++; }
     const gc = g.extras.contact;
@@ -2176,6 +2290,7 @@ const actions = {
     // Keep the collector's complete excerpt instead of discarding the evidence used to score the job.
     const sourceText = [f.detailText || '', ...(f.statuses || []), f.snippet || ''].filter(Boolean).join('\n');
     const g = sourceText.trim() ? parseJobCall(sourceText) : { fields:{}, materials:[], extras:{}, summary:'' };
+    const importedDate=resolveDeadlineCandidates(deadlineCandidates(f)).selected;
     const j = newJob({
       institution:f.institution || g.fields.institution || '',
       title:f.title || g.fields.title || '',
@@ -2186,9 +2301,10 @@ const actions = {
       sourceListingUrl:f.url || '',
       officialPostingUrl:f.verifiedApplicationUrl || '',
       jobNumber:f.jobNumber || g.fields.jobNumber || jobNumberFromUrl(f.adUrl || f.url) || '',
-      deadline:(f.applicationEvidence?.deadlineEvidence||[]).find(x=>x.type==='closing')?.date || (f.applicationEvidence?.deadlineEvidence||[])[0]?.date || f.deadline || g.fields.deadline || '',
-      deadlineKind:f.deadlineKind || (f.applicationEvidence?.deadlineEvidence||[]).find(x=>x.type==='closing')?.type || (f.applicationEvidence?.deadlineEvidence||[])[0]?.type || '',
-      deadlineEvidence:f.deadlineEvidence || (f.applicationEvidence?.deadlineEvidence||[])[0] || null,
+      deadline:importedDate?.date || g.fields.deadline || '',
+      deadlineKind:importedDate?.type || g.fields.deadlineKind || '',
+      deadlineEvidence:importedDate || g.fields.deadlineEvidence || null,
+      deadlineResolution:f.deadlineResolution || g.fields.deadlineResolution || null,
       applicationEvidence:f.applicationEvidence || null,
       applicationCoverage:f.applicationCoverage || 'summary_only',
       applicationLinkCandidates:f.applicationLinkCandidates || [],
@@ -2286,6 +2402,7 @@ const submits = {
     const f = Object.fromEntries(new FormData(form).entries());
     const d = S.callDraft || {};
     const j = newJob({ institution: f.institution.trim(), title: f.title.trim(), department: f.department.trim(), location: f.location.trim(), deadline: f.deadline, deadlineNote: f.deadlineNote.trim(), url: f.url.trim(), area: f.area.trim(), startDate: (f.startDate||'').trim(), jobNumber: (f.jobNumber||'').trim(), summary: d.readSummary || '', salary: (d.extras && d.extras.salary) || '' });
+    for(const k of ['deadlineKind','deadlineEvidence','deadlineResolution']) if(d[k]) j[k]=d[k];
     if((f.rawText || '').trim()) setCallText(j, (f.rawText || '').trim());
     if(d.extras && d.extras.contact && (d.extras.contact.name || d.extras.contact.email)) j.contacts.push({ name: d.extras.contact.name, email: d.extras.contact.email, role: d.extras.contact.role });
     const found = Array.isArray(d.materials) ? d.materials : [];
